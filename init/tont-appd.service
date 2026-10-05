@@ -1,0 +1,14 @@
+[Unit]
+Description=TontOS App Lifecycle and Waydroid Daemon
+After=tont-powerd.service cgroup.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tont-appd
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

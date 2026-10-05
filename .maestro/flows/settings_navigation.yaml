@@ -1,0 +1,20 @@
+appId: org.tontos.launcher
+---
+- launchApp
+- tapOn:
+    text: ".*SETTINGS.*"
+- assertVisible: ".*TontOS SETTINGS.*"
+- assertVisible: ".*Display & Screen Time.*"
+- assertVisible: ".*Sound & Volume.*"
+- assertVisible: ".*Home Screen & App Drawer.*"
+- assertVisible: ".*Connectivity & Radios.*"
+- assertVisible: ".*About Device & Updates.*"
+- takeScreenshot: settings_menu_verified
+- tapOn:
+    text: ".*About Device & Updates.*"
+- assertVisible: ".*DEVICE INFORMATION.*"
+- assertVisible: ".*SYSTEM UPDATES.*"
+- takeScreenshot: settings_system_verified
+- tapOn:
+    text: ".*BACK TO SETTINGS.*"
+- assertVisible: ".*TontOS SETTINGS.*"

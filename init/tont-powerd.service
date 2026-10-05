@@ -1,0 +1,15 @@
+[Unit]
+Description=TontOS Power Daemon
+Documentation=https://github.com/TontOS/tont-powerd
+After=syslog.target systemd-modules-load.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tont-powerd
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

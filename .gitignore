@@ -1,0 +1,35 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Android build artifacts
+launcher_apk/build/
+launcher_apk/*.apk
+launcher_apk/*.idsig
+*.class
+*.dex
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Knowledge graph & raw disk images
+graphify-out/
+*.img
+*.iso
+*.png
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.tontbak

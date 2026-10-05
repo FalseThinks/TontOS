@@ -1,0 +1,11 @@
+appId: org.tontos.launcher
+---
+- launchApp
+- tapOn:
+    text: ".*ALL APPS / DRAWER.*"
+- assertVisible: ".*ALL APPLICATIONS.*"
+- assertVisible: ".*BACK TO HOME.*"
+- takeScreenshot: app_drawer_verified
+- tapOn:
+    text: ".*BACK TO HOME.*"
+- assertVisible: ".*TontOS.*"

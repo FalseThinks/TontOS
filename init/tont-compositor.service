@@ -1,0 +1,16 @@
+[Unit]
+Description=TontOS Wayland Mobile Compositor
+After=systemd-user-sessions.service tont-powerd.service tont-sensors.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tont-compositor
+Restart=always
+RestartSec=1
+StandardOutput=journal
+StandardError=journal
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+
+[Install]
+WantedBy=default.target

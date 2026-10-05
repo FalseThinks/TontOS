@@ -1,0 +1,9 @@
+appId: org.tontos.launcher
+---
+- launchApp
+- assertVisible: ".*TontOS.*"
+- assertVisible: ".*100% ⚡.*"
+- assertVisible: ".*budget.*"
+- assertVisible: ".*ALL APPS / DRAWER.*"
+- assertVisible: ".*SETTINGS.*"
+- takeScreenshot: home_screen_verified

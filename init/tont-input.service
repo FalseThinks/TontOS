@@ -1,0 +1,14 @@
+[Unit]
+Description=TontOS Hardware Button Input Processor
+After=systemd-udevd.service tont-powerd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tont-input
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

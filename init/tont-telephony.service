@@ -1,0 +1,14 @@
+[Unit]
+Description=TontOS Telephony Daemon
+After=dbus.service ModemManager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tont-telephony
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

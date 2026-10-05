@@ -1,0 +1,14 @@
+[Unit]
+Description=TontOS Radio Synchronization Daemon
+After=network.target tont-powerd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/tont-syncd
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+[package]
+name = "tont-powerd"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tont-common = { path = "../tont-common" }
+tokio.workspace = true
+rustix.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
