@@ -44,18 +44,10 @@ pub enum SettingsAction {
     SetScreenTimeBudget(u32),
 }
 
+#[derive(Default)]
 pub struct SettingsApp {
     pub current_category: Option<SettingsCategory>,
     pub settings: TontSettings,
-}
-
-impl Default for SettingsApp {
-    fn default() -> Self {
-        Self {
-            current_category: None,
-            settings: TontSettings::default(),
-        }
-    }
 }
 
 impl SettingsApp {

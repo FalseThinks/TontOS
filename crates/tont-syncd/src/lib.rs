@@ -25,30 +25,42 @@ impl SyncScheduler {
     pub fn new(config: SyncWindowConfig) -> Self {
         Self {
             config,
-            state: SyncState::Sleeping { elapsed_in_interval: 0 },
+            state: SyncState::Sleeping {
+                elapsed_in_interval: 0,
+            },
         }
     }
 
     /// Advance the internal clock by `seconds` and compute the state transition.
     pub fn tick(&mut self, seconds: u64) -> SyncEvent {
         match self.state {
-            SyncState::Sleeping { elapsed_in_interval } => {
+            SyncState::Sleeping {
+                elapsed_in_interval,
+            } => {
                 let next = elapsed_in_interval + seconds;
                 if next >= self.config.interval_secs {
-                    self.state = SyncState::WindowOpen { elapsed_in_window: 0 };
+                    self.state = SyncState::WindowOpen {
+                        elapsed_in_window: 0,
+                    };
                     SyncEvent::WindowOpened
                 } else {
-                    self.state = SyncState::Sleeping { elapsed_in_interval: next };
+                    self.state = SyncState::Sleeping {
+                        elapsed_in_interval: next,
+                    };
                     SyncEvent::NoChange
                 }
             }
             SyncState::WindowOpen { elapsed_in_window } => {
                 let next = elapsed_in_window + seconds;
                 if next >= self.config.duration_secs {
-                    self.state = SyncState::Sleeping { elapsed_in_interval: 0 };
+                    self.state = SyncState::Sleeping {
+                        elapsed_in_interval: 0,
+                    };
                     SyncEvent::WindowClosed
                 } else {
-                    self.state = SyncState::WindowOpen { elapsed_in_window: next };
+                    self.state = SyncState::WindowOpen {
+                        elapsed_in_window: next,
+                    };
                     SyncEvent::NoChange
                 }
             }

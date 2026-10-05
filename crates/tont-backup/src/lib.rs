@@ -124,14 +124,9 @@ mod tests {
         }];
         let apps = vec![];
 
-        let backup = BackupPackage::create(
-            settings,
-            sms,
-            apps,
-            1700000000,
-            "Treble-ARM64".to_string(),
-        )
-        .unwrap();
+        let backup =
+            BackupPackage::create(settings, sms, apps, 1700000000, "Treble-ARM64".to_string())
+                .unwrap();
 
         assert!(backup.verify_integrity());
 

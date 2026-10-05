@@ -10,7 +10,10 @@ pub enum TelephonyError {
     #[error("Call not found: {0}")]
     CallNotFound(u64),
     #[error("Invalid state transition: cannot {action} in state {state:?}")]
-    InvalidTransition { action: &'static str, state: CallState },
+    InvalidTransition {
+        action: &'static str,
+        state: CallState,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,8 +42,14 @@ pub struct SmsMessage {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CellularNetworkStatus {
     NoSignal,
-    Registered { operator: String, signal_percent: u8 },
-    Roaming { operator: String, signal_percent: u8 },
+    Registered {
+        operator: String,
+        signal_percent: u8,
+    },
+    Roaming {
+        operator: String,
+        signal_percent: u8,
+    },
 }
 
 pub struct TelephonyManager {
@@ -175,7 +184,8 @@ mod tests {
     #[test]
     fn test_sms_reception() {
         let mut mgr = TelephonyManager::new();
-        let sms = mgr.handle_incoming_sms("Mom".to_string(), "Call me back".to_string(), 1700000000);
+        let sms =
+            mgr.handle_incoming_sms("Mom".to_string(), "Call me back".to_string(), 1700000000);
 
         assert_eq!(sms.message_id, 1);
         assert_eq!(mgr.get_inbox().len(), 1);

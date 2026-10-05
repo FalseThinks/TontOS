@@ -19,20 +19,11 @@ pub enum KeyAction {
     EmergencySos,
 }
 
+#[derive(Default)]
 pub struct KeyProcessor {
     power_press_start_ms: Option<u64>,
     power_tap_count: u32,
     last_power_release_ms: u64,
-}
-
-impl Default for KeyProcessor {
-    fn default() -> Self {
-        Self {
-            power_press_start_ms: None,
-            power_tap_count: 0,
-            last_power_release_ms: 0,
-        }
-    }
 }
 
 impl KeyProcessor {

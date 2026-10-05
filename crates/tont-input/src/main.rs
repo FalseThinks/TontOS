@@ -4,9 +4,7 @@ use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixListener;
 use tokio::sync::Mutex;
-use tont_input::{
-    AudioMixerController, KeyAction, KeyProcessor, RawInputEvent,
-};
+use tont_input::{AudioMixerController, KeyAction, KeyProcessor, RawInputEvent};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -45,7 +43,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    tracing::info!("Discovered {} evdev input nodes in /dev/input", input_nodes.len());
+    tracing::info!(
+        "Discovered {} evdev input nodes in /dev/input",
+        input_nodes.len()
+    );
 
     // Spawn evdev monitoring tasks for accessible event devices
     for node in input_nodes {
@@ -73,21 +74,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     KeyAction::VolumeUp => {
                                         let mut m = mix.lock().await;
                                         let state = m.volume_up();
-                                        tracing::info!("Hardware VolumeUp -> {}%", state.level_percent);
+                                        tracing::info!(
+                                            "Hardware VolumeUp -> {}%",
+                                            state.level_percent
+                                        );
                                     }
                                     KeyAction::VolumeDown => {
                                         let mut m = mix.lock().await;
                                         let state = m.volume_down();
-                                        tracing::info!("Hardware VolumeDown -> {}%", state.level_percent);
+                                        tracing::info!(
+                                            "Hardware VolumeDown -> {}%",
+                                            state.level_percent
+                                        );
                                     }
                                     KeyAction::ToggleDisplay => {
                                         tracing::info!("Hardware Power Tap -> Toggle Display");
                                     }
                                     KeyAction::OpenPowerMenu => {
-                                        tracing::warn!("Hardware Power Long-Press -> Open Power Menu");
+                                        tracing::warn!(
+                                            "Hardware Power Long-Press -> Open Power Menu"
+                                        );
                                     }
                                     KeyAction::EmergencySos => {
-                                        tracing::error!("Hardware 5-Tap -> EMERGENCY SOS TRIGGERED!");
+                                        tracing::error!(
+                                            "Hardware 5-Tap -> EMERGENCY SOS TRIGGERED!"
+                                        );
                                     }
                                 }
                             }

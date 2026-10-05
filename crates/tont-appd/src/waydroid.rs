@@ -115,15 +115,25 @@ mod tests {
     #[test]
     fn test_package_name_validation() {
         assert!(WaydroidController::is_valid_package_name("com.whatsapp"));
-        assert!(WaydroidController::is_valid_package_name("org.fdroid.fdroid"));
-        assert!(WaydroidController::is_valid_package_name("com.example.my_app123"));
+        assert!(WaydroidController::is_valid_package_name(
+            "org.fdroid.fdroid"
+        ));
+        assert!(WaydroidController::is_valid_package_name(
+            "com.example.my_app123"
+        ));
 
         // Malformed / injection attempts
         assert!(!WaydroidController::is_valid_package_name(""));
         assert!(!WaydroidController::is_valid_package_name("no_dots"));
-        assert!(!WaydroidController::is_valid_package_name("com.app;rm -rf /"));
-        assert!(!WaydroidController::is_valid_package_name(".starts.with.dot"));
-        assert!(!WaydroidController::is_valid_package_name("com.123start.digit"));
+        assert!(!WaydroidController::is_valid_package_name(
+            "com.app;rm -rf /"
+        ));
+        assert!(!WaydroidController::is_valid_package_name(
+            ".starts.with.dot"
+        ));
+        assert!(!WaydroidController::is_valid_package_name(
+            "com.123start.digit"
+        ));
     }
 
     #[test]

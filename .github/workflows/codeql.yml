@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
@@ -48,6 +48,6 @@ jobs:
           javac --release 17 -cp "$ANDROID_HOME/platforms/android-34/android.jar" -d build/classes $(find launcher_apk/src -name "*.java")
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"

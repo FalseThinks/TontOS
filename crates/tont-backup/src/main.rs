@@ -17,7 +17,10 @@ async fn main() {
 
     match args[1].as_str() {
         "create" => {
-            let out_path = args.get(2).map(String::as_str).unwrap_or("/tmp/tontos_backup.json");
+            let out_path = args
+                .get(2)
+                .map(String::as_str)
+                .unwrap_or("/tmp/tontos_backup.json");
             let settings = TontSettings::default();
             let package = BackupPackage::create(
                 settings,
@@ -34,7 +37,10 @@ async fn main() {
             tracing::info!("Backup successfully created at {}", out_path);
         }
         "verify" => {
-            let in_path = args.get(2).map(String::as_str).unwrap_or("/tmp/tontos_backup.json");
+            let in_path = args
+                .get(2)
+                .map(String::as_str)
+                .unwrap_or("/tmp/tontos_backup.json");
             match BackupPackage::load_from_file(Path::new(in_path)) {
                 Ok(pkg) => tracing::info!(
                     "Backup at {} is VALID. SHA256: {}",
@@ -45,7 +51,10 @@ async fn main() {
             }
         }
         "restore" => {
-            let in_path = args.get(2).map(String::as_str).unwrap_or("/tmp/tontos_backup.json");
+            let in_path = args
+                .get(2)
+                .map(String::as_str)
+                .unwrap_or("/tmp/tontos_backup.json");
             let pkg = BackupPackage::load_from_file(Path::new(in_path))
                 .expect("Failed to load and verify backup archive");
             tracing::info!(

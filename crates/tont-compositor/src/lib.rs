@@ -84,7 +84,12 @@ mod tests {
     #[test]
     fn test_direct_scanout_when_fullscreen_and_no_overlay() {
         let evaluator = DirectScanoutEvaluator::new(1080, 2400);
-        let damage = vec![Rect { x: 0, y: 0, width: 1080, height: 2400 }];
+        let damage = vec![Rect {
+            x: 0,
+            y: 0,
+            width: 1080,
+            height: 2400,
+        }];
         let decision = evaluator.evaluate_frame(true, damage, false, Some(42), Some((1080, 2400)));
         assert_eq!(decision, ScanoutDecision::DirectScanout { surface_id: 42 });
     }
@@ -92,8 +97,19 @@ mod tests {
     #[test]
     fn test_composite_damage_when_overlay_present() {
         let evaluator = DirectScanoutEvaluator::new(1080, 2400);
-        let damage = vec![Rect { x: 0, y: 0, width: 1080, height: 50 }];
-        let decision = evaluator.evaluate_frame(true, damage.clone(), true, Some(42), Some((1080, 2400)));
-        assert_eq!(decision, ScanoutDecision::CompositeDamage { damage_regions: damage });
+        let damage = vec![Rect {
+            x: 0,
+            y: 0,
+            width: 1080,
+            height: 50,
+        }];
+        let decision =
+            evaluator.evaluate_frame(true, damage.clone(), true, Some(42), Some((1080, 2400)));
+        assert_eq!(
+            decision,
+            ScanoutDecision::CompositeDamage {
+                damage_regions: damage
+            }
+        );
     }
 }

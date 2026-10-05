@@ -190,7 +190,10 @@ mod tests {
         assert!(!detox.is_exceeded());
 
         detox.record_screen_on(3600); // 2h 30m total (exceeded)
-        assert_eq!(detox.format_screen_time(), "[ 2h 30m / 2h budget ! EXCEEDED ]");
+        assert_eq!(
+            detox.format_screen_time(),
+            "[ 2h 30m / 2h budget ! EXCEEDED ]"
+        );
         assert!(detox.is_exceeded());
     }
 

@@ -85,6 +85,10 @@ jobs:
   trivy-security-scan:
     name: Trivy Vulnerability & Misconfig Scan
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -99,25 +103,35 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        if: >-
+          always() &&
+          hashFiles('trivy-results.sarif') != '' &&
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
           sarif_file: 'trivy-results.sarif'
 
   semgrep-sast-scan:
     name: Semgrep SAST Code Quality & Security
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run Semgrep SAST
-        run: |
-          pip install semgrep
-          semgrep scan --config auto --sarif --output semgrep.sarif . || true
+        run: pip install semgrep && semgrep scan --config auto --sarif --output semgrep.sarif .
 
       - name: Upload Semgrep results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        if: >-
+          always() &&
+          hashFiles('semgrep.sarif') != '' &&
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
           sarif_file: 'semgrep.sarif'

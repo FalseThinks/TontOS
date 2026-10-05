@@ -9,7 +9,5 @@ async fn main() {
 
     let settings = TontSettings::default();
     let _app = SettingsApp::new(settings);
-    tracing::info!(
-        "Settings UI ready: AMOLED Black mode active. Top-level category count: 5"
-    );
+    tracing::info!("Settings UI ready: AMOLED Black mode active. Top-level category count: 5");
 }

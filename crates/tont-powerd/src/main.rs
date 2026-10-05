@@ -10,7 +10,11 @@ async fn main() {
     let battery_dir = Path::new("/sys/class/power_supply/battery");
     if battery_dir.exists() {
         match PowerController::read_battery(battery_dir) {
-            Ok(info) => tracing::info!("Battery capacity: {}%, status: {:?}", info.capacity_percent, info.status),
+            Ok(info) => tracing::info!(
+                "Battery capacity: {}%, status: {:?}",
+                info.capacity_percent,
+                info.status
+            ),
             Err(e) => tracing::warn!("Failed to read battery: {}", e),
         }
     } else {
