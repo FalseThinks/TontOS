@@ -3,12 +3,19 @@ target/
 **/*.rs.bk
 Cargo.lock
 
-# Android build artifacts
+# Android & Java build artifacts
+build/
 launcher_apk/build/
 launcher_apk/*.apk
 launcher_apk/*.idsig
+launcher_apk/debug.keystore
 *.class
 *.dex
+*.ap_
+
+# Test & report artifacts
+playwright-report/
+test-results/
 
 # IDE & Editor files
 .idea/
