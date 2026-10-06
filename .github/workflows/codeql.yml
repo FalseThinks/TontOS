@@ -12,6 +12,7 @@ jobs:
   analyze:
     name: Analyze Java Launcher
     runs-on: ubuntu-latest
+    if: github.event.repository.private == false
     permissions:
       actions: read
       contents: read
