@@ -236,9 +236,9 @@
 - [x] **Phase 24 — Expand hardware support:** ARM64/device-family targets remain blocked with explicit kernel, Binder, graphics, input, network and power prerequisites plus dynamic representative-device tests.
   - Evidence: `tasks/todo.md:232` blocked + `SPEC-device-support.md` profile; no `tont-romctl`/`update_engine` until pilot device audited.
 
-### Checkpoint: First Real Android Runtime — local static gates PASS; E2E VM runner pending
+### Checkpoint: First Real Android Runtime — local static PASS; E2E guest Waydroid/Android/HTTP/reboot blocked on this host (binderfs now available via user-ns, Waydroid+LXC not installed, needs sudo)
 - [ ] A disposable x86_64 VM boots the Linux host and Wayland session.
 - [ ] Waydroid Android framework boots, Package Manager responds, and an app renders.
 - [ ] Guest networking works and clean stop/start plus VM reboot recovery pass.
 - [ ] No battery, performance, OTA or Verified Boot improvements are claimed until their own acceptance tests pass.
-- Local 2026-10-10: `cargo fmt --check PASS` · `cargo test --workspace PASS` · `clippy --workspace --all-targets PASS` · `./scripts/build_launcher_apk.sh 168K` · `cargo audit/deny` CI-only (no local bin) · `CONSTRAINTS.md:5-6` security bars + `AndroidManifest:11-14` INTERNET scope + `SettingsActivity:1590` 300MB cap. Security scan: repo `http://` 0 hits, `WebView/TrustManager` 0, `cleartextTraffic` 0, debug.keystore tracked (sign v2/v3 ok), OTA `exit 1` fail-closed. E2E (binder `pm path android`+HTTP+stop/start+sockets+reboot) solo runner desechable.
+- Local 2026-10-10: `fmt PASS` · `test --workspace PASS` · `clippy PASS` · `APK 168K v2+v3 SIGN PASS targetSdk 34` · `CONSTRAINTS.md:5-6` · `unshare --user mount -t binder binder → binder/hwbinder/vndbinder OK` · but `binder_linux` kmod absent, `waydroid`+`lxc` not installed (`sudo: password required`), `/dev/binder*` absent on bare host. Host baseline 2026-10-07 E2E evidence (boot_completed=1+pm path+HTTP+stop/start) recorded in `tasks/todo.md:20.4`; needs fresh `TONTOS_DESIGNATED_RUNNER=1` run on VM/runner.

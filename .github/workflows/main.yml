@@ -158,6 +158,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -172,8 +174,8 @@ jobs:
       - name: Install Playwright Dependencies
         working-directory: tests/ui
         run: |
-          pnpm install
-          pnpm dlx playwright install --with-deps chromium
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright Tests
         working-directory: tests/ui
