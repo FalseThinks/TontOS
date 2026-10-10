@@ -87,7 +87,7 @@ jobs:
         run: ./scripts/build_launcher_apk.sh
 
       - name: Upload launcher APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tontos-launcher
           path: ${{ runner.temp }}/tontos-launcher.apk
@@ -180,7 +180,7 @@ jobs:
         run: pnpm test
 
       - name: Upload Test Report & Screenshots
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
