@@ -1,66 +1,69 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# TontOS AMOLED Detox Home Launcher APK Builder
-# Compiles a minimal pure-black launcher without Gradle dependencies.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+SRC_DIR="$ROOT_DIR/launcher_apk"
+SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Android/Sdk}}"
+ANDROID_PLATFORM="${ANDROID_PLATFORM:-android-34}"
+ANDROID_BUILD_TOOLS_VERSION="${ANDROID_BUILD_TOOLS_VERSION:-36.0.0}"
+BUILD_TOOLS="$SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS_VERSION"
+PLATFORM_JAR="$SDK_ROOT/platforms/$ANDROID_PLATFORM/android.jar"
+OUTPUT_APK="${OUTPUT_APK:-$SRC_DIR/tontos-launcher.apk}"
+DEBUG_KEYSTORE="${DEBUG_KEYSTORE:-$SRC_DIR/debug.keystore}"
+BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tontos-launcher-build.XXXXXX")"
+trap 'rm -rf "$BUILD_DIR"' EXIT
 
-BUILD_TOOLS="/home/paproka/Android/Sdk/build-tools/36.0.0"
-PLATFORM_JAR="/home/paproka/Android/Sdk/platforms/android-37.0/android.jar"
-SRC_DIR="/home/paproka/Desktop/TontoOS/launcher_apk"
-BUILD_DIR="$SRC_DIR/build"
-OUTPUT_APK="$SRC_DIR/tontos-launcher.apk"
-
-echo "=============================================="
-echo " Building TontOS AMOLED Detox Launcher APK"
-echo "=============================================="
-
-rm -rf "$BUILD_DIR"
-mkdir -p "$BUILD_DIR"/classes
-mkdir -p "$BUILD_DIR"/res
-
-# 1. Compile resources with aapt2
-"$BUILD_TOOLS/aapt2" compile --dir "$SRC_DIR/res" -o "$BUILD_DIR/compiled_res.zip" 2>/dev/null || true
-
-# 2. Link APK skeleton
-if [ -f "$BUILD_DIR/compiled_res.zip" ]; then
-    "$BUILD_TOOLS/aapt2" link -I "$PLATFORM_JAR" \
-        --manifest "$SRC_DIR/AndroidManifest.xml" \
-        -o "$BUILD_DIR/unaligned.apk" \
-        "$BUILD_DIR/compiled_res.zip" \
-        --auto-add-overlay
-else
-    "$BUILD_TOOLS/aapt2" link -I "$PLATFORM_JAR" \
-        --manifest "$SRC_DIR/AndroidManifest.xml" \
-        -o "$BUILD_DIR/unaligned.apk"
+if [[ ! -f "$PLATFORM_JAR" ]]; then
+    echo "Android platform not found: $PLATFORM_JAR" >&2
+    exit 1
 fi
 
-# 3. Compile Java source
-javac --release 17 -cp "$PLATFORM_JAR" -d "$BUILD_DIR/classes" $(find "$SRC_DIR/src" -name "*.java")
+for tool in aapt2 d8 zipalign apksigner; do
+    if [[ ! -x "$BUILD_TOOLS/$tool" ]]; then
+        echo "Android build tool not found: $BUILD_TOOLS/$tool" >&2
+        exit 1
+    fi
+done
 
-# 4. Convert classes to dex with d8
-"$BUILD_TOOLS/d8" --lib "$PLATFORM_JAR" --output "$BUILD_DIR" $(find "$BUILD_DIR/classes" -name "*.class")
+for tool in javac jar keytool; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "Required command not found in PATH: $tool" >&2
+        exit 1
+    fi
+done
 
-# 5. Add classes.dex into unaligned.apk
+mkdir -p "$BUILD_DIR/classes" "$(dirname -- "$OUTPUT_APK")"
+
+resource_args=()
+if [[ -d "$SRC_DIR/res" ]] && find "$SRC_DIR/res" -type f -print -quit | grep -q .; then
+    "$BUILD_TOOLS/aapt2" compile --dir "$SRC_DIR/res" -o "$BUILD_DIR/compiled_res.zip"
+    resource_args+=("$BUILD_DIR/compiled_res.zip")
+fi
+
+"$BUILD_TOOLS/aapt2" link -I "$PLATFORM_JAR" \
+    --manifest "$SRC_DIR/AndroidManifest.xml" \
+    -o "$BUILD_DIR/unaligned.apk" \
+    "${resource_args[@]}" \
+    --auto-add-overlay
+
+javac --release 17 -cp "$PLATFORM_JAR" -d "$BUILD_DIR/classes" \
+    $(find "$SRC_DIR/src" -name "*.java")
+"$BUILD_TOOLS/d8" --lib "$PLATFORM_JAR" --output "$BUILD_DIR" \
+    $(find "$BUILD_DIR/classes" -name "*.class")
 (cd "$BUILD_DIR" && jar -uf unaligned.apk classes.dex)
-
-# 6. Zipalign
 "$BUILD_TOOLS/zipalign" -f -p 4 "$BUILD_DIR/unaligned.apk" "$BUILD_DIR/aligned.apk"
 
-# 7. Generate debug keystore if not present
-DEBUG_KEYSTORE="$SRC_DIR/debug.keystore"
-if [ ! -f "$DEBUG_KEYSTORE" ]; then
-    keytool -genkeypair -v -keystore "$DEBUG_KEYSTORE" \
+if [[ ! -f "$DEBUG_KEYSTORE" ]]; then
+    keytool -genkeypair -noprompt -keystore "$DEBUG_KEYSTORE" \
         -storepass android -alias androiddebugkey -keypass android \
         -keyalg RSA -keysize 2048 -validity 10000 \
         -dname "CN=Android Debug,O=Android,C=US"
 fi
 
-# 8. Sign APK with apksigner
 "$BUILD_TOOLS/apksigner" sign --ks "$DEBUG_KEYSTORE" \
     --ks-pass pass:android --key-pass pass:android \
     --out "$OUTPUT_APK" "$BUILD_DIR/aligned.apk"
+"$BUILD_TOOLS/apksigner" verify --verbose "$OUTPUT_APK"
 
-echo "=============================================="
-echo "[+] TontOS Launcher APK successfully built!"
-echo "    Output: $OUTPUT_APK ($(du -h "$OUTPUT_APK" | cut -f1))"
-echo "=============================================="
+echo "Launcher APK built successfully: $OUTPUT_APK ($(du -h "$OUTPUT_APK" | cut -f1))"

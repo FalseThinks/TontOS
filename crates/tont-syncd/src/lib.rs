@@ -31,6 +31,20 @@ impl SyncScheduler {
         }
     }
 
+    pub fn time_until_next_event_secs(&self) -> u64 {
+        match self.state {
+            SyncState::Sleeping {
+                elapsed_in_interval,
+            } => self
+                .config
+                .interval_secs
+                .saturating_sub(elapsed_in_interval),
+            SyncState::WindowOpen { elapsed_in_window } => {
+                self.config.duration_secs.saturating_sub(elapsed_in_window)
+            }
+        }
+    }
+
     /// Advance the internal clock by `seconds` and compute the state transition.
     pub fn tick(&mut self, seconds: u64) -> SyncEvent {
         match self.state {

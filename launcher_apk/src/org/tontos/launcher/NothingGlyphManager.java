@@ -203,21 +203,29 @@ public final class NothingGlyphManager {
         isFlipActive = false;
     }
 
+    private static final int GLYPH_PWM_MAX = 4095; // AW210xx 12-bit
+
+    private static boolean isAllowedGlyphPath(String path) {
+        if (path == null) return false;
+        return path.equals(ATTR_ALL_WHITE_LEDS)
+            || path.equals(ATTR_FRONT_CAM_LED)
+            || path.equals(ATTR_ROUND_LEDS)
+            || path.equals(ATTR_VLINE_LEDS)
+            || path.equals(ATTR_DOT_LED);
+    }
+
     private static boolean writeSysfs(String path, int value) {
+        if (!isAllowedGlyphPath(path)) return false;
+        if (value < 0 || value > GLYPH_PWM_MAX) return false;
         File file = new File(path);
         if (!file.exists()) return false;
         String valStr = String.valueOf(value);
         try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(valStr.getBytes());
+            fos.write(valStr.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             fos.flush();
             return true;
         } catch (Throwable t) {
-            try {
-                Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + value + " > " + path});
-                return p.waitFor() == 0;
-            } catch (Throwable ignored) {
-                return false;
-            }
+            return false;
         }
     }
 }

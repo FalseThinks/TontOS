@@ -1,19 +1,27 @@
 # Rust build artifacts
-target/
+**/target/
 **/*.rs.bk
-Cargo.lock
 
-# Android & Java build artifacts
+# Java & Android build artifacts
 build/
-launcher_apk/build/
-launcher_apk/*.apk
-launcher_apk/*.idsig
-launcher_apk/debug.keystore
+out/
+.gradle/
+local.properties
 *.class
 *.dex
 *.ap_
+*.apk
+!apps/*.apk
+*.aab
+*.aar
+*.idsig
+*.keystore
+*.jks
+*.p12
+*.pfx
 
 # Test & report artifacts
+node_modules/
 playwright-report/
 test-results/
 
@@ -33,10 +41,11 @@ Thumbs.db
 graphify-out/
 *.img
 *.iso
-*.png
 
 # Environment & secrets
 .env
 .env.local
 .env.*.local
+*.pem
+*.key
 *.tontbak

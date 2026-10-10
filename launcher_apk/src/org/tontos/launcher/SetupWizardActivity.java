@@ -181,26 +181,7 @@ public class SetupWizardActivity extends Activity {
     }
 
     private void hideSystemUI() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = getWindow().getInsetsController();
-                if (controller != null) {
-                    controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                    controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
-                }
-            }
-            View decor = getWindow().getDecorView();
-            if (decor != null) {
-                decor.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                );
-            }
-        } catch (Throwable ignored) {}
+        // No-op: compositor owns chrome.
     }
 
     private void navigatePrevious() {
@@ -220,6 +201,11 @@ public class SetupWizardActivity extends Activity {
     }
 
     private void completeSetup() {
+        // Seed home defaults: full pinned set + order + limit = visible size.
+        // Ensures first boot from 0 shows all defaults; background can reuse.
+        // Seed bg_allowed_apps = DEFAULT_PINNED + bg_policy whitelist so the
+        // background policy never kills Phone/Messages on first boot.
+        String pinnedOrder = android.text.TextUtils.join(",", MainActivity.DEFAULT_PINNED_PACKAGES);
         preferences.edit()
             .putBoolean(KEY_SETUP_COMPLETED, true)
             .putString(KEY_SYSTEM_LANGUAGE, selectedLocale.getTag())
@@ -227,6 +213,11 @@ public class SetupWizardActivity extends Activity {
             .putString(KEY_SELECTED_THEME, selectedTheme.getId())
             .putInt(KEY_DAILY_BUDGET, selectedBudgetMinutes)
             .putString(KEY_OTA_CHANNEL, UpdateChannel.BETA.getCode())
+            .putStringSet(MainActivity.KEY_PINNED_APPS, new java.util.HashSet<String>(MainActivity.DEFAULT_PINNED_PACKAGES))
+            .putString(MainActivity.KEY_PINNED_APPS_ORDER, pinnedOrder)
+            .putInt(MainActivity.KEY_HOME_APP_LIMIT, MainActivity.DEFAULT_PINNED_PACKAGES.size())
+            .putString("bg_policy", "whitelist")
+            .putStringSet("bg_allowed_apps", new java.util.HashSet<String>(MainActivity.DEFAULT_PINNED_PACKAGES))
             .apply();
         I18n.applyLocale(this, selectedLocale.getTag(), selectedRegion.getCode());
 
@@ -480,6 +471,11 @@ public class SetupWizardActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("2h", "2h"));
                 options.add(new SingleChoiceSelectorDialog.Option("3h", "3h"));
                 options.add(new SingleChoiceSelectorDialog.Option("4h", "4h"));
+                options.add(new SingleChoiceSelectorDialog.Option("6h", "6h"));
+                options.add(new SingleChoiceSelectorDialog.Option("8h", "8h"));
+                options.add(new SingleChoiceSelectorDialog.Option("12h", "12h"));
+                options.add(new SingleChoiceSelectorDialog.Option("24h", "24h"));
+                options.add(new SingleChoiceSelectorDialog.Option("custom", I18n.get(I18n.KEY_BUDGET_CUSTOM, langCode)));
 
                 String curId = (selectedBudgetMinutes <= 0) ? "none" : (selectedBudgetMinutes % 60 == 0 ? (selectedBudgetMinutes / 60) + "h" : selectedBudgetMinutes + "m");
                 SingleChoiceSelectorDialog.show(
@@ -498,6 +494,11 @@ public class SetupWizardActivity extends Activity {
                             else if ("2h".equals(selected.id)) minutes = 120;
                             else if ("3h".equals(selected.id)) minutes = 180;
                             else if ("4h".equals(selected.id)) minutes = 240;
+                            else if ("6h".equals(selected.id)) minutes = 360;
+                            else if ("8h".equals(selected.id)) minutes = 480;
+                            else if ("12h".equals(selected.id)) minutes = 720;
+                            else if ("24h".equals(selected.id)) minutes = 1440;
+                            else if ("custom".equals(selected.id)) { showCustomBudgetDialog(tokens); return; }
 
                             selectedBudgetMinutes = minutes;
                             preferences.edit().putInt(KEY_DAILY_BUDGET, minutes).apply();
@@ -507,6 +508,31 @@ public class SetupWizardActivity extends Activity {
                 );
             }
         }, tokens);
+    }
+
+    private void showCustomBudgetDialog(final ThemeTokens tokens) {
+        final String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint(I18n.get(I18n.KEY_BUDGET_CUSTOM_HINT, langCode));
+        if (selectedBudgetMinutes > 0) input.setText(String.valueOf(selectedBudgetMinutes));
+        try { input.setSelection(input.getText() != null ? input.getText().length() : 0); } catch (Throwable ignored) {}
+        new android.app.AlertDialog.Builder(this)
+            .setTitle(I18n.get(I18n.KEY_DAILY_BUDGET, langCode))
+            .setView(input)
+            .setPositiveButton(android.R.string.ok, new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    try {
+                        int v = Integer.parseInt(input.getText().toString().trim());
+                        v = Math.max(1, Math.min(1440, v));
+                        selectedBudgetMinutes = v;
+                        preferences.edit().putInt(KEY_DAILY_BUDGET, v).apply();
+                    } catch (Throwable ignored) {}
+                    renderStep();
+                }
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
     }
 
     private void renderSummary(ThemeTokens tokens) {

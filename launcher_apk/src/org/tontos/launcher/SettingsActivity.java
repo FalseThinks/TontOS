@@ -51,6 +51,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -225,36 +226,11 @@ public class SettingsActivity extends Activity {
     }
 
     private void hideSystemUI() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = getWindow().getInsetsController();
-                if (controller != null) {
-                    controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                    controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
-                }
-            }
-            View decor = getWindow().getDecorView();
-            if (decor != null) {
-                decor.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                );
-            }
-        } catch (Throwable ignored) {}
+        // No-op: compositor owns chrome, avoid Pixel WindowInsets dependency.
     }
 
     private void disableStatusBarExpansion() {
-        try {
-            Runtime.getRuntime().exec(new String[]{
-                "cmd", "statusbar", "send-disable-flag",
-                "statusbar-expansion", "quick-settings", "notification-peek",
-                "system-icons", "notification-icons", "clock"
-            });
-        } catch (Exception ignored) {}
+        // TontOS owns its shade; no Pixel 'cmd statusbar' dependency.
     }
 
     private ThemeTokens currentTokens() {
@@ -619,7 +595,7 @@ public class SettingsActivity extends Activity {
                 resetBtn.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        MainActivity.resetScreenTimeToday();
+                        MainActivity.resetScreenTimeToday(SettingsActivity.this);
                         counterText.setText(I18n.get(I18n.KEY_SCREEN_TIME_COUNTER, curLangCode) + ": 0m");
                         AlertDialog.Builder okDialog = new AlertDialog.Builder(SettingsActivity.this, tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK);
                         okDialog.setTitle(I18n.get(I18n.KEY_SCREEN_TIME_RESET_TITLE, curLangCode));
@@ -685,6 +661,11 @@ public class SettingsActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("2h", "2h"));
                 options.add(new SingleChoiceSelectorDialog.Option("3h", "3h"));
                 options.add(new SingleChoiceSelectorDialog.Option("4h", "4h"));
+                options.add(new SingleChoiceSelectorDialog.Option("6h", "6h"));
+                options.add(new SingleChoiceSelectorDialog.Option("8h", "8h"));
+                options.add(new SingleChoiceSelectorDialog.Option("12h", "12h"));
+                options.add(new SingleChoiceSelectorDialog.Option("24h", "24h"));
+                options.add(new SingleChoiceSelectorDialog.Option("custom", I18n.get(I18n.KEY_BUDGET_CUSTOM, curLangCode)));
 
                 String curId = (currentBudgetMins <= 0) ? "none" : (currentBudgetMins % 60 == 0 ? (currentBudgetMins / 60) + "h" : currentBudgetMins + "m");
                 SingleChoiceSelectorDialog.show(
@@ -703,6 +684,11 @@ public class SettingsActivity extends Activity {
                             else if ("2h".equals(selected.id)) mins = 120;
                             else if ("3h".equals(selected.id)) mins = 180;
                             else if ("4h".equals(selected.id)) mins = 240;
+                            else if ("6h".equals(selected.id)) mins = 360;
+                            else if ("8h".equals(selected.id)) mins = 480;
+                            else if ("12h".equals(selected.id)) mins = 720;
+                            else if ("24h".equals(selected.id)) mins = 1440;
+                            else if ("custom".equals(selected.id)) { showCustomBudgetDialog(tokens, curLangCode); return; }
 
                             preferences.edit().putInt(KEY_BUDGET, mins).apply();
                             buildSettingsUI();
@@ -760,13 +746,16 @@ public class SettingsActivity extends Activity {
         }, tokens);
 
         final int curBatteryMode = BatteryProtectionManager.getMode(this);
-        addSelectorRow(I18n.get(I18n.KEY_BATTERY_PROTECTION, curLangCode), BatteryProtectionManager.getModeDisplay(curBatteryMode, curLangCode), new View.OnClickListener() {
+        addSelectorRow(I18n.get(I18n.KEY_BATTERY_PROTECTION, curLangCode), BatteryProtectionManager.getSettingsDisplay(curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("100", "100%"));
-                options.add(new SingleChoiceSelectorDialog.Option("80", "80%"));
-                options.add(new SingleChoiceSelectorDialog.Option("bypass", "Bypass"));
+                options.add(new SingleChoiceSelectorDialog.Option(
+                    "100", BatteryProtectionManager.getOptionDisplay(BatteryProtectionManager.MODE_100, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(
+                    "80", BatteryProtectionManager.getOptionDisplay(BatteryProtectionManager.MODE_80, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(
+                    "bypass", BatteryProtectionManager.getOptionDisplay(BatteryProtectionManager.MODE_BYPASS, curLangCode)));
 
                 String curId = curBatteryMode == BatteryProtectionManager.MODE_80 ? "80" : (curBatteryMode == BatteryProtectionManager.MODE_BYPASS ? "bypass" : "100");
                 SingleChoiceSelectorDialog.show(
@@ -782,9 +771,16 @@ public class SettingsActivity extends Activity {
                             if ("80".equals(selected.id)) targetMode = BatteryProtectionManager.MODE_80;
                             else if ("bypass".equals(selected.id)) targetMode = BatteryProtectionManager.MODE_BYPASS;
 
-                            BatteryProtectionManager.setMode(SettingsActivity.this, targetMode);
-                            buildSettingsUI();
-                            Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_BATTERY_PROTECTION, curLangCode) + ": " + selected.label, Toast.LENGTH_SHORT).show();
+                            BatteryProtectionManager.ModeResult result =
+                                BatteryProtectionManager.setMode(SettingsActivity.this, targetMode);
+                            if (result == BatteryProtectionManager.ModeResult.APPLIED) {
+                                buildSettingsUI();
+                            }
+                            Toast.makeText(
+                                SettingsActivity.this,
+                                BatteryProtectionManager.getModeResultDisplay(result, curLangCode),
+                                Toast.LENGTH_LONG
+                            ).show();
                         }
                     }
                 );
@@ -838,7 +834,7 @@ public class SettingsActivity extends Activity {
             public void onProgress(int progress, boolean fromUser) {
                 int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
                 int target = (int) Math.round((progress / 100.0) * max);
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0);
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, AudioManager.FLAG_SHOW_UI);
             }
             @Override public void onStop(int progress) {}
         }, tokens);
@@ -851,7 +847,7 @@ public class SettingsActivity extends Activity {
             public void onProgress(int progress, boolean fromUser) {
                 int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
                 int target = (int) Math.round((progress / 100.0) * max);
-                audioManager.setStreamVolume(AudioManager.STREAM_RING, target, 0);
+                audioManager.setStreamVolume(AudioManager.STREAM_RING, target, AudioManager.FLAG_SHOW_UI);
             }
             @Override public void onStop(int progress) {}
         }, tokens);
@@ -864,7 +860,7 @@ public class SettingsActivity extends Activity {
             public void onProgress(int progress, boolean fromUser) {
                 int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM);
                 int target = (int) Math.round((progress / 100.0) * max);
-                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, target, 0);
+                audioManager.setStreamVolume(AudioManager.STREAM_ALARM, target, AudioManager.FLAG_SHOW_UI);
             }
             @Override public void onStop(int progress) {}
         }, tokens);
@@ -900,6 +896,15 @@ public class SettingsActivity extends Activity {
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                            boolean needDnd = ("VIBRATE".equals(selected.id) || "SILENT".equals(selected.id))
+                                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                                && nm != null && !nm.isNotificationPolicyAccessGranted();
+                            if (needDnd) {
+                                startActivity(new Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
+                                Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_ENABLED, curLangCode) + " DND access", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
                             if ("NORMAL".equals(selected.id)) {
                                 audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
                             } else if ("VIBRATE".equals(selected.id)) {
@@ -1316,6 +1321,30 @@ public class SettingsActivity extends Activity {
     }
 
     // ==========================================
+    private void showCustomBudgetDialog(final ThemeTokens tokens, final String curLangCode) {
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        input.setHint(I18n.get(I18n.KEY_BUDGET_CUSTOM_HINT, curLangCode));
+        int cur = preferences.getInt(KEY_BUDGET, MainActivity.DEFAULT_BUDGET_MINUTES);
+        if (cur > 0) input.setText(String.valueOf(cur));
+        try { input.setSelection(input.getText() != null ? input.getText().length() : 0); } catch (Throwable ignored) {}
+        new android.app.AlertDialog.Builder(this)
+            .setTitle(I18n.get(I18n.KEY_DAILY_BUDGET, curLangCode))
+            .setView(input)
+            .setPositiveButton(android.R.string.ok, new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    try {
+                        int v = Integer.parseInt(input.getText().toString().trim());
+                        v = Math.max(1, Math.min(1440, v));
+                        preferences.edit().putInt(KEY_BUDGET, v).apply();
+                    } catch (Throwable ignored) {}
+                    buildSettingsUI();
+                }
+            })
+            .setNegativeButton(android.R.string.cancel, null)
+            .show();
+    }
+
     // SECTION 4: CONNECTIVITY & RADIOS
     // ==========================================
     private void buildConnectivitySection(ThemeTokens tokens) {
@@ -1436,6 +1465,13 @@ public class SettingsActivity extends Activity {
             }, tokens);
         }
 
+        addSelectorRow(I18n.get(I18n.KEY_SHADE_TILES_TITLE, curLangCode), getShadeTilesSummary(curLangCode), new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showShadeTilesDialog(tokens, curLangCode);
+            }
+        }, tokens);
+
         addSelectorRow(I18n.get(I18n.KEY_APP_NETWORK_FIREWALL, curLangCode), getBlockedCountSummary(this, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1467,7 +1503,7 @@ public class SettingsActivity extends Activity {
     }
 
     // ==========================================
-    // SECTION 5: ABOUT DEVICE, OTA UPDATES & BACKUP
+    // SECTION 5: ABOUT DEVICE, RELEASE LINKS & BACKUP
     // ==========================================
     private void buildSystemSection(ThemeTokens tokens) {
         final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
@@ -1496,47 +1532,9 @@ public class SettingsActivity extends Activity {
         blHeader.setPadding(0, 18, 0, 8);
         contentContainer.addView(blHeader);
 
-        final boolean isBlLocked = BootloaderManager.isLocked(this);
-        addToggleRow(
+        addInfoRow(
             I18n.get(I18n.KEY_BOOTLOADER_LOCK_STATUS, curLangCode),
-            BootloaderManager.getStatusDisplay(this, curLangCode),
-            isBlLocked,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (isBlLocked) {
-                        showConfirmDialog(
-                            I18n.get(I18n.KEY_BOOTLOADER_ACTION_UNLOCK, curLangCode),
-                            I18n.get(I18n.KEY_BOOTLOADER_WARNING_UNLOCK, curLangCode),
-                            I18n.get(I18n.KEY_BOOTLOADER_ACTION_UNLOCK, curLangCode),
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    BootloaderManager.setLocked(SettingsActivity.this, false);
-                                    buildSettingsUI();
-                                    Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_BOOTLOADER_UNLOCKED, curLangCode), Toast.LENGTH_LONG).show();
-                                }
-                            },
-                            tokens
-                        );
-                    } else {
-                        showConfirmDialog(
-                            I18n.get(I18n.KEY_BOOTLOADER_ACTION_LOCK, curLangCode),
-                            I18n.get(I18n.KEY_BOOTLOADER_WARNING_LOCK, curLangCode),
-                            I18n.get(I18n.KEY_BOOTLOADER_ACTION_LOCK, curLangCode),
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    BootloaderManager.setLocked(SettingsActivity.this, true);
-                                    buildSettingsUI();
-                                    Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_BOOTLOADER_LOCKED, curLangCode), Toast.LENGTH_LONG).show();
-                                }
-                            },
-                            tokens
-                        );
-                    }
-                }
-            },
+            BootloaderManager.getStatusDisplay(curLangCode),
             tokens
         );
 
@@ -1579,17 +1577,74 @@ public class SettingsActivity extends Activity {
 
         addInfoRow(I18n.get(I18n.KEY_ACTIVE_CHANNEL, curLangCode), curChannel.getCode(), tokens);
 
-        addButtonRow("GitHub OTA", I18n.get(I18n.KEY_CHECK_UPDATES, curLangCode), new View.OnClickListener() {
+        addButtonRow("Keyboard", "Input method", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.showInputMethodPicker();
+                } catch (Throwable e) {
+                    try {
+                        startActivity(new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS));
+                    } catch (Throwable ignored) {}
+                }
+            }
+        }, tokens);
+
+        addButtonRow("APK", "Install package", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                File dir = getExternalFilesDir(null);
+                if (dir == null) dir = getFilesDir();
+                File[] apks = dir.listFiles(new java.io.FilenameFilter() {
+                    @Override public boolean accept(File d, String name) { return name.endsWith(".apk"); }
+                });
+                if (apks == null || apks.length == 0) {
+                    Toast.makeText(SettingsActivity.this, "No .apk in " + dir.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                    return;
+                }
+                // Limit picker to APKs already in app-scoped dir; no external storage traversal.
+                File apk = apks[0];
+                if (apk.length() > 300L * 1024L * 1024L) {
+                    Toast.makeText(SettingsActivity.this, "APK too large (>300MB)", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {
+                    startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                        Uri.parse("package:" + getPackageName())));
+                    Toast.makeText(SettingsActivity.this, "Allow install, retry", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(Uri.fromFile(apk), "application/vnd.android.package-archive");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    // Guard: require explicit user action above; no auto-install without consent.
+                    startActivity(intent);
+                } catch (Throwable e) {
+                    try {
+                        Process p = Runtime.getRuntime().exec(new String[]{"pm", "install", "-r", apk.getAbsolutePath()});
+                        int rc = p.waitFor();
+                        Toast.makeText(SettingsActivity.this, rc == 0 ? "Installed" : "Install rc=" + rc, Toast.LENGTH_SHORT).show();
+                    } catch (Throwable e2) {
+                        Toast.makeText(SettingsActivity.this, "Install error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        }, tokens);
+
+        addButtonRow("GitHub Releases", I18n.get(I18n.KEY_CHECK_UPDATES, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String targetUrl = curChannel.getReleaseUrl();
-                Toast.makeText(SettingsActivity.this, "Checking OTA for " + curChannel.getCode() + "...", Toast.LENGTH_SHORT).show();
+                Toast.makeText(SettingsActivity.this, "Opening release page for " + curChannel.getCode() + "...", Toast.LENGTH_SHORT).show();
                 try {
                     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
                     browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(browserIntent);
                 } catch (Exception e) {
-                    Toast.makeText(SettingsActivity.this, "OTA Target: " + targetUrl, Toast.LENGTH_LONG).show();
+                    Toast.makeText(SettingsActivity.this, "Release URL: " + targetUrl, Toast.LENGTH_LONG).show();
                 }
             }
         }, tokens);
@@ -2165,16 +2220,24 @@ public class SettingsActivity extends Activity {
 
     private void applySystemBrightness(final int percent) {
         applyBrightness(percent);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    int sysVal = Math.max(1, Math.min(255, Math.round((percent / 100.0f) * 255.0f)));
-                    Runtime.getRuntime().exec(new String[]{"settings", "put", "system", "screen_brightness_mode", "0"});
-                    Runtime.getRuntime().exec(new String[]{"settings", "put", "system", "screen_brightness", String.valueOf(sysVal)});
-                } catch (Throwable ignored) {}
-            }
-        }).start();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.System.canWrite(this)) {
+            return;
+        }
+        try {
+            int sysVal = Math.max(1, Math.min(255, Math.round((percent / 100.0f) * 255.0f)));
+            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, sysVal);
+        } catch (Throwable ignored) {
+            new Thread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        int sysVal2 = Math.max(1, Math.min(255, Math.round((percent / 100.0f) * 255.0f)));
+                        Runtime.getRuntime().exec(new String[]{"settings", "put", "system", "screen_brightness_mode", "0"});
+                        Runtime.getRuntime().exec(new String[]{"settings", "put", "system", "screen_brightness", String.valueOf(sysVal2)});
+                    } catch (Throwable ignored2) {}
+                }
+            }).start();
+        }
     }
 
     private boolean getNfcHardwareState() {
@@ -2187,13 +2250,17 @@ public class SettingsActivity extends Activity {
 
     private void setNfcState(boolean enable) {
         String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
+        preferences.edit().putBoolean("nfc_enabled", enable).apply();
         try {
-            preferences.edit().putBoolean("nfc_enabled", enable).apply();
-            Runtime.getRuntime().exec(new String[]{"svc", "nfc", enable ? "enable" : "disable"});
+            Process p = Runtime.getRuntime().exec(new String[]{"svc", "nfc", enable ? "enable" : "disable"});
+            if (p.waitFor() != 0) {
+                Toast.makeText(this, "NFC: " + I18n.get(I18n.KEY_DISABLED, curLangCode) + " (needs system privilege)", Toast.LENGTH_SHORT).show();
+                return;
+            }
             String statusStr = I18n.get(enable ? I18n.KEY_ENABLED : I18n.KEY_DISABLED, curLangCode);
             Toast.makeText(this, "NFC: " + statusStr, Toast.LENGTH_SHORT).show();
         } catch (Throwable e) {
-            Toast.makeText(this, "NFC Error", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "NFC Error (needs system privilege)", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -2233,11 +2300,55 @@ public class SettingsActivity extends Activity {
         );
     }
 
+    private static final String[] ALL_SHADE_TILES = {"airplane", "dnd", "wifi", "data", "bluetooth", "torch", "nfc"};
+
+    private String getShadeTilesSummary(String lang) {
+        java.util.Set<String> s = preferences.getStringSet("shade_tiles", null);
+        if (s == null || s.isEmpty()) return "7/7";
+        return s.size() + "/7";
+    }
+
+    private String shadeTileLabel(String id, String lang) {
+        if ("airplane".equals(id)) return I18n.get(I18n.KEY_TOGGLE_AIRPLANE, lang);
+        if ("dnd".equals(id)) return I18n.get(I18n.KEY_TOGGLE_DND, lang);
+        if ("wifi".equals(id)) return I18n.get(I18n.KEY_TOGGLE_WIFI, lang);
+        if ("data".equals(id)) return I18n.get(I18n.KEY_TOGGLE_DATA, lang);
+        if ("bluetooth".equals(id)) return I18n.get(I18n.KEY_TOGGLE_BLUETOOTH, lang);
+        if ("torch".equals(id)) return I18n.get(I18n.KEY_TOGGLE_TORCH, lang);
+        if ("nfc".equals(id)) return I18n.get(I18n.KEY_TOGGLE_NFC, lang);
+        return id;
+    }
+
+    private void showShadeTilesDialog(final ThemeTokens tokens, final String lang) {
+        java.util.Set<String> cur = preferences.getStringSet("shade_tiles", null);
+        final java.util.Set<String> sel = (cur == null || cur.isEmpty())
+            ? new java.util.HashSet<>(java.util.Arrays.asList(ALL_SHADE_TILES))
+            : new java.util.HashSet<>(cur);
+        java.util.List<MultiChoiceSelectorDialog.Item> items = new java.util.ArrayList<>();
+        for (String id : ALL_SHADE_TILES) items.add(new MultiChoiceSelectorDialog.Item(id, shadeTileLabel(id, lang)));
+        MultiChoiceSelectorDialog.show(this, tokens, I18n.get(I18n.KEY_SHADE_TILES_TITLE, lang), items, sel, lang,
+            new MultiChoiceSelectorDialog.OnMultiChoiceSelectedListener() {
+                @Override public void onSelected(java.util.Set<String> selected) {
+                    java.util.Set<String> save = (selected == null || selected.isEmpty())
+                        ? new java.util.HashSet<>(java.util.Arrays.asList(ALL_SHADE_TILES)) : selected;
+                    preferences.edit().putStringSet("shade_tiles", save).apply();
+                    buildSettingsUI();
+                }
+            });
+    }
+
     private void applyScreenTimeout(int secs) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.System.canWrite(this)) {
+            return;
+        }
+        long ms = (secs <= 0) ? 2147483647L : ((long) secs * 1000L);
         try {
-            long ms = (secs <= 0) ? 2147483647L : ((long) secs * 1000L);
-            Runtime.getRuntime().exec(new String[]{"settings", "put", "system", "screen_off_timeout", String.valueOf(ms)});
-        } catch (Exception ignored) {}
+            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, (int) Math.min(ms, Integer.MAX_VALUE));
+        } catch (Throwable ignored) {
+            try {
+                Runtime.getRuntime().exec(new String[]{"settings", "put", "system", "screen_off_timeout", String.valueOf(ms)});
+            } catch (Exception ignored2) {}
+        }
     }
 
     private boolean getWifiHardwareState() {
@@ -2262,11 +2373,40 @@ public class SettingsActivity extends Activity {
     }
 
     private void setRadioState(String radio, boolean enable) {
+        if (!"wifi".equals(radio) && !"bluetooth".equals(radio) && !"nfc".equals(radio) && !"data".equals(radio)) {
+            return;
+        }
+        if ("wifi".equals(radio)) {
+            try {
+                android.net.wifi.WifiManager wm = (android.net.wifi.WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wm != null && wm.setWifiEnabled(enable)) {
+                    Toast.makeText(this, "WIFI " + (enable ? "enabled" : "disabled"), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            } catch (Throwable ignored) {}
+        }
+        if ("bluetooth".equals(radio)) {
+            try {
+                android.bluetooth.BluetoothAdapter adapter = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+                boolean ok = false;
+                if (adapter != null) ok = enable ? adapter.enable() : adapter.disable();
+                if (ok) {
+                    Toast.makeText(this, "BLUETOOTH " + (enable ? "enabled" : "disabled"), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                startActivity(new Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS));
+                return;
+            } catch (Throwable ignored) {}
+        }
         try {
-            Runtime.getRuntime().exec(new String[]{"svc", radio, enable ? "enable" : "disable"});
+            Process p = Runtime.getRuntime().exec(new String[]{"svc", radio, enable ? "enable" : "disable"});
+            if (p.waitFor() != 0) {
+                Toast.makeText(this, "Failed to toggle " + radio + " (needs system privilege)", Toast.LENGTH_SHORT).show();
+                return;
+            }
             Toast.makeText(this, radio.toUpperCase() + (enable ? " enabled" : " disabled"), Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
-            Toast.makeText(this, "Failed to toggle " + radio, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Failed to toggle " + radio + " (needs system privilege)", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -2304,6 +2444,13 @@ public class SettingsActivity extends Activity {
             for (Map.Entry<String, ?> entry : all.entrySet()) {
                 json.put(entry.getKey(), entry.getValue());
             }
+            String payload = json.toString();
+            String checksum = sha256Hex(payload);
+
+            JSONObject envelope = new JSONObject();
+            envelope.put("version", 1);
+            envelope.put("sha256", checksum);
+            envelope.put("payload", payload);
 
             File baseDir = getExternalFilesDir(null);
             if (baseDir == null) baseDir = getFilesDir();
@@ -2312,17 +2459,29 @@ public class SettingsActivity extends Activity {
 
             File jsonFile = new File(dir, "tontos_settings.json");
             FileWriter writer = new FileWriter(jsonFile);
-            writer.write(json.toString(2));
+            writer.write(envelope.toString(2));
             writer.close();
 
             File bakFile = new File(dir, "tontos_latest.tontbak");
             FileWriter bakWriter = new FileWriter(bakFile);
-            bakWriter.write(json.toString());
+            bakWriter.write(envelope.toString());
             bakWriter.close();
 
             Toast.makeText(this, "Backup saved to: " + bakFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this, "Backup error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private static String sha256Hex(String input) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) sb.append(String.format(Locale.ROOT, "%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            return "";
         }
     }
 
@@ -2343,23 +2502,65 @@ public class SettingsActivity extends Activity {
                 while ((line = reader.readLine()) != null) sb.append(line);
                 reader.close();
 
-                JSONObject obj = new JSONObject(sb.toString());
-                SharedPreferences.Editor edit = preferences.edit();
-                if (obj.has(KEY_THEME)) edit.putString(KEY_THEME, obj.getString(KEY_THEME));
-                if (obj.has(KEY_OTA_CHANNEL)) edit.putString(KEY_OTA_CHANNEL, obj.getString(KEY_OTA_CHANNEL));
-                if (obj.has(KEY_LANGUAGE)) edit.putString(KEY_LANGUAGE, obj.getString(KEY_LANGUAGE));
-                if (obj.has(KEY_BUDGET)) edit.putInt(KEY_BUDGET, obj.getInt(KEY_BUDGET));
-                if (obj.has(KEY_PINNED_ORDER)) edit.putString(KEY_PINNED_ORDER, obj.getString(KEY_PINNED_ORDER));
-                edit.apply();
-
-                buildSettingsUI();
-                Toast.makeText(this, "Backup restored successfully!", Toast.LENGTH_LONG).show();
+                JSONObject envelope = new JSONObject(sb.toString());
+                if (!envelope.has("payload") || !envelope.has("sha256")) {
+                    Toast.makeText(this, "Restore error: missing integrity envelope", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String payload = envelope.getString("payload");
+                if (!sha256Hex(payload).equalsIgnoreCase(envelope.getString("sha256"))) {
+                    Toast.makeText(this, "Restore error: checksum mismatch (tampered or corrupt backup)", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                JSONObject obj = new JSONObject(payload);
+                restorePrefsFromJson(obj);
             } else {
                 Toast.makeText(this, "No backup file found in " + dir.getAbsolutePath(), Toast.LENGTH_SHORT).show();
             }
         } catch (Exception e) {
             Toast.makeText(this, "Restore error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void restorePrefsFromJson(JSONObject obj) {
+        SharedPreferences.Editor edit = preferences.edit();
+        try {
+            if (obj.has(KEY_THEME)) {
+                String themeId = obj.getString(KEY_THEME);
+                ThemePreset preset = ThemePreset.fromId(themeId);
+                if (preset != null) edit.putString(KEY_THEME, preset.getId());
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (obj.has(KEY_OTA_CHANNEL)) {
+                UpdateChannel ch = UpdateChannel.fromCode(obj.getString(KEY_OTA_CHANNEL));
+                if (ch != null) edit.putString(KEY_OTA_CHANNEL, ch.getCode());
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (obj.has(KEY_LANGUAGE)) {
+                String lang = obj.getString(KEY_LANGUAGE);
+                if (lang != null && lang.matches("[a-z]{2}(-[A-Z]{2})?")) edit.putString(KEY_LANGUAGE, lang);
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (obj.has(KEY_BUDGET)) {
+                int budget = obj.getInt(KEY_BUDGET);
+                if (budget >= 0 && budget <= 1440) edit.putInt(KEY_BUDGET, budget);
+            }
+        } catch (Exception ignored) {}
+        try {
+            if (obj.has(KEY_PINNED_ORDER)) {
+                String order = obj.getString(KEY_PINNED_ORDER);
+                if (order != null && order.length() <= 4096 && order.matches("[A-Za-z0-9_.,\\-]*")) {
+                    edit.putString(KEY_PINNED_ORDER, order);
+                }
+            }
+        } catch (Exception ignored) {}
+        edit.apply();
+
+        buildSettingsUI();
+        Toast.makeText(this, "Backup restored successfully!", Toast.LENGTH_LONG).show();
     }
 
     private Ringtone currentPlayingPreview = null;

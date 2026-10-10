@@ -1,69 +1,45 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# TontOS Project Treble GSI Rootfs Packager
-# Packages compiled binaries and service units into a flashable system.img layout.
+# Legacy filename retained for compatibility. This packages a Linux rootfs archive;
+# it does not build Android, a GSI, or a flashable system image.
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+OUTPUT_DIR="$ROOT/target/linux-rootfs"
+OUTPUT_ARCHIVE="$OUTPUT_DIR/tontos-linux-rootfs.tar.gz"
+TARGET_ARCH="${TARGET_ARCH:-x86_64-unknown-linux-gnu}"
+ROOTFS_DIR=""
+ARCHIVE_TEMP=""
 DRY_RUN=false
-BUILD_IMAGE=true
-TARGET_ARCH="${TARGET_ARCH:-x86_64-unknown-linux-musl}"
-IMAGE_SIZE="${IMAGE_SIZE:-512M}"
-ROOTFS_DIR="/tmp/tontos_rootfs_staging"
-OUTPUT_DIR="target/gsi"
-TARGET_RAW_IMG="$OUTPUT_DIR/tontos-system.raw.img"
-TARGET_SPARSE_IMG="$OUTPUT_DIR/tontos-system.img"
+
+cleanup() {
+    if [[ -n "$ROOTFS_DIR" && -d "$ROOTFS_DIR" ]]; then
+        rm -rf -- "$ROOTFS_DIR"
+    fi
+    if [[ -n "$ARCHIVE_TEMP" && -f "$ARCHIVE_TEMP" ]]; then
+        rm -f -- "$ARCHIVE_TEMP"
+    fi
+}
+trap cleanup EXIT
 
 for arg in "$@"; do
     case "$arg" in
-        --dry-run)
-            DRY_RUN=true
-            ;;
-        --no-img)
-            BUILD_IMAGE=false
-            ;;
-        --arch=*)
-            TARGET_ARCH="${arg#*=}"
-            ;;
-        --size=*)
-            IMAGE_SIZE="${arg#*=}"
+        --dry-run) DRY_RUN=true ;;
+        --arch=*) TARGET_ARCH="${arg#*=}" ;;
+        *)
+            echo "Unknown argument: $arg" >&2
+            echo "Usage: $0 [--dry-run] [--arch=<rust-target>]" >&2
+            exit 2
             ;;
     esac
 done
 
-echo "=============================================="
-echo " TontOS: GSI Rootfs Packager"
-echo " Target Architecture: $TARGET_ARCH"
-echo " Staging directory:   $ROOTFS_DIR"
-echo " Image Size:          $IMAGE_SIZE"
-echo " Output Image:        $TARGET_SPARSE_IMG"
-echo "=============================================="
-
-if [ "$DRY_RUN" = true ]; then
-    echo "[DRY RUN] Validating binary artifacts, APKs, and systemd units..."
-    ls -l init/*.service
-    ls -l launcher_apk/tontos-launcher.apk
-    ls -l apps/*.apk
-    cargo check --workspace
-    echo "[DRY RUN] GSI packager validation successful."
-    exit 0
+if [[ ! "$TARGET_ARCH" =~ ^[A-Za-z0-9_]+(-[A-Za-z0-9_]+)*$ ]]; then
+    echo "Invalid Rust target triple: $TARGET_ARCH" >&2
+    exit 2
 fi
 
-echo "1. Compiling workspace binaries for target ($TARGET_ARCH)..."
-cargo build --workspace --target "$TARGET_ARCH" --config "target.$TARGET_ARCH.linker=\"clang\"" --release
-
-echo "2. Staging root filesystem..."
-rm -rf "$ROOTFS_DIR"
-mkdir -p "$ROOTFS_DIR"/bin
-mkdir -p "$ROOTFS_DIR"/usr/bin
-mkdir -p "$ROOTFS_DIR"/system/bin
-mkdir -p "$ROOTFS_DIR"/system/priv-app/TontOSLauncher
-mkdir -p "$ROOTFS_DIR"/system/app
-mkdir -p "$ROOTFS_DIR"/etc/systemd/system
-mkdir -p "$ROOTFS_DIR"/etc/tontos
-mkdir -p "$ROOTFS_DIR"/var/lib/tontos
-mkdir -p "$ROOTFS_DIR"/usr/share/sounds/tontos
-
-# Full list of 11 TontOS system binaries from crates/
 BINARIES=(
     "tont-init"
     "tont-powerd"
@@ -78,60 +54,78 @@ BINARIES=(
     "tont-backup"
 )
 
-BIN_SRC="target/$TARGET_ARCH/release"
-for bin in "${BINARIES[@]}"; do
-    if [ -f "$BIN_SRC/$bin" ]; then
-        cp "$BIN_SRC/$bin" "$ROOTFS_DIR/usr/bin/"
-        cp "$BIN_SRC/$bin" "$ROOTFS_DIR/bin/"
-        cp "$BIN_SRC/$bin" "$ROOTFS_DIR/system/bin/"
-        chmod 755 "$ROOTFS_DIR/usr/bin/$bin"
-        chmod 755 "$ROOTFS_DIR/bin/$bin"
-        chmod 755 "$ROOTFS_DIR/system/bin/$bin"
-        echo "  [x] Staged $bin"
-    else
-        echo "  [!] Warning: $BIN_SRC/$bin not found!"
-    fi
-done
+echo "TontOS Linux rootfs archive packager (not an Android GSI or flashable image)"
+echo "Target architecture: $TARGET_ARCH"
+echo "Output archive:      $OUTPUT_ARCHIVE"
 
-# Stage TontOS Launcher in /system/priv-app/TontOSLauncher/TontOSLauncher.apk
-echo "3. Staging system & privileged APKs..."
-LAUNCHER_APK_SRC="launcher_apk/tontos-launcher.apk"
-if [ -f "$LAUNCHER_APK_SRC" ]; then
-    cp "$LAUNCHER_APK_SRC" "$ROOTFS_DIR/system/priv-app/TontOSLauncher/TontOSLauncher.apk"
-    chmod 644 "$ROOTFS_DIR/system/priv-app/TontOSLauncher/TontOSLauncher.apk"
-    chmod 755 "$ROOTFS_DIR/system/priv-app/TontOSLauncher"
-    echo "  [x] Staged TontOSLauncher.apk in /system/priv-app/TontOSLauncher/"
-else
-    echo "  [!] Warning: $LAUNCHER_APK_SRC not found!"
+if [[ "$DRY_RUN" == true ]]; then
+    echo "[DRY RUN] No build or output files will be created."
+    for service in "$ROOT"/init/*.service; do
+        [[ -f "$service" ]] || {
+            echo "Missing systemd unit files in $ROOT/init" >&2
+            exit 1
+        }
+    done
+    echo "[DRY RUN] Systemd unit inputs are present; binaries were not built or checked."
+    exit 0
 fi
 
-# Stage FOSS APK suite in /system/app/
-for apk in apps/*.apk; do
-    if [ -f "$apk" ]; then
-        apk_basename="$(basename "$apk")"
-        apk_dir="${apk_basename%.apk}"
-        # Flat staging in /system/app/
-        cp "$apk" "$ROOTFS_DIR/system/app/$apk_basename"
-        chmod 644 "$ROOTFS_DIR/system/app/$apk_basename"
-        # Subfolder staging in /system/app/<app>/ (Android directory scan convention)
-        mkdir -p "$ROOTFS_DIR/system/app/$apk_dir"
-        chmod 755 "$ROOTFS_DIR/system/app/$apk_dir"
-        ln -sf "../$apk_basename" "$ROOTFS_DIR/system/app/$apk_dir/$apk_basename" 2>/dev/null || true
-        echo "  [x] Staged $apk_basename in /system/app/"
+cd "$ROOT"
+mkdir -p "$OUTPUT_DIR"
+if [[ -e "$OUTPUT_ARCHIVE" ]]; then
+    echo "Refusing to overwrite existing archive: $OUTPUT_ARCHIVE" >&2
+    exit 1
+fi
+
+echo "Building workspace binaries for $TARGET_ARCH..."
+if ! command -v clang >/dev/null 2>&1; then
+    echo "Required linker 'clang' not found in PATH; install clang or set target.$TARGET_ARCH.linker in .cargo/config.toml" >&2
+    exit 1
+fi
+cargo build --workspace --target "$TARGET_ARCH" \
+    --config "target.$TARGET_ARCH.linker=\"clang\"" --release
+
+BIN_SRC="$ROOT/target/$TARGET_ARCH/release"
+for bin in "${BINARIES[@]}"; do
+    if [[ ! -f "$BIN_SRC/$bin" ]]; then
+        echo "Required Linux binary missing: $BIN_SRC/$bin" >&2
+        exit 1
     fi
 done
 
-# Ensure explicit permissions (0644 for APKs, 0755 for directories)
-find "$ROOTFS_DIR/system/priv-app" "$ROOTFS_DIR/system/app" -type d -exec chmod 755 {} +
-find "$ROOTFS_DIR/system/priv-app" "$ROOTFS_DIR/system/app" -type f -name "*.apk" -exec chmod 644 {} +
+ROOTFS_DIR="$(mktemp -d "$OUTPUT_DIR/.rootfs.XXXXXXXX")"
+ARCHIVE_TEMP="$(mktemp "$OUTPUT_DIR/.tontos-linux-rootfs.XXXXXXXX")"
+mkdir -p \
+    "$ROOTFS_DIR/usr/bin" \
+    "$ROOTFS_DIR/usr/lib/systemd/system" \
+    "$ROOTFS_DIR/usr/share/tontos/apps" \
+    "$ROOTFS_DIR/usr/share/sounds/tontos" \
+    "$ROOTFS_DIR/etc/tontos" \
+    "$ROOTFS_DIR/var/lib/tontos"
 
-# Copy systemd units
-echo "4. Staging systemd unit files..."
-cp init/*.service "$ROOTFS_DIR/etc/systemd/system/"
+for bin in "${BINARIES[@]}"; do
+    install -m 0755 "$BIN_SRC/$bin" "$ROOTFS_DIR/usr/bin/$bin"
+done
 
-# Create default /etc/tontos/settings.json
-echo "5. Generating default TontOS settings..."
-cat << 'EOF' > "$ROOTFS_DIR/etc/tontos/settings.json"
+for service in "$ROOT"/init/*.service; do
+    install -m 0644 "$service" "$ROOTFS_DIR/usr/lib/systemd/system/"
+done
+
+if [[ -f "$ROOT/launcher_apk/tontos-launcher.apk" ]]; then
+    install -m 0644 "$ROOT/launcher_apk/tontos-launcher.apk" \
+        "$ROOTFS_DIR/usr/share/tontos/apps/"
+fi
+
+shopt -s nullglob
+for apk in "$ROOT"/apps/*.apk; do
+    install -m 0644 "$apk" "$ROOTFS_DIR/usr/share/tontos/apps/"
+done
+shopt -u nullglob
+
+if [[ -f "$ROOT/crates/tont-settings/src/default_settings.json" ]]; then
+    install -m 0644 "$ROOT/crates/tont-settings/src/default_settings.json" "$ROOTFS_DIR/etc/tontos/settings.json"
+else
+    cat > "$ROOTFS_DIR/etc/tontos/settings.json" <<'EOF'
 {
   "connectivity": {
     "wifi_enabled": true,
@@ -145,9 +139,9 @@ cat << 'EOF' > "$ROOTFS_DIR/etc/tontos/settings.json"
     "phone_app": "org.fossify.phone",
     "messaging_app": "org.fossify.messages",
     "browser_app": "de.baumann.browser",
-    "maps_app": "org.tontos.maps",
+    "maps_app": "app.organicmaps",
     "gallery_app": "org.fossify.gallery",
-    "music_app": "org.fossify.music",
+    "music_app": "org.fossify.musicplayer",
     "files_app": "org.fossify.filemanager"
   },
   "sound": {
@@ -160,13 +154,15 @@ cat << 'EOF' > "$ROOTFS_DIR/etc/tontos/settings.json"
   "display": {
     "screen_timeout_secs": 30,
     "dark_amoled_mode": true,
-    "font_scale": 1.0
+    "font_scale": 1.0,
+    "screen_time_budget_mins": 120,
+    "theme": "amoled_black"
   }
 }
 EOF
+fi
 
-# Provide os-release
-cat << 'EOF' > "$ROOTFS_DIR/etc/os-release"
+cat > "$ROOTFS_DIR/etc/os-release" <<'EOF'
 NAME="TontOS"
 ID="tontos"
 VERSION="0.1.0-alpha"
@@ -174,62 +170,17 @@ PRETTY_NAME="TontOS Digital Detox Mobile Linux"
 HOME_URL="https://github.com/tontos/tontos"
 EOF
 
-# 5b. Stage Google Play Integrity & CTS certified build.prop
-echo "5b. Staging Play Integrity CTS certification properties..."
-mkdir -p "$ROOTFS_DIR/system"
-cat << 'EOF' >> "$ROOTFS_DIR/system/build.prop"
-# TontOS Play Integrity & CTS Certification Spoof (MEETS_DEVICE_INTEGRITY)
-ro.oem_unlock_supported=1
-sys.oem_unlock_allowed=0
-ro.boot.verifiedbootstate=green
-ro.boot.flash.locked=1
-ro.boot.vbmeta.device_state=locked
-ro.boot.veritymode=enforcing
-ro.boot.warranty_bit=0
-ro.build.type=user
-ro.build.tags=release-keys
-ro.debuggable=0
-ro.secure=1
-ro.build.fingerprint=google/shiba/shiba:14/UD1A.230805.041.B1/10640075:user/release-keys
-ro.bootimage.build.fingerprint=google/shiba/shiba:14/UD1A.230805.041.B1/10640075:user/release-keys
-ro.system.build.fingerprint=google/shiba/shiba:14/UD1A.230805.041.B1/10640075:user/release-keys
-ro.vendor.build.fingerprint=google/shiba/shiba:14/UD1A.230805.041.B1/10640075:user/release-keys
-ro.product.brand=google
-ro.product.name=shiba
-ro.product.device=shiba
-ro.product.model=Pixel 8
-ro.product.manufacturer=Google
-ro.build.version.release=14
-ro.build.id=UD1A.230805.041.B1
-ro.build.version.incremental=10640075
-ro.build.version.security_patch=2023-11-05
+cat > "$ROOTFS_DIR/README.txt" <<'EOF'
+TontOS Linux root filesystem staging archive.
+This is not Android, a GSI, a recovery package, or a flashable image.
+It makes no device identity, Verified Boot, or security-patch claims.
+Target-specific installation and boot integration are not provided.
 EOF
-chmod 644 "$ROOTFS_DIR/system/build.prop"
 
-if [ "$BUILD_IMAGE" = true ]; then
-    echo "6. Generating flashable GSI image..."
-    mkdir -p "$OUTPUT_DIR"
-    rm -f "$TARGET_RAW_IMG" "$TARGET_SPARSE_IMG"
-
-    # Truncate raw ext4 image
-    truncate -s "$IMAGE_SIZE" "$TARGET_RAW_IMG"
-
-    # Format as ext4
-    mke2fs -t ext4 -b 4096 -F -L "system" "$TARGET_RAW_IMG"
-
-    # Populate with e2fsdroid
-    e2fsdroid -e -a /system -f "$ROOTFS_DIR" "$TARGET_RAW_IMG"
-
-    # Convert to Android sparse image
-    img2simg "$TARGET_RAW_IMG" "$TARGET_SPARSE_IMG"
-
-    echo "=============================================="
-    echo " GSI Build Complete!"
-    echo " Raw Image:    $TARGET_RAW_IMG ($(du -h "$TARGET_RAW_IMG" | cut -f1))"
-    echo " Sparse Image: $TARGET_SPARSE_IMG ($(du -h "$TARGET_SPARSE_IMG" | cut -f1))"
-    echo " Ready for fastboot flashing:"
-    echo "   fastboot flash system $TARGET_SPARSE_IMG"
-    echo "=============================================="
-else
-    echo "Staging complete at $ROOTFS_DIR (image generation skipped)."
-fi
+tar -czf "$ARCHIVE_TEMP" -C "$ROOTFS_DIR" .
+chmod 0644 "$ARCHIVE_TEMP"
+ln "$ARCHIVE_TEMP" "$OUTPUT_ARCHIVE"
+rm -f -- "$ARCHIVE_TEMP"
+ARCHIVE_TEMP=""
+echo "Linux rootfs archive created: $OUTPUT_ARCHIVE"
+echo "This archive is not an Android GSI or flashable system image."

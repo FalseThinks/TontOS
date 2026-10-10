@@ -56,9 +56,9 @@ impl Default for DefaultAppsConfig {
             phone_app: "org.fossify.phone".to_string(),
             messaging_app: "org.fossify.messages".to_string(),
             browser_app: "de.baumann.browser".to_string(),
-            maps_app: "org.tontos.maps".to_string(),
+            maps_app: "app.organicmaps".to_string(),
             gallery_app: "org.fossify.gallery".to_string(),
-            music_app: "org.fossify.music".to_string(),
+            music_app: "org.fossify.musicplayer".to_string(),
             files_app: "org.fossify.filemanager".to_string(),
         }
     }
@@ -116,7 +116,13 @@ pub struct TontSettings {
     pub display: DisplayConfig,
 }
 
+const EMBEDDED_DEFAULT_JSON: &str = include_str!("default_settings.json");
+
 impl TontSettings {
+    pub fn embedded_default() -> Self {
+        serde_json::from_str(EMBEDDED_DEFAULT_JSON).expect("embedded default_settings.json invalid")
+    }
+
     pub fn load_from_file(path: &Path) -> Result<Self, SettingsError> {
         let content = fs::read_to_string(path)?;
         let settings = serde_json::from_str(&content)?;

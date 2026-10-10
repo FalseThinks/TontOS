@@ -159,11 +159,11 @@ enum ThemePreset {
  */
 enum SettingsSection {
     MENU("TontOS SETTINGS (Beta)", "System & Preferences Configuration"),
-    DISPLAY("1. DISPLAY, THEMES & LANGUAGE", "Brightness, 4 low-power themes, detox budget, locale"),
+    DISPLAY("1. DISPLAY, THEMES & LANGUAGE", "Brightness, 4 visual themes, screen-time budget, language"),
     SOUND("2. SOUND & VOLUME", "Media, ring, alarm sliders & sound profiles"),
     HOME_DRAWER("3. HOME SCREEN & ALL APPS", "App sorting [^] [v], manual priority, all apps list"),
     CONNECTIVITY("4. CONNECTIVITY & RADIOS", "Wi-Fi, Bluetooth, Mobile Data, sync batching"),
-    SYSTEM("5. ABOUT DEVICE & UPDATES", "Specs, OTA Channel (Beta), Backup & Setup");
+    SYSTEM("5. ABOUT DEVICE & UPDATES", "Specs, release channel, backups & setup");
 
     private final String title;
     private final String subtitle;
@@ -241,13 +241,13 @@ enum WizardStep {
 }
 
 /**
- * OTA Update Channels for TontOS.
- * Encapsulates release stability tiers and remote distribution URLs.
+ * Manual GitHub release channels for TontOS.
+ * These links do not install or verify system updates.
  */
 enum UpdateChannel {
-    RELEASE("RELEASE", "Release (Stable OTA)", "https://github.com/paproka/TontOS/releases/latest"),
-    BETA("BETA", "Beta (v1.0-beta)", "https://github.com/paproka/TontOS/releases"),
-    NIGHTLY("NIGHTLY", "Nightly (Bleeding Edge)", "https://github.com/paproka/TontOS/releases/tag/nightly");
+    RELEASE("RELEASE", "Release", "https://github.com/FalseThinks/TontOS/releases/latest"),
+    BETA("BETA", "Beta", "https://github.com/FalseThinks/TontOS/releases"),
+    NIGHTLY("NIGHTLY", "Nightly", "https://github.com/FalseThinks/TontOS/releases/tag/nightly");
 
     private final String code;
     private final String label;

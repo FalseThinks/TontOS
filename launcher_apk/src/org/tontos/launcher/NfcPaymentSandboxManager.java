@@ -26,27 +26,23 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.File;
-
 /**
- * NFC Contactless Payments & Isolated Sandbox Manager for TontOS.
- * Architecture:
- * 1. NFC Hardware & Host Card Emulation (HCE) management.
- * 2. GrapheneOS-style isolated sandbox environment for Google Play Services (unprivileged user-space).
- * 3. Play Integrity API attestation auditor (MEETS_BASIC_INTEGRITY & MEETS_DEVICE_INTEGRITY).
+ * Reports NFC capabilities and Android-reported app installation details.
+ * This class does not assess payment security or perform platform attestation.
  */
 public final class NfcPaymentSandboxManager {
 
-    public enum SandboxStatus {
-        DEBLOATED_SECURE("FOSS_SECURE", "Inactivo (FOSS)", "Inactive (FOSS)"),
-        ISOLATED_SANDBOX("SANDBOX_ISOLATED", "Aislado (Sandbox)", "Isolated (Sandbox)"),
-        SYSTEM_PRIVILEGED("SYSTEM_PRIVILEGED", "Privilegiado", "Privileged");
+    public enum GmsInstallStatus {
+        UNKNOWN("UNKNOWN", "Desconocido", "Unavailable"),
+        NOT_INSTALLED("NOT_INSTALLED", "No instalado", "Not installed"),
+        USER_INSTALLED("USER_INSTALLED", "Instalado por el usuario (aislamiento no verificado)", "User-installed (isolation not verified)"),
+        SYSTEM_INSTALLED("SYSTEM_INSTALLED", "App del sistema (aislamiento no verificado)", "System app (isolation not verified)");
 
         public final String id;
         public final String labelEs;
         public final String labelEn;
 
-        SandboxStatus(String id, String labelEs, String labelEn) {
+        GmsInstallStatus(String id, String labelEs, String labelEn) {
             this.id = id;
             this.labelEs = labelEs;
             this.labelEn = labelEn;
@@ -57,20 +53,13 @@ public final class NfcPaymentSandboxManager {
         }
     }
 
-    public static class IntegrityVerdict {
-        public final boolean basicIntegrity;
-        public final boolean deviceIntegrity;
-        public final boolean strongIntegrity;
-        public final String bootState;
-        public final String fingerprintStatus;
+    public static final class AttestationStatus {
+        public final String basicIntegrity = "Not evaluated";
+        public final String deviceIntegrity = "Not evaluated";
+        public final String strongIntegrity = "Not evaluated";
+        public final String platformStatus = "Unavailable (no trusted attestation API integrated)";
 
-        public IntegrityVerdict(boolean basic, boolean device, boolean strong, String boot, String fp) {
-            this.basicIntegrity = basic;
-            this.deviceIntegrity = device;
-            this.strongIntegrity = strong;
-            this.bootState = boot;
-            this.fingerprintStatus = fp;
-        }
+        private AttestationStatus() {}
     }
 
     private NfcPaymentSandboxManager() {}
@@ -130,56 +119,37 @@ public final class NfcPaymentSandboxManager {
         return "None";
     }
 
-    public static SandboxStatus getGmsSandboxStatus(Context context) {
-        if (context == null) return SandboxStatus.DEBLOATED_SECURE;
+    public static GmsInstallStatus getGmsInstallStatus(Context context) {
+        if (context == null) return GmsInstallStatus.UNKNOWN;
         try {
             PackageManager pm = context.getPackageManager();
             ApplicationInfo ai = pm.getApplicationInfo("com.google.android.gms", 0);
             boolean isSystem = (ai.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0;
             if (isSystem) {
-                return SandboxStatus.SYSTEM_PRIVILEGED;
+                return GmsInstallStatus.SYSTEM_INSTALLED;
             }
-            return SandboxStatus.ISOLATED_SANDBOX;
+            return GmsInstallStatus.USER_INSTALLED;
         } catch (PackageManager.NameNotFoundException e) {
-            return SandboxStatus.DEBLOATED_SECURE;
+            return GmsInstallStatus.NOT_INSTALLED;
+        } catch (Throwable ignored) {
+            return GmsInstallStatus.UNKNOWN;
         }
     }
 
-    public static IntegrityVerdict evaluatePlayIntegrity(Context context) {
-        // 1. Basic integrity: absence of root binaries in PATH, SELinux enforcing
-        boolean hasSu = new File("/system/bin/su").exists()
-            || new File("/system/xbin/su").exists()
-            || new File("/sbin/su").exists()
-            || new File("/data/local/tmp/su").exists();
-        boolean basic = !hasSu;
-
-        // 2. Device integrity: requires certified fingerprint and bootloader locked state
-        boolean blLocked = BootloaderManager.isLocked(context);
-        String bootloaderProp = System.getProperty("ro.boot.verifiedbootstate", "orange");
-        boolean bootloaderOk = blLocked || "green".equalsIgnoreCase(bootloaderProp);
-        boolean device = basic && bootloaderOk;
-
-        // 3. Strong integrity: hardware TEE StrongBox key attestation
-        boolean strong = device && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-            && context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE);
-
-        String fp = Build.FINGERPRINT != null && !Build.FINGERPRINT.contains("test-keys") ? "Certified" : "Custom/Test";
-        return new IntegrityVerdict(basic, device, strong, bootloaderOk ? "Locked / AVB" : "Unlocked", fp);
+    public static AttestationStatus getAttestationStatus() {
+        return new AttestationStatus();
     }
 
     public static String getSummaryStatus(Context context, String langCode) {
-        boolean nfcOn = isNfcEnabled(context);
-        IntegrityVerdict verdict = evaluatePlayIntegrity(context);
         if (!isNfcSupported(context)) {
             return "es".equalsIgnoreCase(langCode) ? "Sin Hardware" : "No Hardware";
         }
-        if (!nfcOn) {
+        if (!isNfcEnabled(context)) {
             return "es".equalsIgnoreCase(langCode) ? "NFC Desactivado" : "NFC Off";
         }
-        if (verdict.deviceIntegrity) {
-            return "es".equalsIgnoreCase(langCode) ? "Integrity: OK" : "Integrity: OK";
-        }
-        return "es".equalsIgnoreCase(langCode) ? "Integrity: Básico" : "Integrity: Basic";
+        return "es".equalsIgnoreCase(langCode)
+            ? "NFC activo; attestation no disponible"
+            : "NFC on; attestation unavailable";
     }
 
     public static void showDiagnosticsDialog(final Activity activity, final ThemeTokens tokens, final String langCode) {
@@ -229,7 +199,7 @@ public final class NfcPaymentSandboxManager {
         // Header Title
         TextView header = new TextView(activity);
         boolean isEs = "es".equalsIgnoreCase(langCode);
-        header.setText(isEs ? "PAGOS Y ENTORNO AISLADO" : "PAYMENTS & SANDBOX");
+        header.setText(isEs ? "NFC Y ESTADO DE ATTESTATION" : "NFC & ATTESTATION STATUS");
         header.setTextColor(tokens.accent);
         header.setTextSize(screenWidthDp < 360 ? 15 : 17);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -257,8 +227,8 @@ public final class NfcPaymentSandboxManager {
         boolean nfcEnabled = isNfcEnabled(activity);
         boolean hceSupported = isHceSupported(activity);
         String defaultApp = getDefaultPaymentApp(activity);
-        SandboxStatus sandbox = getGmsSandboxStatus(activity);
-        IntegrityVerdict verdict = evaluatePlayIntegrity(activity);
+        GmsInstallStatus gmsInstallStatus = getGmsInstallStatus(activity);
+        AttestationStatus attestation = getAttestationStatus();
 
         // Section 1: NFC Hardware & HCE
         addCategoryHeader(list, "=== HARDWARE & HCE ===", tokens);
@@ -266,18 +236,13 @@ public final class NfcPaymentSandboxManager {
         addStatusRow(list, "HCE (Host Emulation)", hceSupported ? "[ DISPONIBLE ]" : "[ NO SOPORTADO ]", hceSupported, tokens);
         addStatusRow(list, isEs ? "App de pago" : "Payment app", defaultApp, !"None".equals(defaultApp), tokens);
 
-        // Section 2: GrapheneOS Isolation Environment
-        addCategoryHeader(list, isEs ? "=== AISLAMIENTO DE ENTORNO ===" : "=== ENVIRONMENT SANDBOX ===", tokens);
-        addStatusRow(list, isEs ? "Entorno GMS" : "GMS Sandbox", sandbox.getDisplay(langCode), sandbox == SandboxStatus.ISOLATED_SANDBOX || sandbox == SandboxStatus.DEBLOATED_SECURE, tokens);
-        addStatusRow(list, isEs ? "Permisos del sistema" : "System Privileges", sandbox == SandboxStatus.SYSTEM_PRIVILEGED ? "[ RIESGO ]" : "[ AISLADO ]", sandbox != SandboxStatus.SYSTEM_PRIVILEGED, tokens);
+        addCategoryHeader(list, isEs ? "=== GOOGLE PLAY SERVICES ===" : "=== GOOGLE PLAY SERVICES ===", tokens);
+        addStatusRow(list, isEs ? "Instalación de GMS" : "GMS installation", gmsInstallStatus.getDisplay(langCode), false, tokens);
 
-        // Section 3: Google Play Integrity
-        addCategoryHeader(list, "=== PLAY INTEGRITY AUDIT ===", tokens);
-        addStatusRow(list, "MEETS_BASIC", verdict.basicIntegrity ? "[ PASS ]" : "[ FAIL ]", verdict.basicIntegrity, tokens);
-        addStatusRow(list, "MEETS_DEVICE", verdict.deviceIntegrity ? "[ PASS ]" : "[ FAIL ]", verdict.deviceIntegrity, tokens);
-        addStatusRow(list, "MEETS_STRONG", verdict.strongIntegrity ? "[ PASS ]" : "[ KEYMINT ]", verdict.strongIntegrity, tokens);
-        addStatusRow(list, "Bootloader / AVB", verdict.bootState, "Locked / AVB".equals(verdict.bootState), tokens);
-        addStatusRow(list, isEs ? "Huella de compilación" : "Build Fingerprint", verdict.fingerprintStatus, "Certified".equals(verdict.fingerprintStatus), tokens);
+        addCategoryHeader(list, isEs ? "=== ATTESTATION DE PLATAFORMA ===" : "=== PLATFORM ATTESTATION ===", tokens);
+        addStatusRow(list, "Play Integrity API", attestation.platformStatus, false, tokens);
+        addStatusRow(list, "Basic / Device / Strong", isEs ? "No evaluado" : "Not evaluated", false, tokens);
+        addStatusRow(list, "Verified Boot / CTS", isEs ? "No verificado por esta app" : "Not verified by this app", false, tokens);
 
         // Actions
         addCategoryHeader(list, isEs ? "=== ACCIONES ===" : "=== ACTIONS ===", tokens);

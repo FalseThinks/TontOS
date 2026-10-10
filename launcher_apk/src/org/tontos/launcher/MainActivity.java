@@ -17,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -68,19 +69,19 @@ public class MainActivity extends Activity {
     public static final String KEY_PINNED_APPS_ORDER = "pinned_apps_order";
     public static final String KEY_HOME_APP_LIMIT = "home_app_limit";
 
-    public static final int DEFAULT_HOME_APP_LIMIT = 6;
+    public static final int DEFAULT_HOME_APP_LIMIT = 5;
     public static final int DEFAULT_BUDGET_MINUTES = 120;
     public static final String OS_VERSION_STRING = "TontOS v1.0-beta";
+
+    public static final String KEY_SCREEN_TIME_SECS = "screen_time_today_secs";
 
     public static final Set<String> DEFAULT_PINNED_PACKAGES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
         "org.fossify.phone",
         "org.fossify.messages",
-        "org.fossify.contacts",
-        "eu.faircode.email",
-        "org.breezyweather",
-        "org.fossify.filemanager",
+        "de.baumann.browser",
+        "org.fossify.camera",
         "org.fossify.gallery",
-        "com.aurora.store"
+        "eu.faircode.email"
     )));
 
     public static class AppItem implements Comparable<AppItem> {
@@ -136,9 +137,12 @@ public class MainActivity extends Activity {
     private SimpleDateFormat cachedDateFormat;
     private final Date reusableDate = new Date();
 
-    public static void resetScreenTimeToday() {
+    public static void resetScreenTimeToday(Context ctx) {
         screenTimeTodaySecs = 0;
         screenOnStartTime = System.currentTimeMillis();
+        if (ctx != null) {
+            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putLong(KEY_SCREEN_TIME_SECS, 0L).apply();
+        }
     }
 
     public static long getScreenTimeTodayMins() {
@@ -148,6 +152,7 @@ public class MainActivity extends Activity {
 
     private static String lastAppliedPolicy = null;
     private static Set<String> lastAppliedAllowed = null;
+    private static long lastApplyUptimeMs = 0;
 
     public static void applyBackgroundPolicy(Context context) {
         if (context == null) return;
@@ -161,8 +166,14 @@ public class MainActivity extends Activity {
             if (policy.equals(lastAppliedPolicy) && allowed.equals(lastAppliedAllowed)) {
                 return;
             }
+            long now = SystemClock.elapsedRealtime();
+            if (lastAppliedPolicy != null && (now - lastApplyUptimeMs) < 500) {
+                // debounce rapid toggles from onCreate+onResume
+                return;
+            }
             lastAppliedPolicy = policy;
-            lastAppliedAllowed = allowed;
+            lastAppliedAllowed = new HashSet<>(allowed);
+            lastApplyUptimeMs = now;
         }
 
         new Thread(new Runnable() {
@@ -217,6 +228,7 @@ public class MainActivity extends Activity {
         applyBackgroundPolicy(this);
 
         handler = new Handler(Looper.getMainLooper());
+        screenTimeTodaySecs = prefs.getLong(KEY_SCREEN_TIME_SECS, 0L);
         screenOnStartTime = System.currentTimeMillis();
 
         int fontScaleInt = prefs.getInt("pref_font_scale", 100);
@@ -341,7 +353,9 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 updateTimeDisplay();
-                handler.postDelayed(this, 1000);
+                long delayMs = 60000 - (System.currentTimeMillis() % 60000);
+                if (delayMs < 1000) delayMs = 60000;
+                handler.postDelayed(this, delayMs);
             }
         };
 
@@ -411,6 +425,7 @@ public class MainActivity extends Activity {
             screenTimeTodaySecs += (System.currentTimeMillis() - screenOnStartTime) / 1000;
             screenOnStartTime = 0;
         }
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putLong(KEY_SCREEN_TIME_SECS, screenTimeTodaySecs).apply();
     }
 
     @Override
@@ -451,9 +466,12 @@ public class MainActivity extends Activity {
         settingsBtn.setText(I18n.get(I18n.KEY_SETTINGS, langCode));
 
         screenOnStartTime = System.currentTimeMillis();
+        updateTimeDisplay();
         if (handler != null && tickRunnable != null) {
             handler.removeCallbacks(tickRunnable);
-            handler.post(tickRunnable);
+            long delayMs = 60000 - (System.currentTimeMillis() % 60000);
+            if (delayMs < 1000) delayMs = 60000;
+            handler.postDelayed(tickRunnable, delayMs);
         }
         updateBatteryDisplay();
         refreshInstalledAppsCache();
@@ -525,36 +543,14 @@ public class MainActivity extends Activity {
     }
 
     private void hideSystemUI() {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                WindowInsetsController controller = getWindow().getInsetsController();
-                if (controller != null) {
-                    controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                    controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
-                }
-            }
-            View decor = getWindow().getDecorView();
-            if (decor != null) {
-                decor.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                );
-            }
-        } catch (Throwable ignored) {}
+        // TontOS compositor owns chrome. Use app top bar; don't hide
+        // Pixel system bars via WindowInsets/controller.
+        // No-op keeps background/defaults visible and avoids AOSP dependency.
     }
 
     private void disableStatusBarExpansion() {
-        try {
-            Runtime.getRuntime().exec(new String[]{
-                "cmd", "statusbar", "send-disable-flag",
-                "statusbar-expansion", "quick-settings", "notification-peek",
-                "system-icons", "notification-icons", "clock"
-            });
-        } catch (Exception ignored) {}
+        // TontOS owns its shade (UltraShadeDialog + in-app top bar).
+        // No Pixel/AOSP 'cmd statusbar' dependency.
     }
 
     private void updateDateFormats(String langCode, String regionCode) {

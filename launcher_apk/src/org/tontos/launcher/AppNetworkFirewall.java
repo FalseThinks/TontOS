@@ -144,9 +144,22 @@ public final class AppNetworkFirewall {
 
     /**
      * Configures kernel netfilter rules via iptables/ip6tables for UID isolation.
+     * AppOps path always applies. iptables requires root: on failure we log honestly
+     * instead of claiming the rule was applied.
      */
     private static void executeIptables(int uid, boolean blocked) {
         if (uid < 0) return;
+        try {
+            Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", "exit 0"});
+            boolean rooted = p.waitFor() == 0;
+            if (!rooted) {
+                Log.i(TAG, "iptables skipped for UID " + uid + ": no root, AppOps-only (blocked=" + blocked + ")");
+                return;
+            }
+        } catch (Throwable t) {
+            Log.i(TAG, "iptables skipped for UID " + uid + ": no root, AppOps-only (blocked=" + blocked + ")");
+            return;
+        }
 
         String script = String.format(Locale.ROOT,
             "iptables -D OUTPUT -m owner --uid-owner %d -j REJECT 2>/dev/null; " +
@@ -156,18 +169,13 @@ public final class AppNetworkFirewall {
 
         try {
             Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", script});
-            p.waitFor();
+            if (p.waitFor() != 0) {
+                Log.w(TAG, "iptables rule failed for UID " + uid + " (blocked=" + blocked + ")");
+                return;
+            }
             Log.d(TAG, "Applied iptables rule for UID " + uid + " (blocked=" + blocked + ")");
         } catch (Throwable t) {
-            // Direct execution fallback if running privileged without su
-            try {
-                if (blocked) {
-                    Runtime.getRuntime().exec(new String[]{"iptables", "-I", "OUTPUT", "-m", "owner", "--uid-owner", String.valueOf(uid), "-j", "REJECT"});
-                } else {
-                    Runtime.getRuntime().exec(new String[]{"iptables", "-D", "OUTPUT", "-m", "owner", "--uid-owner", String.valueOf(uid), "-j", "REJECT"});
-                }
-            } catch (Throwable ignored) {}
-            Log.i(TAG, "Root execution unavailable, logged iptables rule for UID " + uid + ": " + script);
+            Log.w(TAG, "iptables rule failed for UID " + uid + " (blocked=" + blocked + ")", t);
         }
     }
 

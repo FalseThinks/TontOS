@@ -20,6 +20,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Locale;
 
@@ -36,9 +37,12 @@ public final class UltraShadeDialog {
 
         final Dialog dialog = new Dialog(activity);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setCanceledOnTouchOutside(true);
+        dialog.setCancelable(true);
 
         SharedPreferences prefs = activity.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
         final String lang = prefs.getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
+        final java.util.Set<String> tilesOrder = prefs.getStringSet("shade_tiles", null);
 
         int densityDpi = activity.getResources().getDisplayMetrics().densityDpi;
         final float density = densityDpi / 160.0f;
@@ -68,6 +72,9 @@ public final class UltraShadeDialog {
         dragHandle.setGravity(Gravity.CENTER);
         dragHandle.setTextSize(14);
         dragHandle.setPadding(0, 0, 0, dp8);
+        dragHandle.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { try { dialog.dismiss(); } catch (Throwable ignored) {} }
+        });
         root.addView(dragHandle);
 
         // Header Title
@@ -79,11 +86,9 @@ public final class UltraShadeDialog {
         headerTitle.setGravity(Gravity.CENTER);
         root.addView(headerTitle);
 
-        // Autonomy and battery estimate
-        int hoursRemaining = UltraBatterySaverManager.getEstimatedAutonomyHours(batteryLevel);
+        // Show the measured battery level only; no runtime measurements are available.
         TextView batteryEstimateView = new TextView(activity);
-        String estimateText = I18n.format(I18n.KEY_SHADE_ESTIMATE_FMT, lang, batteryLevel, hoursRemaining);
-        batteryEstimateView.setText(estimateText);
+        batteryEstimateView.setText(batteryLevel + "%");
         batteryEstimateView.setTextColor(tokens.textPrimary);
         batteryEstimateView.setTextSize(13);
         batteryEstimateView.setTypeface(Typeface.MONOSPACE);
@@ -135,45 +140,92 @@ public final class UltraShadeDialog {
         row3.addView(btnTorch);
         root.addView(row3);
 
+        // Row 4: NFC (hide if unsupported)
+        final Button btnNfc = createToggleButton(activity, tokens, dp48);
+        final boolean nfcSupported = UltraBatterySaverManager.getNfcState(activity) != UltraBatterySaverManager.ToggleState.UNKNOWN
+                || android.nfc.NfcAdapter.getDefaultAdapter(activity) != null;
+        if (nfcSupported) {
+            root.addView(createVerticalSpacer(activity, dp8));
+            LinearLayout row4 = createToggleRow(activity);
+            row4.addView(btnNfc);
+            // spacer + invisible placeholder to keep 2-col alignment
+            row4.addView(createSpacer(activity, dp8));
+            android.widget.Space ph = new android.widget.Space(activity);
+            ph.setLayoutParams(new LinearLayout.LayoutParams(0, dp48, 1.0f));
+            row4.addView(ph);
+            root.addView(row4);
+        }
+
         // Update states helper
         final Runnable stateRefresher = new Runnable() {
             @Override
             public void run() {
                 // Airplane Mode
-                boolean airplaneOn = UltraBatterySaverManager.isAirplaneModeOn(activity);
+                UltraBatterySaverManager.ToggleState airplaneState =
+                    UltraBatterySaverManager.getAirplaneModeState(activity);
                 updateToggleStyle(btnAirplane, tokens,
-                    I18n.get(I18n.KEY_TOGGLE_AIRPLANE, lang) + ": " + (airplaneOn ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
-                    airplaneOn, density);
+                    I18n.get(I18n.KEY_TOGGLE_AIRPLANE, lang) + ": "
+                        + UltraBatterySaverManager.getToggleStateDisplay(airplaneState, lang),
+                    airplaneState == UltraBatterySaverManager.ToggleState.ON, density);
 
                 // DND Mode
-                boolean dndOn = UltraBatterySaverManager.isDndOn(activity);
+                UltraBatterySaverManager.ToggleState dndState =
+                    UltraBatterySaverManager.getDndState(activity);
                 updateToggleStyle(btnDnd, tokens,
-                    I18n.get(I18n.KEY_TOGGLE_DND, lang) + ": " + (dndOn ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
-                    dndOn, density);
+                    I18n.get(I18n.KEY_TOGGLE_DND, lang) + ": "
+                        + UltraBatterySaverManager.getToggleStateDisplay(dndState, lang),
+                    dndState == UltraBatterySaverManager.ToggleState.ON, density);
 
                 // Wi-Fi
-                boolean wifiOn = UltraBatterySaverManager.isWifiOn(activity);
+                UltraBatterySaverManager.ToggleState wifiState =
+                    UltraBatterySaverManager.getWifiState(activity);
                 updateToggleStyle(btnWifi, tokens,
-                    I18n.get(I18n.KEY_TOGGLE_WIFI, lang) + ": " + (wifiOn ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
-                    wifiOn, density);
+                    I18n.get(I18n.KEY_TOGGLE_WIFI, lang) + ": "
+                        + UltraBatterySaverManager.getToggleStateDisplay(wifiState, lang),
+                    wifiState == UltraBatterySaverManager.ToggleState.ON, density);
 
                 // Mobile Data
-                boolean dataOn = UltraBatterySaverManager.isMobileDataOn(activity);
+                UltraBatterySaverManager.ToggleState dataState =
+                    UltraBatterySaverManager.getMobileDataState(activity);
                 updateToggleStyle(btnData, tokens,
-                    I18n.get(I18n.KEY_TOGGLE_DATA, lang) + ": " + (dataOn ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
-                    dataOn, density);
+                    I18n.get(I18n.KEY_TOGGLE_DATA, lang) + ": "
+                        + UltraBatterySaverManager.getToggleStateDisplay(dataState, lang),
+                    dataState == UltraBatterySaverManager.ToggleState.ON, density);
 
                 // Bluetooth
-                boolean btOn = UltraBatterySaverManager.isBluetoothOn();
+                UltraBatterySaverManager.ToggleState bluetoothState =
+                    UltraBatterySaverManager.getBluetoothState(activity);
                 updateToggleStyle(btnBluetooth, tokens,
-                    I18n.get(I18n.KEY_TOGGLE_BLUETOOTH, lang) + ": " + (btOn ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
-                    btOn, density);
+                    I18n.get(I18n.KEY_TOGGLE_BLUETOOTH, lang) + ": "
+                        + UltraBatterySaverManager.getToggleStateDisplay(bluetoothState, lang),
+                    bluetoothState == UltraBatterySaverManager.ToggleState.ON, density);
 
                 // Torch
-                boolean torchOn = UltraBatterySaverManager.isTorchOn();
+                UltraBatterySaverManager.ToggleState torchState =
+                    UltraBatterySaverManager.getTorchState(activity);
                 updateToggleStyle(btnTorch, tokens,
-                    I18n.get(I18n.KEY_TOGGLE_TORCH, lang) + ": " + (torchOn ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
-                    torchOn, density);
+                    I18n.get(I18n.KEY_TOGGLE_TORCH, lang) + ": "
+                        + UltraBatterySaverManager.getToggleStateDisplay(torchState, lang),
+                    torchState == UltraBatterySaverManager.ToggleState.ON, density);
+
+                // NFC
+                try { 
+                    UltraBatterySaverManager.ToggleState nfcState = UltraBatterySaverManager.getNfcState(activity);
+                    updateToggleStyle(btnNfc, tokens,
+                        I18n.get(I18n.KEY_TOGGLE_NFC, lang) + ": " + UltraBatterySaverManager.getToggleStateDisplay(nfcState, lang),
+                        nfcState == UltraBatterySaverManager.ToggleState.ON, density);
+                    btnNfc.setVisibility(nfcSupported ? View.VISIBLE : View.GONE);
+                } catch (Throwable ignored) {}
+                // tiles config
+                try {
+                    btnAirplane.setVisibility(isTileEnabled(tilesOrder, "airplane") ? View.VISIBLE : View.GONE);
+                    btnDnd.setVisibility(isTileEnabled(tilesOrder, "dnd") ? View.VISIBLE : View.GONE);
+                    btnWifi.setVisibility(isTileEnabled(tilesOrder, "wifi") ? View.VISIBLE : View.GONE);
+                    btnData.setVisibility(isTileEnabled(tilesOrder, "data") ? View.VISIBLE : View.GONE);
+                    btnBluetooth.setVisibility(isTileEnabled(tilesOrder, "bluetooth") ? View.VISIBLE : View.GONE);
+                    btnTorch.setVisibility(isTileEnabled(tilesOrder, "torch") ? View.VISIBLE : View.GONE);
+                    btnNfc.setVisibility((isTileEnabled(tilesOrder, "nfc") && nfcSupported) ? View.VISIBLE : View.GONE);
+                } catch (Throwable ignored2) {}
             }
         };
 
@@ -181,53 +233,90 @@ public final class UltraShadeDialog {
         btnAirplane.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean cur = UltraBatterySaverManager.isAirplaneModeOn(activity);
-                UltraBatterySaverManager.setAirplaneMode(activity, !cur);
-                v.postDelayed(stateRefresher, 300);
+                handleActionResult(
+                    activity, dialog, v, stateRefresher, lang,
+                    UltraBatterySaverManager.openAirplaneModeSettings(activity));
             }
         });
 
         btnDnd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean cur = UltraBatterySaverManager.isDndOn(activity);
-                UltraBatterySaverManager.setDnd(activity, !cur);
-                v.postDelayed(stateRefresher, 200);
+                UltraBatterySaverManager.ToggleState state =
+                    UltraBatterySaverManager.getDndState(activity);
+                UltraBatterySaverManager.ActionResult result =
+                    state == UltraBatterySaverManager.ToggleState.UNKNOWN
+                        ? UltraBatterySaverManager.ActionResult.UNSUPPORTED
+                        : UltraBatterySaverManager.setDnd(
+                            activity, state != UltraBatterySaverManager.ToggleState.ON);
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
             }
         });
 
         btnWifi.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean cur = UltraBatterySaverManager.isWifiOn(activity);
-                UltraBatterySaverManager.setWifi(activity, !cur);
-                v.postDelayed(stateRefresher, 300);
+                UltraBatterySaverManager.ToggleState state =
+                    UltraBatterySaverManager.getWifiState(activity);
+                UltraBatterySaverManager.ActionResult result =
+                    state == UltraBatterySaverManager.ToggleState.UNKNOWN
+                        ? UltraBatterySaverManager.openWifiSettings(activity)
+                        : UltraBatterySaverManager.setWifi(
+                            activity, state != UltraBatterySaverManager.ToggleState.ON);
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
             }
         });
 
         btnData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean cur = UltraBatterySaverManager.isMobileDataOn(activity);
-                UltraBatterySaverManager.setMobileData(activity, !cur);
-                v.postDelayed(stateRefresher, 300);
+                handleActionResult(
+                    activity, dialog, v, stateRefresher, lang,
+                    UltraBatterySaverManager.openMobileDataSettings(activity));
             }
         });
 
         btnBluetooth.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean cur = UltraBatterySaverManager.isBluetoothOn();
-                UltraBatterySaverManager.setBluetooth(!cur);
-                v.postDelayed(stateRefresher, 300);
+                UltraBatterySaverManager.ToggleState state =
+                    UltraBatterySaverManager.getBluetoothState(activity);
+                UltraBatterySaverManager.ActionResult result;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        && state == UltraBatterySaverManager.ToggleState.UNKNOWN) {
+                    result = UltraBatterySaverManager.requestBluetoothPermission(activity);
+                    if (result == UltraBatterySaverManager.ActionResult.REQUESTED) {
+                        result = UltraBatterySaverManager.openBluetoothSettings(activity);
+                    }
+                } else if (state == UltraBatterySaverManager.ToggleState.UNKNOWN) {
+                    result = UltraBatterySaverManager.openBluetoothSettings(activity);
+                } else {
+                    result = UltraBatterySaverManager.setBluetooth(
+                        activity, state != UltraBatterySaverManager.ToggleState.ON);
+                }
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
+            }
+        });
+
+        btnNfc.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                UltraBatterySaverManager.ToggleState st = UltraBatterySaverManager.getNfcState(activity);
+                UltraBatterySaverManager.ActionResult r = (st == UltraBatterySaverManager.ToggleState.UNKNOWN)
+                        ? UltraBatterySaverManager.openNfcSettings(activity)
+                        : UltraBatterySaverManager.setNfc(activity, st != UltraBatterySaverManager.ToggleState.ON);
+                // toggleable: deselect immediately, refresh after
+                try { btnNfc.setSelected(r == UltraBatterySaverManager.ActionResult.APPLIED && st != UltraBatterySaverManager.ToggleState.ON); } catch (Throwable ignored) {}
+                handleActionResult(activity, dialog, v, stateRefresher, lang, r);
             }
         });
 
         btnTorch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                UltraBatterySaverManager.toggleTorch(activity);
-                stateRefresher.run();
+                UltraBatterySaverManager.ActionResult result =
+                    UltraBatterySaverManager.toggleTorch(activity);
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
             }
         });
 
@@ -296,6 +385,31 @@ public final class UltraShadeDialog {
         }
 
         dialog.show();
+    }
+
+    private static boolean isTileEnabled(java.util.Set<String> tilesOrder, String id) {
+        if (tilesOrder == null || tilesOrder.isEmpty()) return true;
+        return tilesOrder.contains(id);
+    }
+
+    private static void handleActionResult(
+            Activity activity,
+            Dialog dialog,
+            View view,
+            Runnable stateRefresher,
+            String lang,
+            UltraBatterySaverManager.ActionResult result) {
+        Toast.makeText(
+            activity,
+            UltraBatterySaverManager.getActionResultDisplay(result, lang),
+            Toast.LENGTH_LONG
+        ).show();
+        if (result == UltraBatterySaverManager.ActionResult.APPLIED
+                || result == UltraBatterySaverManager.ActionResult.REQUESTED
+                || result == UltraBatterySaverManager.ActionResult.SETTINGS_REQUIRED
+                || result == UltraBatterySaverManager.ActionResult.PERMISSION_REQUIRED) {
+            try { view.postDelayed(stateRefresher, 600); } catch (Throwable ignored) {}
+        }
     }
 
     private static LinearLayout createToggleRow(Context context) {

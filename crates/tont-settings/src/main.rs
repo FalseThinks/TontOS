@@ -9,9 +9,10 @@ async fn main() {
 
     let config_path = Path::new("/etc/tontos/settings.json");
     let settings = if config_path.exists() {
-        TontSettings::load_from_file(config_path).unwrap_or_default()
+        TontSettings::load_from_file(config_path)
+            .unwrap_or_else(|_| TontSettings::embedded_default())
     } else {
-        TontSettings::default()
+        TontSettings::embedded_default()
     };
 
     tracing::info!(

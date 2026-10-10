@@ -68,28 +68,9 @@ public final class GrayscaleManager {
             }
         } catch (Exception ignored) {}
 
-        // Attempt 2: su / sh execution fallback
-        String cmd = "settings put secure " + SECURE_KEY_DALTONIZER_ENABLED + " " + daltonizerEnabled +
-                     " && settings put secure " + SECURE_KEY_DALTONIZER + " " + daltonizer;
-
-        try {
-            Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", cmd});
-            if (p.waitFor() == 0) return true;
-        } catch (Exception ignored) {}
-
-        try {
-            Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", cmd});
-            if (p.waitFor() == 0) return true;
-        } catch (Exception ignored) {}
-
-        try {
-            Process p1 = Runtime.getRuntime().exec(new String[]{"settings", "put", "secure", SECURE_KEY_DALTONIZER_ENABLED, String.valueOf(daltonizerEnabled)});
-            Process p2 = Runtime.getRuntime().exec(new String[]{"settings", "put", "secure", SECURE_KEY_DALTONIZER, String.valueOf(daltonizer)});
-            p1.waitFor();
-            p2.waitFor();
-            return true;
-        } catch (Exception ignored) {}
-
+        // No shell/root fallback: unprivileged exec would silently fail and mislead the UI.
+        // System grayscale requires WRITE_SECURE_SETTINGS (ROM-signed). Window-level
+        // desaturation via applyGrayscaleToWindow() still applies locally.
         return false;
     }
 

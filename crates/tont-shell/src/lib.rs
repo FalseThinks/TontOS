@@ -56,20 +56,40 @@ impl Default for AppRegistry {
                     display_name: "Files".to_string(),
                     category: AppCategory::Utility,
                 },
-                // Gallery & Music
+                // Gallery & Music & Camera
                 AppEntry {
                     id: "org.fossify.gallery".to_string(),
                     display_name: "Gallery".to_string(),
                     category: AppCategory::Media,
                 },
                 AppEntry {
-                    id: "org.fossify.music".to_string(),
+                    id: "org.fossify.camera".to_string(),
+                    display_name: "Camera".to_string(),
+                    category: AppCategory::Media,
+                },
+                AppEntry {
+                    id: "org.fossify.musicplayer".to_string(),
                     display_name: "Music".to_string(),
                     category: AppCategory::Media,
                 },
                 AppEntry {
+                    id: "eu.faircode.email".to_string(),
+                    display_name: "Email".to_string(),
+                    category: AppCategory::Communication,
+                },
+                AppEntry {
+                    id: "de.baumann.browser".to_string(),
+                    display_name: "Browser".to_string(),
+                    category: AppCategory::Utility,
+                },
+                AppEntry {
                     id: "org.breezyweather".to_string(),
                     display_name: "Weather".to_string(),
+                    category: AppCategory::Utility,
+                },
+                AppEntry {
+                    id: "app.organicmaps".to_string(),
+                    display_name: "Maps".to_string(),
                     category: AppCategory::Utility,
                 },
                 // System Settings
@@ -128,11 +148,16 @@ mod tests {
         assert!(apps.iter().any(|a| a.id == "com.aurora.store"));
         assert!(apps.iter().any(|a| a.id == "org.fossify.phone"));
         assert!(apps.iter().any(|a| a.id == "org.fossify.contacts"));
+        assert!(apps.iter().any(|a| a.id == "org.fossify.camera"));
         assert!(apps.iter().any(|a| a.id == "org.fossify.gallery"));
-        assert!(apps.iter().any(|a| a.id == "org.fossify.music"));
+        assert!(apps.iter().any(|a| a.id == "org.fossify.musicplayer"));
         assert!(apps.iter().any(|a| a.id == "org.fossify.filemanager"));
         assert!(apps.iter().any(|a| a.id == "org.breezyweather"));
+        assert!(apps.iter().any(|a| a.id == "app.organicmaps"));
+        assert!(apps.iter().any(|a| a.id == "de.baumann.browser"));
+        assert!(apps.iter().any(|a| a.id == "eu.faircode.email"));
         assert!(apps.iter().any(|a| a.id == "org.tontos.settings"));
+        assert_eq!(apps.len(), 13);
     }
 
     #[test]

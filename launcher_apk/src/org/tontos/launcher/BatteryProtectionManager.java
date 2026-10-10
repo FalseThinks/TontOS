@@ -2,24 +2,13 @@ package org.tontos.launcher;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
-
-import java.io.File;
-import java.io.FileOutputStream;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
- * Battery Health & Hardware Charging Control Subsystem for TontOS.
- * Supports:
- * 1. 80% charge ceiling (stops cell swelling and prolongs Li-Ion cycle life).
- * 2. Bypass charging (powers hardware directly from USB VBUS via input_suspend without cycling battery cell).
- * 3. Kernel sysfs hooks for standard Android 14+ Health HAL, Qualcomm PMIC and MediaTek Charger.
+ * Stores the standard charging preference without claiming unsupported hardware control.
+ *
+ * Ordinary Android apps have no public API for charge limits or bypass charging.
  */
 public final class BatteryProtectionManager {
-
-    private static final String TAG = "BatteryProtectMgr";
 
     public static final String PREF_BATTERY_CHARGE_LIMIT_MODE = "pref_battery_charge_limit_mode";
 
@@ -27,33 +16,27 @@ public final class BatteryProtectionManager {
     public static final int MODE_80 = 1;
     public static final int MODE_BYPASS = 2;
 
-    private static int lastMode = -1;
-    private static int lastBatteryLevel = -1;
-    private static boolean lastCharging = false;
-    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
-
-    // Standard Android 14+ Health HAL nodes
-    private static final String NODE_CHARGE_CONTROL_LIMIT = "/sys/class/power_supply/battery/charge_control_limit";
-    private static final String NODE_CHARGE_CONTROL_LIMIT_MAX = "/sys/class/power_supply/battery/charge_control_limit_max";
-
-    // Qualcomm & MediaTek hardware PMIC charging switches
-    private static final String NODE_CHARGING_ENABLED = "/sys/class/power_supply/battery/charging_enabled";
-    private static final String NODE_INPUT_SUSPEND = "/sys/class/power_supply/battery/input_suspend";
-    private static final String NODE_QCOM_RESTRICTED = "/sys/class/qcom-battery/restricted_charging";
-    private static final String NODE_MTK_CHARGING = "/sys/devices/platform/charger/charging_enabled";
+    public enum ModeResult {
+        APPLIED,
+        UNSUPPORTED,
+        INVALID
+    }
 
     private BatteryProtectionManager() {}
 
     public static int getMode(Context context) {
-        if (context == null) return MODE_100;
-        SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getInt(PREF_BATTERY_CHARGE_LIMIT_MODE, MODE_100);
+        return MODE_100;
     }
 
-    public static void setMode(Context context, int mode) {
-        if (context == null) return;
+    public static ModeResult setMode(Context context, int mode) {
+        if (context == null || (mode != MODE_100 && mode != MODE_80 && mode != MODE_BYPASS)) {
+            return ModeResult.INVALID;
+        }
+        if (mode != MODE_100) return ModeResult.UNSUPPORTED;
+
         SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putInt(PREF_BATTERY_CHARGE_LIMIT_MODE, mode).apply();
+        prefs.edit().putInt(PREF_BATTERY_CHARGE_LIMIT_MODE, MODE_100).apply();
+        return ModeResult.APPLIED;
     }
 
     public static String getModeDisplay(int mode, String langCode) {
@@ -66,93 +49,69 @@ public final class BatteryProtectionManager {
         }
     }
 
+    public static String getSettingsDisplay(String langCode) {
+        String lang = langCode == null ? "en" : langCode.toLowerCase();
+        if (lang.startsWith("de")) return "100% · Steuerung n. v.";
+        if (lang.startsWith("pl")) return "100% · sterowanie n/d";
+        if (lang.startsWith("es")) return "100% · control no disp.";
+        return "100% · controls N/A";
+    }
+
+    public static String getOptionDisplay(int mode, String langCode) {
+        if (mode == MODE_100) return getModeDisplay(mode, langCode);
+        String lang = langCode == null ? "en" : langCode.toLowerCase();
+        if (mode == MODE_80) {
+            if (lang.startsWith("de")) return "80%-Limit — nicht verfügbar";
+            if (lang.startsWith("pl")) return "Limit 80% — niedostępny";
+            if (lang.startsWith("es")) return "Límite 80% — no disponible";
+            return "80% limit — unavailable";
+        }
+        if (mode == MODE_BYPASS) {
+            if (lang.startsWith("de")) return "Bypass — nicht verfügbar";
+            if (lang.startsWith("pl")) return "Bypass — niedostępny";
+            if (lang.startsWith("es")) return "Bypass — no disponible";
+            return "Bypass — unavailable";
+        }
+        return getModeDisplay(mode, langCode);
+    }
+
+    public static String getModeResultDisplay(ModeResult result, String langCode) {
+        if (result == ModeResult.UNSUPPORTED) {
+            String lang = langCode == null ? "en" : langCode.toLowerCase();
+            if (lang.startsWith("de")) return "Ladelimits und Bypass-Steuerung sind dieser App auf diesem Gerät nicht verfügbar.";
+            if (lang.startsWith("pl")) return "Limity ładowania i sterowanie bypass są niedostępne dla tej aplikacji na tym urządzeniu.";
+            if (lang.startsWith("es")) return "Los límites de carga y el bypass no están disponibles para esta aplicación en este dispositivo.";
+            return "Charge limits and bypass control are unavailable to this app on this device.";
+        }
+        if (result == ModeResult.APPLIED) {
+            String lang = langCode == null ? "en" : langCode.toLowerCase();
+            if (lang.startsWith("de")) return "Standardladen ausgewählt; es wird kein Ladelimit angewendet.";
+            if (lang.startsWith("pl")) return "Wybrano standardowe ładowanie; limit ładowania nie jest stosowany.";
+            if (lang.startsWith("es")) return "Carga estándar seleccionada; no se aplica ningún límite.";
+            return "Standard charging selected; no charge limit is applied.";
+        }
+        String lang = langCode == null ? "en" : langCode.toLowerCase();
+        if (lang.startsWith("de")) return "Ungültige Ladeoption.";
+        if (lang.startsWith("pl")) return "Nieprawidłowa opcja ładowania.";
+        if (lang.startsWith("es")) return "Opción de carga no válida.";
+        return "Invalid charging option.";
+    }
+
     /**
-     * Checks if device kernel exposes charging control interfaces.
+     * Retained for existing callers; node presence is not evidence that this app can safely
+     * control charging, so this capability remains unavailable.
      */
     public static boolean isHardwareSupported() {
-        return new File(NODE_CHARGE_CONTROL_LIMIT).exists()
-            || new File(NODE_CHARGING_ENABLED).exists()
-            || new File(NODE_INPUT_SUSPEND).exists()
-            || new File(NODE_QCOM_RESTRICTED).exists()
-            || new File(NODE_MTK_CHARGING).exists();
+        return false;
     }
 
     /**
-     * Applies charging limits according to current battery level and chosen mode.
+     * Retained for compatibility with the battery receiver. It deliberately performs no
+     * filesystem or shell writes because charge-control interfaces are privileged and
+     * vendor-specific.
      */
-    public static void applyHardwareProtection(Context context, final int currentBatteryLevel, final boolean isCharging) {
-        if (!isHardwareSupported()) return;
-        final int mode = getMode(context);
-        synchronized (BatteryProtectionManager.class) {
-            if (mode == lastMode && isCharging == lastCharging) {
-                if (mode != MODE_80 || (lastBatteryLevel >= 80 && currentBatteryLevel >= 80) || (lastBatteryLevel <= 78 && currentBatteryLevel <= 78)) {
-                    return;
-                }
-            }
-            lastMode = mode;
-            lastBatteryLevel = currentBatteryLevel;
-            lastCharging = isCharging;
-        }
-
-        EXECUTOR.execute(new Runnable() {
-            @Override
-            public void run() {
-                switch (mode) {
-                    case MODE_80:
-                        // Standard Android 14+ Health HAL
-                        writeSysfs(NODE_CHARGE_CONTROL_LIMIT, "80");
-                        if (currentBatteryLevel >= 80) {
-                            // Cut charging when ceiling reached
-                            writeSysfs(NODE_CHARGING_ENABLED, "0");
-                            writeSysfs(NODE_MTK_CHARGING, "0");
-                            writeSysfs(NODE_QCOM_RESTRICTED, "1");
-                        } else if (currentBatteryLevel <= 78) {
-                            // Hysteresis: resume charging when drops below 78%
-                            writeSysfs(NODE_CHARGING_ENABLED, "1");
-                            writeSysfs(NODE_MTK_CHARGING, "1");
-                            writeSysfs(NODE_QCOM_RESTRICTED, "0");
-                            writeSysfs(NODE_INPUT_SUSPEND, "0");
-                        }
-                        break;
-
-                    case MODE_BYPASS:
-                        // Suspend VBUS charging intake; power SoC directly from USB
-                        writeSysfs(NODE_INPUT_SUSPEND, "1");
-                        writeSysfs(NODE_CHARGING_ENABLED, "0");
-                        writeSysfs(NODE_MTK_CHARGING, "0");
-                        break;
-
-                    case MODE_100:
-                    default:
-                        // Full standard charging to 100%
-                        writeSysfs(NODE_CHARGE_CONTROL_LIMIT, "100");
-                        writeSysfs(NODE_CHARGING_ENABLED, "1");
-                        writeSysfs(NODE_INPUT_SUSPEND, "0");
-                        writeSysfs(NODE_MTK_CHARGING, "1");
-                        writeSysfs(NODE_QCOM_RESTRICTED, "0");
-                        break;
-                }
-            }
-        });
+    public static void applyHardwareProtection(Context context, int currentBatteryLevel, boolean isCharging) {
+        // No ordinary-app Android API applies charging limits or bypass mode.
     }
 
-    private static boolean writeSysfs(String path, String value) {
-        File file = new File(path);
-        if (!file.exists()) return false;
-
-        // Try direct userspace write
-        try (FileOutputStream fos = new FileOutputStream(file)) {
-            fos.write(value.getBytes());
-            fos.flush();
-            return true;
-        } catch (Throwable t) {
-            // Fallback via shell/su command for privileged sysfs nodes
-            try {
-                Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo " + value + " > " + path});
-                return p.waitFor() == 0;
-            } catch (Throwable ignored) {
-                return false;
-            }
-        }
-    }
 }

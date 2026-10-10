@@ -1,0 +1,33 @@
+{
+  "connectivity": {
+    "wifi_enabled": true,
+    "bluetooth_enabled": false,
+    "mobile_data_enabled": true,
+    "gps_enabled": true,
+    "airplane_mode": false,
+    "nfc_enabled": false
+  },
+  "default_apps": {
+    "phone_app": "org.fossify.phone",
+    "messaging_app": "org.fossify.messages",
+    "browser_app": "de.baumann.browser",
+    "maps_app": "app.organicmaps",
+    "gallery_app": "org.fossify.gallery",
+    "music_app": "org.fossify.musicplayer",
+    "files_app": "org.fossify.filemanager"
+  },
+  "sound": {
+    "ringtone_path": "/usr/share/sounds/tontos/ring_minimal.ogg",
+    "notification_tone_path": "/usr/share/sounds/tontos/notify_pulse.ogg",
+    "alarm_tone_path": "/usr/share/sounds/tontos/alarm_chime.ogg",
+    "ring_volume_percent": 80,
+    "vibration_enabled": true
+  },
+  "display": {
+    "screen_timeout_secs": 30,
+    "dark_amoled_mode": true,
+    "font_scale": 1.0,
+    "screen_time_budget_mins": 120,
+    "theme": "amoled_black"
+  }
+}
