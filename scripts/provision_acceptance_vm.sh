@@ -120,8 +120,15 @@ else
 fi
 
 if command -v virsh >/dev/null 2>&1; then
-    if ! virsh -c "$VIRSH_URI" net-list --all 2>/dev/null | grep -qi "active\|default"; then
-        add_reason "missing: libvirt bridge/NAT networking (no active network on $VIRSH_URI)"
+    # qemu:///session never owns networks; system `default` active is host readiness.
+    # Try session, then any virsh (system). Last resort: bridge/NAT device exists.
+    has_net=false
+    if virsh -c "$VIRSH_URI" net-list --all 2>/dev/null | grep -qi "active"; then has_net=true; fi
+    if [[ "$has_net" == false ]] && virsh net-list --all 2>/dev/null | grep -qi "active"; then has_net=true; fi
+    if [[ "$has_net" == false ]] && ip link show virbr0 >/dev/null 2>&1; then has_net=true; fi
+    if [[ "$has_net" == false ]] && sudo -n virsh net-list --all 2>/dev/null | grep -qi "active"; then has_net=true; fi
+    if [[ "$has_net" == false ]]; then
+        add_reason "missing: libvirt bridge/NAT networking (no active network on $VIRSH_URI / system default)"
     fi
 else
     add_reason "missing: cannot query libvirt networking (no virsh)"
