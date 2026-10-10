@@ -1,7 +1,8 @@
 [advisories]
 db-path = "~/.cargo/advisory-db"
-vulnerability = "deny"
+yanked = "warn"
 unmaintained = "workspace"
+unsound = "workspace"
 
 [licenses]
 allow = [
@@ -13,7 +14,8 @@ allow = [
     "Unicode-DFS-2016",
     "Zlib",
 ]
-copyleft = "deny"
+confidence-threshold = 0.8
+unused-allowed-license = "warn"
 
 [bans]
 multiple-versions = "warn"
