@@ -140,7 +140,7 @@ docker run --rm -it \
     -v "$HOME/aosp/tontos:/home/tontos/aosp" \
     -v "$HOME/.ccache:/home/tontos/.ccache" \
     tontos-builder:latest \
-    bash -c "source build/envsetup.sh && lunch tontos_cf_x86_64-bp4a-userdebug && SOONG_JOBS=1 m -j1 droid"
+    bash -c "source build/envsetup.sh && lunch tontos_cf_x86_64-bp4a-userdebug && m -j\$(nproc) bootimage systemimage vbmetaimage"
 ```
 
 ---

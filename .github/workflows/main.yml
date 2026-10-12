@@ -14,29 +14,60 @@ permissions:
   contents: read
 
 jobs:
+  # ============================================================================
+  # STAGE 1: Gatekeeper & Pre-flight Hygiene (~10s)
+  # ============================================================================
   pr-target-guard:
-    name: Validate PR Target Branch
+    name: "1. Gatekeeper: PR Target Policy"
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - name: Enforce PR branch policy
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           ACTOR: ${{ github.actor }}
         run: |
-          echo "Target branch: $BASE_REF"
-          echo "Source branch: $HEAD_REF"
-          echo "Actor: $ACTOR"
-          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" != "development" ] && [ "$ACTOR" != "FalseThinks" ]; then
-            echo "::error title=Forbidden PR Target::Direct Pull Requests targeting 'main' are forbidden! You must target the 'development' branch."
-            exit 1
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "Target branch: $BASE_REF"
+            echo "Source branch: $HEAD_REF"
+            echo "Actor: $ACTOR"
+            if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" != "development" ] && [ "$ACTOR" != "FalseThinks" ]; then
+              echo "::error title=Forbidden PR Target::Direct Pull Requests targeting 'main' are forbidden! You must target the 'development' branch."
+              exit 1
+            fi
+            echo "PR target branch policy verified successfully."
+          else
+            echo "Event is '$EVENT_NAME': PR target validation not applicable, continuing."
           fi
-          echo "PR target branch policy verified successfully."
 
-  rust-quality:
-    name: Rust Format, Lint & Test
+  hygiene-and-scripts:
+    name: "1. Hygiene: Secrets & Script Syntax"
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate JSON syntax
+        run: jq empty platform/manifests/pinned.json tests/ui/package.json
+
+      - name: Check Shell scripts syntax
+        run: bash -n scripts/*.sh
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # STAGE 2: Build & Core Compilations (~35s)
+  # ============================================================================
+  rust-quality:
+    name: "2. Build: Rust Format, Lint & Test"
+    runs-on: ubuntu-latest
+    needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,33 +97,10 @@ jobs:
           RUSTDOCFLAGS: "-D warnings"
         run: cargo doc --workspace --no-deps
 
-  rust-security:
-    name: Rust Dependency Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Install cargo-audit & cargo-deny
-        run: |
-          cargo install cargo-audit --locked
-          cargo install cargo-deny --locked
-
-      - name: Run cargo audit (Advisory DB)
-        run: cargo audit
-
-      - name: Run cargo deny check
-        run: cargo deny check
-
   android-build:
-    name: Android Launcher Verification
+    name: "2. Build: Android Launcher APK"
     runs-on: ubuntu-latest
+    needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -132,123 +140,10 @@ jobs:
           path: ${{ runner.temp }}/tontos-launcher.apk
           if-no-files-found: error
 
-  hygiene-and-scripts:
-    name: Repository Hygiene, Scripts & Secrets
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Validate JSON syntax
-        run: jq empty platform/manifests/pinned.json tests/ui/package.json
-
-      - name: Check Shell scripts syntax
-        run: bash -n scripts/*.sh
-
-      - name: Run Gitleaks secret scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  trivy-security-scan:
-    name: Trivy Vulnerability & Misconfig Scan
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          format: sarif
-          output: trivy-results.sarif
-          severity: CRITICAL,HIGH
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        if: >-
-          always() &&
-          github.event.repository.private == false &&
-          hashFiles('trivy-results.sarif') != '' &&
-          github.actor != 'dependabot[bot]' &&
-          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        with:
-          sarif_file: trivy-results.sarif
-
-  semgrep-sast-scan:
-    name: Semgrep SAST Code Quality & Security
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run Semgrep SAST
-        run: pip install semgrep && semgrep scan --config auto --sarif --output semgrep.sarif .
-
-      - name: Upload Semgrep results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        if: >-
-          always() &&
-          github.event.repository.private == false &&
-          hashFiles('semgrep.sarif') != '' &&
-          github.actor != 'dependabot[bot]' &&
-          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-        with:
-          sarif_file: semgrep.sarif
-
-  playwright-ui:
-    name: Playwright UI Visual & DOM Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          lfs: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 20
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install Playwright Dependencies
-        working-directory: tests/ui
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm exec playwright install --with-deps chromium
-
-      - name: Run Playwright Tests
-        working-directory: tests/ui
-        run: pnpm test
-
-      - name: Upload Test Report & Screenshots
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: |
-            tests/ui/playwright-report/
-            tests/ui/*.png
-
   docker-builder-verification:
-    name: Docker ROM Builder & Bootstrap Verification
+    name: "2. Build: Docker ROM Environment"
     runs-on: ubuntu-latest
+    needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -295,18 +190,147 @@ jobs:
           AOSP_DIR="$TMP_DIR" ./scripts/docker_build_rom.sh bash -c "source build/envsetup.sh && echo 'AOSP compile pipeline bootstrap successful!'"
           rm -rf "$TMP_DIR"
 
+  # ============================================================================
+  # STAGE 3: Security & E2E Verification (~40s - 4m)
+  # ============================================================================
+  rust-security:
+    name: "3. Security: Rust Dependency Audit"
+    runs-on: ubuntu-latest
+    needs: [rust-quality]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-audit & cargo-deny
+        run: |
+          cargo install cargo-audit --locked
+          cargo install cargo-deny --locked
+
+      - name: Run cargo audit (Advisory DB)
+        run: cargo audit
+
+      - name: Run cargo deny check
+        run: cargo deny check
+
+  semgrep-sast-scan:
+    name: "3. Security: Semgrep SAST Analysis"
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    needs: [rust-quality, android-build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep SAST
+        run: pip install semgrep && semgrep scan --config auto --sarif --output semgrep.sarif .
+
+      - name: Upload Semgrep results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: >-
+          always() &&
+          github.event.repository.private == false &&
+          hashFiles('semgrep.sarif') != '' &&
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        with:
+          sarif_file: semgrep.sarif
+
+  trivy-security-scan:
+    name: "3. Security: Trivy Container & FS"
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    needs: [docker-builder-verification]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: >-
+          always() &&
+          github.event.repository.private == false &&
+          hashFiles('trivy-results.sarif') != '' &&
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        with:
+          sarif_file: trivy-results.sarif
+
+  playwright-ui:
+    name: "3. E2E: Playwright UI Visual Tests"
+    runs-on: ubuntu-latest
+    needs: [android-build]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Playwright Dependencies
+        working-directory: tests/ui
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright Tests
+        working-directory: tests/ui
+        run: pnpm test
+
+      - name: Upload Test Report & Screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            tests/ui/playwright-report/
+            tests/ui/*.png
+
+  # ============================================================================
+  # STAGE 4: Executive Gate & Health Report (~5s)
+  # ============================================================================
   ci-executive-summary:
-    name: Executive Security, Coverage & Quality Summary
+    name: "4. Executive: Health & Security Summary"
     runs-on: ubuntu-latest
     needs:
-      - rust-quality
-      - rust-security
-      - android-build
+      - pr-target-guard
       - hygiene-and-scripts
-      - trivy-security-scan
-      - semgrep-sast-scan
-      - playwright-ui
+      - rust-quality
+      - android-build
       - docker-builder-verification
+      - rust-security
+      - semgrep-sast-scan
+      - trivy-security-scan
+      - playwright-ui
     if: always()
     steps:
       - name: Checkout repository
@@ -322,4 +346,3 @@ jobs:
         with:
           name: tontos-security-coverage-audit
           path: ci-report.md
-
