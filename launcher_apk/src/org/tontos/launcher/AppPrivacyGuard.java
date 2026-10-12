@@ -91,6 +91,10 @@ public final class AppPrivacyGuard {
 
     public static void setCategoryBlocked(Context context, String prefKey, String pkg, boolean blocked, String[] appOps) {
         if (context == null || pkg == null || prefKey == null) return;
+        if (!SafeCommandExecutor.isValidPackageName(pkg)) {
+            Log.w(TAG, "Refusing operation for invalid package identifier: " + pkg);
+            return;
+        }
         SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
         Set<String> current = prefs.getStringSet(prefKey, null);
         Set<String> updated = new HashSet<>(current != null ? current : Collections.<String>emptySet());
@@ -105,11 +109,7 @@ public final class AppPrivacyGuard {
         if (appOps != null) {
             String mode = blocked ? "deny" : "allow";
             for (String op : appOps) {
-                try {
-                    Runtime.getRuntime().exec(new String[]{"cmd", "appops", "set", pkg, op, mode});
-                } catch (Throwable t) {
-                    Log.w(TAG, "Failed setting AppOp " + op + " for " + pkg, t);
-                }
+                SafeCommandExecutor.execute("cmd", "appops", "set", pkg, op, mode);
             }
         }
     }
@@ -167,6 +167,10 @@ public final class AppPrivacyGuard {
 
     public static void setBgRestricted(Context context, String pkg, boolean restricted) {
         if (context == null || pkg == null) return;
+        if (!SafeCommandExecutor.isValidPackageName(pkg)) {
+            Log.w(TAG, "Refusing operation for invalid package identifier: " + pkg);
+            return;
+        }
         SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
         Set<String> current = prefs.getStringSet(PREF_RESTRICTED_BG_APPS, null);
         Set<String> updated = new HashSet<>(current != null ? current : Collections.<String>emptySet());
@@ -179,20 +183,10 @@ public final class AppPrivacyGuard {
         prefs.edit().putStringSet(PREF_RESTRICTED_BG_APPS, updated).apply();
 
         String mode = restricted ? "deny" : "allow";
-        try {
-            Runtime.getRuntime().exec(new String[]{"cmd", "appops", "set", pkg, "RUN_IN_BACKGROUND", mode});
-        } catch (Throwable t) {
-            Log.w(TAG, "Failed setting RUN_IN_BACKGROUND for " + pkg, t);
-        }
-        try {
-            Runtime.getRuntime().exec(new String[]{"cmd", "appops", "set", pkg, "RUN_ANY_IN_BACKGROUND", mode});
-        } catch (Throwable t) {
-            Log.w(TAG, "Failed setting RUN_ANY_IN_BACKGROUND for " + pkg, t);
-        }
+        SafeCommandExecutor.execute("cmd", "appops", "set", pkg, "RUN_IN_BACKGROUND", mode);
+        SafeCommandExecutor.execute("cmd", "appops", "set", pkg, "RUN_ANY_IN_BACKGROUND", mode);
         if (restricted) {
-            try {
-                Runtime.getRuntime().exec(new String[]{"cmd", "deviceidle", "whitelist", "-" + pkg});
-            } catch (Throwable ignored) {}
+            SafeCommandExecutor.execute("cmd", "deviceidle", "whitelist", "-" + pkg);
         }
     }
 
@@ -201,12 +195,15 @@ public final class AppPrivacyGuard {
     // ==========================================
 
     public static void forceStopApp(Context context, String pkg) {
-        if (pkg == null) return;
-        try {
-            Runtime.getRuntime().exec(new String[]{"am", "force-stop", pkg});
+        if (pkg == null || !SafeCommandExecutor.isValidPackageName(pkg)) {
+            Log.w(TAG, "Refusing force stop for invalid package: " + pkg);
+            return;
+        }
+        boolean ok = SafeCommandExecutor.execute("am", "force-stop", pkg);
+        if (ok) {
             Toast.makeText(context, "Force stopped: " + pkg, Toast.LENGTH_SHORT).show();
-        } catch (Throwable t) {
-            Log.w(TAG, "Failed to force stop " + pkg, t);
+        } else {
+            Log.w(TAG, "Failed to force stop " + pkg);
             Toast.makeText(context, "Could not force stop app", Toast.LENGTH_SHORT).show();
         }
     }

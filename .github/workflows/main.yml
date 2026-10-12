@@ -37,6 +37,11 @@ jobs:
       - name: Build release binaries
         run: cargo build --workspace --release
 
+      - name: Verify Rust documentation
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+        run: cargo doc --workspace --no-deps
+
   rust-security:
     name: Rust Dependency Security Audit
     runs-on: ubuntu-latest
@@ -86,12 +91,43 @@ jobs:
           OUTPUT_APK: ${{ runner.temp }}/tontos-launcher.apk
         run: ./scripts/build_launcher_apk.sh
 
+      - name: Verify APK signature and budget limits
+        env:
+          OUTPUT_APK: ${{ runner.temp }}/tontos-launcher.apk
+        run: |
+          $ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose "$OUTPUT_APK"
+          APK_SIZE=$(wc -c < "$OUTPUT_APK")
+          echo "APK Size: $APK_SIZE bytes"
+          if [ "$APK_SIZE" -gt 2097152 ]; then
+            echo "ERROR: Launcher APK exceeded 2MB budget: $APK_SIZE bytes"
+            exit 1
+          fi
+
       - name: Upload launcher APK
         uses: actions/upload-artifact@v4
         with:
           name: tontos-launcher
           path: ${{ runner.temp }}/tontos-launcher.apk
           if-no-files-found: error
+
+  hygiene-and-scripts:
+    name: Repository Hygiene, Scripts & Secrets
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate JSON syntax
+        run: jq empty platform/manifests/pinned.json tests/ui/package.json
+
+      - name: Check Shell scripts syntax
+        run: bash -n scripts/*.sh
+
+      - name: Run Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   trivy-security-scan:
     name: Trivy Vulnerability & Misconfig Scan

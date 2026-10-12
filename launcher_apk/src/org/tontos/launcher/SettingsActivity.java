@@ -1736,18 +1736,11 @@ public class SettingsActivity extends Activity {
     }
 
     // ==========================================
-    // HELPER UI BUILDERS
+    // HELPER UI BUILDERS (Delegated to SettingsRowFactory)
     // ==========================================
     private void addBackHeader(String title, ThemeTokens tokens) {
         String langCode = preferences.getString(KEY_LANGUAGE, "en");
-        TextView backBtn = new TextView(this);
-        backBtn.setText(I18n.get(I18n.KEY_BACK_TO_SETTINGS, langCode));
-        backBtn.setTextColor(tokens.navAccent);
-        backBtn.setTextSize(14);
-        backBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        backBtn.setBackground(createTouchFeedbackDrawable(tokens));
-        backBtn.setPadding(0, 0, 0, 14);
-        backBtn.setOnClickListener(new View.OnClickListener() {
+        SettingsRowFactory.addBackHeader(this, contentContainer, tokens, langCode, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 currentSection = SettingsSection.MENU;
@@ -1756,110 +1749,37 @@ public class SettingsActivity extends Activity {
                 buildSettingsUI();
             }
         });
-        contentContainer.addView(backBtn);
     }
 
     private void addCategoryCard(String title, String subtitle, View.OnClickListener listener, ThemeTokens tokens) {
-        LinearLayout card = new LinearLayout(this);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(0, 16, 0, 16);
-        card.setClickable(true);
-        card.setFocusable(true);
-        card.setBackground(createTouchFeedbackDrawable(tokens));
-        card.setOnClickListener(listener);
-
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-
-        TextView t = new TextView(this);
-        t.setText(title);
-        t.setTextColor(tokens.textPrimary);
-        t.setTextSize(15);
-        t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        t.setLayoutParams(lp);
-        row.addView(t);
-
-        TextView arrow = new TextView(this);
-        arrow.setText("-->");
-        arrow.setTextColor(tokens.navAccent);
-        arrow.setTextSize(15);
-        arrow.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        row.addView(arrow);
-
-        card.addView(row);
-
-        TextView s = new TextView(this);
-        s.setText(subtitle);
-        s.setTextColor(tokens.textMuted);
-        s.setTextSize(12);
-        s.setTypeface(Typeface.MONOSPACE);
-        s.setPadding(0, 4, 0, 0);
-        card.addView(s);
-
-        contentContainer.addView(card);
+        SettingsRowFactory.addCategoryCard(this, contentContainer, title, subtitle, listener, tokens);
     }
 
     private void addSliderRow(final String label, int currentVal, final int min, final int max, final OnSliderChangedListener listener, ThemeTokens tokens) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, 12, 0, 12);
-
-        final TextView labelView = new TextView(this);
-        labelView.setText(label + ": " + currentVal + "%");
-        labelView.setTextColor(tokens.textPrimary);
-        labelView.setTextSize(14);
-        labelView.setTypeface(Typeface.MONOSPACE);
-        row.addView(labelView);
-
-        SeekBar seekBar = new SeekBar(this);
-        styleMinimalSeekBar(seekBar, tokens);
-        seekBar.setMax(max - min);
-        seekBar.setProgress(Math.max(0, currentVal - min));
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
-                int actualVal = min + progress;
-                labelView.setText(label + ": " + actualVal + "%");
-                if (listener != null) {
-                    listener.onProgress(actualVal, fromUser);
-                }
-            }
-            @Override public void onStartTrackingTouch(SeekBar sb) {}
-            @Override
-            public void onStopTrackingTouch(SeekBar sb) {
-                int actualVal = min + sb.getProgress();
-                if (listener != null) {
-                    listener.onStop(actualVal);
-                }
-            }
-        });
-        row.addView(seekBar);
-
-        contentContainer.addView(row);
+        SettingsRowFactory.addSliderRow(this, contentContainer, label, currentVal, min, max, listener, tokens);
     }
 
     private void addEqBandSliderRow(final String bandName, final int bandIndex, int currentDb, ThemeTokens tokens) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, 8, 0, 8);
+        row.setPadding(0, dpToPx(8), 0, dpToPx(8));
 
         final TextView labelView = new TextView(this);
-        labelView.setText(formatBandDbText(bandName, currentDb));
+        labelView.setText(SettingsRowFactory.formatBandDbText(bandName, currentDb));
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(13);
         labelView.setTypeface(Typeface.MONOSPACE);
         row.addView(labelView);
 
         SeekBar seekBar = new SeekBar(this);
-        styleMinimalSeekBar(seekBar, tokens);
+        SettingsRowFactory.styleMinimalSeekBar(this, seekBar, tokens);
         seekBar.setMax(20);
         seekBar.setProgress(currentDb + 10);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
                 int db = progress - 10;
-                labelView.setText(formatBandDbText(bandName, db));
+                labelView.setText(SettingsRowFactory.formatBandDbText(bandName, db));
                 if (fromUser) {
                     preferences.edit()
                         .putInt("pref_eq_band_" + bandIndex, db)
@@ -1875,264 +1795,32 @@ public class SettingsActivity extends Activity {
         contentContainer.addView(row);
     }
 
-    private void styleMinimalSeekBar(SeekBar seekBar, ThemeTokens tokens) {
-        float density = getResources().getDisplayMetrics().density;
-        int trackHeight = (int) (4 * density + 0.5f);
-        int thumbWidth = (int) (12 * density + 0.5f);
-        int thumbHeight = (int) (22 * density + 0.5f);
-
-        // 1. Background Track (Crisp monospace bar with theme border)
-        GradientDrawable bgTrack = new GradientDrawable();
-        bgTrack.setColor(tokens.isLight ? Color.parseColor("#E0E0E0") : Color.parseColor("#18181B"));
-        bgTrack.setStroke((int) (1 * density + 0.5f), tokens.border);
-        bgTrack.setCornerRadius((int) (2 * density));
-        bgTrack.setSize(-1, trackHeight);
-
-        // 2. Progress Track (Solid Accent Fill)
-        GradientDrawable progressShape = new GradientDrawable();
-        progressShape.setColor(tokens.accent);
-        progressShape.setCornerRadius((int) (2 * density));
-        progressShape.setSize(-1, trackHeight);
-        ClipDrawable progressClip = new ClipDrawable(progressShape, Gravity.START | Gravity.CENTER_VERTICAL, ClipDrawable.HORIZONTAL);
-
-        // 3. LayerDrawable combining background and clipped progress
-        Drawable[] layers = new Drawable[]{bgTrack, progressClip};
-        LayerDrawable trackLayer = new LayerDrawable(layers);
-        trackLayer.setId(0, android.R.id.background);
-        trackLayer.setId(1, android.R.id.progress);
-        seekBar.setProgressDrawable(trackLayer);
-
-        // 4. Sleek Minimal Monospace Thumb: Flat rectangular tab [ | ]
-        GradientDrawable thumbNormal = new GradientDrawable();
-        thumbNormal.setColor(tokens.accent);
-        thumbNormal.setStroke((int) (2 * density), tokens.bg);
-        thumbNormal.setCornerRadius((int) (2 * density));
-        thumbNormal.setSize(thumbWidth, thumbHeight);
-
-        GradientDrawable thumbPressed = new GradientDrawable();
-        thumbPressed.setColor(tokens.navAccent);
-        thumbPressed.setStroke((int) (2 * density), tokens.bg);
-        thumbPressed.setCornerRadius((int) (2 * density));
-        thumbPressed.setSize((int) (14 * density), (int) (26 * density));
-
-        StateListDrawable thumb = new StateListDrawable();
-        thumb.addState(new int[]{android.R.attr.state_pressed}, thumbPressed);
-        thumb.addState(new int[]{android.R.attr.state_focused}, thumbPressed);
-        thumb.addState(new int[]{}, thumbNormal);
-
-        seekBar.setThumb(thumb);
-        seekBar.setThumbOffset(thumbWidth / 2);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            seekBar.setSplitTrack(false);
-        }
-        seekBar.setPadding((int) (10 * density), (int) (10 * density), (int) (10 * density), (int) (10 * density));
-    }
-
-    private static String formatBandDbText(String bandName, int db) {
-        String sign = db > 0 ? "+" : "";
-        return bandName + ": " + sign + db + " dB";
-    }
-
     private void addToggleRow(String label, String actionText, boolean isPositive, View.OnClickListener listener, ThemeTokens tokens) {
-        float density = getResources().getDisplayMetrics().density;
-        int minTargetPx = (int) (MIN_TOUCH_TARGET_HEIGHT_DP * density + 0.5f);
-
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(0, 10, 0, 10);
-
-        TextView labelView = new TextView(this);
-        labelView.setText(label);
-        labelView.setTextColor(tokens.textPrimary);
-        labelView.setTextSize(14);
-        labelView.setTypeface(Typeface.MONOSPACE);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        labelView.setLayoutParams(lp);
-        row.addView(labelView);
-
-        TextView actionBtn = new TextView(this);
-        String btnText = (actionText != null && actionText.startsWith("[") && actionText.endsWith("]"))
-                ? actionText : "[ " + actionText + " ]";
-        actionBtn.setText(btnText);
-        int btnColor = isPositive ? tokens.navAccent : (tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555"));
-        actionBtn.setTextColor(btnColor);
-        actionBtn.setTextSize(13);
-        actionBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        actionBtn.setGravity(Gravity.CENTER);
-        actionBtn.setMinHeight(minTargetPx);
-        actionBtn.setMinimumHeight(minTargetPx);
-        actionBtn.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        actionBtn.setBackground(sld);
-
-        actionBtn.setClickable(true);
-        actionBtn.setFocusable(true);
-        actionBtn.setOnClickListener(listener);
-        row.addView(actionBtn);
-
-        contentContainer.addView(row);
+        SettingsRowFactory.addToggleRow(this, contentContainer, label, actionText, isPositive, listener, tokens);
     }
 
     private void addButtonRow(String label, String buttonText, View.OnClickListener listener, ThemeTokens tokens) {
-        addButtonRow(label, buttonText, tokens.navAccent, listener, tokens);
+        SettingsRowFactory.addButtonRow(this, contentContainer, label, buttonText, tokens.navAccent, listener, tokens);
     }
 
     private void addButtonRow(String label, String buttonText, int buttonTextColor, View.OnClickListener listener, ThemeTokens tokens) {
-        float density = getResources().getDisplayMetrics().density;
-        int minTargetPx = (int) (MIN_TOUCH_TARGET_HEIGHT_DP * density + 0.5f);
-
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(0, 10, 0, 10);
-
-        TextView labelView = new TextView(this);
-        labelView.setText(label);
-        labelView.setTextColor(tokens.textPrimary);
-        labelView.setTextSize(14);
-        labelView.setTypeface(Typeface.MONOSPACE);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        labelView.setLayoutParams(lp);
-        row.addView(labelView);
-
-        TextView actionBtn = new TextView(this);
-        actionBtn.setText("[ " + buttonText + " ]");
-        actionBtn.setTextColor(buttonTextColor != 0 ? buttonTextColor : tokens.navAccent);
-        actionBtn.setTextSize(13);
-        actionBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        actionBtn.setGravity(Gravity.CENTER);
-        actionBtn.setMinHeight(minTargetPx);
-        actionBtn.setMinimumHeight(minTargetPx);
-        actionBtn.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        actionBtn.setBackground(sld);
-
-        actionBtn.setClickable(true);
-        actionBtn.setFocusable(true);
-        actionBtn.setOnClickListener(listener);
-        row.addView(actionBtn);
-
-        contentContainer.addView(row);
+        SettingsRowFactory.addButtonRow(this, contentContainer, label, buttonText, buttonTextColor, listener, tokens);
     }
 
-
-
     private void addSelectorRow(String label, String valueText, View.OnClickListener listener, ThemeTokens tokens) {
-        addSelectorRow(label, valueText, true, listener, tokens);
+        SettingsRowFactory.addSelectorRow(this, contentContainer, label, valueText, true, listener, tokens);
     }
 
     private void addSelectorRow(String label, String valueText, boolean enabled, View.OnClickListener listener, ThemeTokens tokens) {
-        float density = getResources().getDisplayMetrics().density;
-        int minHeightPx = (int) (MIN_TOUCH_TARGET_HEIGHT_DP * density + 0.5f);
-        int padH = (int) (6 * density + 0.5f);
-        int padV = (int) (6 * density + 0.5f);
-
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, (int) (6 * density), 0, (int) (6 * density));
-
-        TextView labelView = new TextView(this);
-        labelView.setText(label);
-        labelView.setTextColor(tokens.textMuted);
-        labelView.setTextSize(13);
-        labelView.setTypeface(Typeface.MONOSPACE);
-        labelView.setSingleLine(true);
-        labelView.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        labelView.setPadding(0, 0, 0, (int) (4 * density));
-        row.addView(labelView);
-
-        String cleanVal = (valueText != null ? valueText.trim() : "");
-        while (cleanVal.startsWith("[") && cleanVal.endsWith("]")) {
-            cleanVal = cleanVal.substring(1, cleanVal.length() - 1).trim();
-        }
-
-        TextView triggerBtn = new TextView(this);
-        triggerBtn.setText("[ " + cleanVal + (enabled ? "  ▼ ]" : " ]"));
-        triggerBtn.setTextColor(enabled ? tokens.textPrimary : tokens.textMuted);
-        triggerBtn.setTextSize(13);
-        triggerBtn.setTypeface(Typeface.MONOSPACE, enabled ? Typeface.BOLD : Typeface.NORMAL);
-        triggerBtn.setSingleLine(true);
-        triggerBtn.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        triggerBtn.setGravity(Gravity.CENTER_VERTICAL);
-        triggerBtn.setMinHeight(minHeightPx);
-        triggerBtn.setMinimumHeight(minHeightPx);
-        triggerBtn.setPadding(padH, padV, padH, padV);
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        triggerBtn.setBackground(sld);
-
-        triggerBtn.setClickable(true);
-        triggerBtn.setFocusable(true);
-        triggerBtn.setOnClickListener(listener);
-
-        row.addView(triggerBtn);
-        contentContainer.addView(row);
+        SettingsRowFactory.addSelectorRow(this, contentContainer, label, valueText, enabled, listener, tokens);
     }
 
     private void addInfoRow(String key, String value, ThemeTokens tokens) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, 6, 0, 8);
-
-        TextView k = new TextView(this);
-        k.setText(key);
-        k.setTextColor(tokens.textMuted);
-        k.setTextSize(11);
-        k.setTypeface(Typeface.MONOSPACE);
-        row.addView(k);
-
-        TextView v = new TextView(this);
-        v.setText(value != null ? value : "Unknown");
-        v.setTextColor(tokens.textPrimary);
-        v.setTextSize(13);
-        v.setTypeface(Typeface.MONOSPACE);
-        v.setPadding(0, 2, 0, 4);
-        row.addView(v);
-
-        contentContainer.addView(row);
+        SettingsRowFactory.addInfoRow(this, contentContainer, key, value, tokens);
     }
 
     private Drawable createTouchFeedbackDrawable(ThemeTokens tokens) {
-        StateListDrawable states = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius(dpToPx(4));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-        states.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        states.addState(new int[]{android.R.attr.state_focused}, pressed);
-        states.addState(new int[]{}, normal);
-        return states;
+        return SettingsRowFactory.createTouchFeedbackDrawable(this, tokens);
     }
 
     private Drawable createTouchFeedbackDrawable() {
@@ -2140,47 +1828,11 @@ public class SettingsActivity extends Activity {
     }
 
     private TextView createReorderButton(String text, int textColor, View.OnClickListener listener, ThemeTokens tokens) {
-        float density = getResources().getDisplayMetrics().density;
-        int minHeightPx = (int) (MIN_TOUCH_TARGET_HEIGHT_DP * density);
-        int minWidthPx = (int) (MIN_TOUCH_TARGET_WIDTH_DP * density);
-        int marginPx = (int) (BUTTON_MARGIN_DP * density);
-
-        TextView btn = new TextView(this);
-        btn.setText(text);
-        btn.setTextColor(textColor != 0 ? textColor : tokens.navAccent);
-        btn.setTextSize(12);
-        btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        btn.setGravity(Gravity.CENTER);
-        btn.setMinHeight(minHeightPx);
-        btn.setMinWidth(minWidthPx);
-        btn.setClickable(true);
-        btn.setFocusable(true);
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        btn.setBackground(sld);
-
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        lp.setMargins(marginPx, 0, marginPx, 0);
-        btn.setLayoutParams(lp);
-
-        btn.setOnClickListener(listener);
-        return btn;
+        return SettingsRowFactory.createReorderButton(this, text, textColor, listener, tokens);
     }
 
     private TextView createReorderButton(String text, int textColor, View.OnClickListener listener) {
-        return createReorderButton(text, textColor, listener, currentTokens());
+        return SettingsRowFactory.createReorderButton(this, text, textColor, listener, currentTokens());
     }
 
     private void showConfirmDialog(String title, String message, String positiveLabel, final Runnable onConfirm, ThemeTokens tokens) {

@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "device": "google/cuttlefish_x86_64",
+  "source_revision": "15128c9e27cfa599c48d294babd39286ee8f1426",
+  "variant": "userdebug",
+  "artifacts": [
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/boot.img",
+      "sha256": "3d0d3e83a307602777689b31c8481c2c394ad95b31ad850d3cc8ab42653d3040",
+      "size_bytes": 67108864
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/init_boot.img",
+      "sha256": "bacd0ff8b91c4414148e547b78f50467333cb1cb0b614f914e9c42c4b958c011",
+      "size_bytes": 8388608
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/vendor_boot.img",
+      "sha256": "2e9b10ee6727bb173fbd59d31c031e84a65b88a33a288e644aad8fbc7c68a0fb",
+      "size_bytes": 67108864
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/super.img",
+      "sha256": "5123a3bdbf156040ec07f84674f22018c3f40886dfaf72496b5df72975616969",
+      "size_bytes": 8589934592
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/system.img",
+      "sha256": "dd724ce7fc673167723a23050fe1a4f25cc21f293e3c7bc43a42415a039f269c",
+      "size_bytes": 729563136
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/vendor.img",
+      "sha256": "c12953c9c5b368d838615189f68eb1ae942b7b9bec19e3ab2b2f8eb2c2ed77eb",
+      "size_bytes": 303558656
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/product.img",
+      "sha256": "2f00a05c9ab13f446766dd194e1eec1eca6bdf1c33f90c51ae401f8d63d1af0e",
+      "size_bytes": 250114048
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/system_ext.img",
+      "sha256": "941c93d6365657837cb886543ab6b39044d9358bfd699a25a8d2aca070594b24",
+      "size_bytes": 257359872
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/vbmeta.img",
+      "sha256": "636456ba0401ee081fead64450d1d9bdc2601e75621982812c67f27a7d1feb37",
+      "size_bytes": 65536
+    },
+    {
+      "path": "../../../../aosp/tontos/out/target/product/vsoc_x86_64_only/userdata.img",
+      "sha256": "173232f43bb9d9c033175f38949b2d9b3462c372876640ea091331150d54b433",
+      "size_bytes": 8589934592
+    }
+  ]
+}

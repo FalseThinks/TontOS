@@ -96,6 +96,11 @@ public final class AppNetworkFirewall {
     public static void setAppNetworkBlocked(Context context, String pkg, boolean blocked) {
         if (context == null || pkg == null) return;
 
+        if (!SafeCommandExecutor.isValidPackageName(pkg)) {
+            Log.w(TAG, "Refusing network policy operation for invalid package: " + pkg);
+            return;
+        }
+
         SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
         Set<String> current = prefs.getStringSet(PREF_BLOCKED_NETWORK_APPS, null);
         Set<String> updated = new HashSet<>(current != null ? current : Collections.<String>emptySet());
@@ -119,7 +124,7 @@ public final class AppNetworkFirewall {
             Log.w(TAG, "Could not resolve UID for pkg: " + pkg, t);
         }
 
-        if (uid >= 0) {
+        if (uid >= 10000 && uid <= 199999) {
             executeIptables(uid, blocked);
         }
     }
@@ -129,17 +134,8 @@ public final class AppNetworkFirewall {
      */
     private static void executeAppOps(String pkg, boolean blocked) {
         String mode = blocked ? "deny" : "allow";
-        try {
-            Runtime.getRuntime().exec(new String[]{"cmd", "appops", "set", pkg, "RUN_IN_BACKGROUND", mode});
-        } catch (Throwable t) {
-            Log.w(TAG, "Failed setting RUN_IN_BACKGROUND for " + pkg, t);
-        }
-
-        try {
-            Runtime.getRuntime().exec(new String[]{"cmd", "appops", "set", pkg, "ACCESS_RESTRICTED_SETTINGS", mode});
-        } catch (Throwable t) {
-            Log.w(TAG, "Failed setting ACCESS_RESTRICTED_SETTINGS for " + pkg, t);
-        }
+        SafeCommandExecutor.execute("cmd", "appops", "set", pkg, "RUN_IN_BACKGROUND", mode);
+        SafeCommandExecutor.execute("cmd", "appops", "set", pkg, "ACCESS_RESTRICTED_SETTINGS", mode);
     }
 
     /**
@@ -148,15 +144,9 @@ public final class AppNetworkFirewall {
      * instead of claiming the rule was applied.
      */
     private static void executeIptables(int uid, boolean blocked) {
-        if (uid < 0) return;
-        try {
-            Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", "exit 0"});
-            boolean rooted = p.waitFor() == 0;
-            if (!rooted) {
-                Log.i(TAG, "iptables skipped for UID " + uid + ": no root, AppOps-only (blocked=" + blocked + ")");
-                return;
-            }
-        } catch (Throwable t) {
+        if (uid < 10000 || uid > 199999) return;
+        boolean rooted = SafeCommandExecutor.execute("su", "-c", "exit 0");
+        if (!rooted) {
             Log.i(TAG, "iptables skipped for UID " + uid + ": no root, AppOps-only (blocked=" + blocked + ")");
             return;
         }
@@ -167,15 +157,11 @@ public final class AppNetworkFirewall {
             (blocked ? "iptables -I OUTPUT -m owner --uid-owner %d -j REJECT; ip6tables -I OUTPUT -m owner --uid-owner %d -j REJECT;" : ""),
             uid, uid, uid, uid);
 
-        try {
-            Process p = Runtime.getRuntime().exec(new String[]{"su", "-c", script});
-            if (p.waitFor() != 0) {
-                Log.w(TAG, "iptables rule failed for UID " + uid + " (blocked=" + blocked + ")");
-                return;
-            }
+        boolean ok = SafeCommandExecutor.execute("su", "-c", script);
+        if (ok) {
             Log.d(TAG, "Applied iptables rule for UID " + uid + " (blocked=" + blocked + ")");
-        } catch (Throwable t) {
-            Log.w(TAG, "iptables rule failed for UID " + uid + " (blocked=" + blocked + ")", t);
+        } else {
+            Log.w(TAG, "iptables rule failed for UID " + uid + " (blocked=" + blocked + ")");
         }
     }
 

@@ -1,36 +1,39 @@
 # TontOS
 
-TontOS is an experimental Linux host project that runs a separate Android
-userspace through Waydroid. It is **not currently an Android ROM, GSI, or
-bootable phone image**.
+TontOS is an open-source, minimalist operating system built for digital detox, focus, and battery longevity. It combines a clean, bloatware-free AOSP platform with a high-contrast monospace home environment and host-side Rust orchestration tools.
 
-The tested baseline is an isolated Arch Linux x86_64 VM with Waydroid (Android
-13) and a headless Weston/Pixman session. The launcher has booted, rendered,
-and loaded an external HTTP page in that guest. A Waydroid user-session
-stop/start recovered the launcher and preserved its selected theme. Privileged
-container recovery and VM-reboot recovery are still unverified. No physical
-device, ARM64 target, cellular radio, or charging-control support is claimed.
+Maintainer: FalseThinks <paproken@protonmail.com>
 
-## Build and tests
+## Architecture & Documentation
+
+TontOS is engineered across three clean layers:
+
+1. **AOSP Platform Tree (`~/aosp/tontos`):** Native Android 16 (BP4A) source tree compiled with Soong/Ninja. Defines the `tontos_cf_x86_64` target product in `vendor/tontos/`, stripped at build time of search widgets, app duplication, and vendor bloatware.
+   - Architectural Decision: [ADR-002: Native AOSP Custom Product Integration](docs/android-platform/DECISION-02-native-tontos-product.md)
+   - Platform Specs: [AOSP Platform Architecture](docs/android-platform/README.md)
+2. **TontOS Launcher (`vendor/tontos/apps/TontOSLauncher` / `launcher_apk/`):** First-party system launcher providing low-stimulus monospace typography, AMOLED themes, mindful launch friction, scheduled notification digests, and system-level privacy controls.
+   - Detailed Documentation: [Java Launcher Reference](docs/JAVA_LAUNCHER.md)
+3. **Rust Workspace (`crates/`):** 14 specialized Rust crates providing build planning, device detection (`tontosctl`), cryptographic artifact verification with streaming SHA-256, and minimal guest daemons.
+   - Detailed Documentation: [Rust Workspace Reference](docs/RUST_CRATES.md)
+
+## Build and Tests
 
 ```sh
+# Rust workspace verification
 cargo fmt --all -- --check
 cargo test --workspace
+
+# Standalone launcher APK compilation
 ./scripts/build_launcher_apk.sh
+
+# Complete AOSP ROM compilation via Alpine Docker container
+./scripts/docker_build_rom.sh
 ```
 
-The launcher build requires JDK 17 and Android SDK platform 34/build-tools
-36.0.0. Set `ANDROID_SDK_ROOT` or `ANDROID_HOME`; intermediates use a temporary
-directory, and `OUTPUT_APK` can override the default APK path.
+The launcher build requires JDK 17 and Android SDK platform 34 / build-tools 36.0.0. Set `ANDROID_SDK_ROOT` or `ANDROID_HOME`; intermediates use a temporary directory, and `OUTPUT_APK` can override the default APK path.
 
-The legacy-named `scripts/make_gsi_rootfs.sh` now creates a Linux rootfs
-staging archive at `target/linux-rootfs/tontos-linux-rootfs.tar.gz`; it does
-not build Android or produce a flashable image. `scripts/make_ota_package.sh`
-fails closed until a signed, target-compatible updater is implemented.
-Bootloader status is read-only, and the integrity scripts do not claim CTS,
-Play Integrity, or Verified Boot certification.
+The Alpine Docker image (`Dockerfile`) encapsulates all dependencies (OpenJDK 17, Python 3, repo, ccache, and glibc compatibility) and mounts the local AOSP source tree to build `tontos_cf_x86_64` in an isolated container.
 
-Battery charging limits and bypass charging are hardware-specific. TontOS
-reports these controls as unsupported unless the guest exposes a verified
-interface; battery savings and performance improvements require measurements
-on supported physical hardware.
+The legacy-named `scripts/make_gsi_rootfs.sh` creates a Linux rootfs staging archive at `target/linux-rootfs/tontos-linux-rootfs.tar.gz`; it does not build Android or produce a flashable image. `scripts/make_ota_package.sh` fails closed until a signed, target-compatible updater is implemented. Bootloader status is read-only, and the integrity scripts do not claim CTS, Play Integrity, or Verified Boot certification.
+
+Battery charging limits and bypass charging are hardware-specific. TontOS reports these controls as unsupported unless the guest exposes a verified interface; battery savings and performance improvements require measurements on supported physical hardware.

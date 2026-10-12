@@ -14,12 +14,13 @@ members = [
     "crates/tont-settings-app",
     "crates/tont-backup",
     "crates/tont-init",
+    "crates/tont-romctl",
 ]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["TontOS Team"]
+authors = ["FalseThinks <paproken@protonmail.com>"]
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]

@@ -1,13 +1,16 @@
 package org.tontos.launcher;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 
@@ -17,6 +20,7 @@ import android.view.Window;
  */
 public final class GrayscaleManager {
 
+    private static final String TAG = "GrayscaleManager";
     public static final String PREF_GRAYSCALE_ENABLED = "pref_grayscale_enabled";
     private static final String SECURE_KEY_DALTONIZER_ENABLED = "accessibility_display_daltonizer_enabled";
     private static final String SECURE_KEY_DALTONIZER = "accessibility_display_daltonizer";
@@ -39,7 +43,11 @@ public final class GrayscaleManager {
             if (en != -99 && mode != -99) {
                 return (en == 1 && mode == 0);
             }
-        } catch (Exception ignored) {}
+        } catch (SecurityException se) {
+            Log.d(TAG, "Access to secure daltonizer settings restricted: " + se.getMessage());
+        } catch (Throwable t) {
+            Log.d(TAG, "Failed reading daltonizer status", t);
+        }
         return false;
     }
 
@@ -49,28 +57,32 @@ public final class GrayscaleManager {
     public static boolean setGrayscaleEnabled(Context context, boolean enable) {
         if (context == null) return false;
 
-        // Persist state in SharedPreferences
+        // Persist desired state in SharedPreferences
         try {
             SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
             prefs.edit().putBoolean(PREF_GRAYSCALE_ENABLED, enable).apply();
-        } catch (Exception ignored) {}
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed writing grayscale preference", t);
+        }
 
         int daltonizerEnabled = enable ? 1 : 0;
         int daltonizer = enable ? 0 : -1;
 
-        // Attempt 1: Direct ContentResolver Settings.Secure write
+        // Attempt 1: Direct ContentResolver Settings.Secure write (requires platform signature or WRITE_SECURE_SETTINGS)
         try {
             ContentResolver cr = context.getContentResolver();
             boolean r1 = Settings.Secure.putInt(cr, SECURE_KEY_DALTONIZER_ENABLED, daltonizerEnabled);
             boolean r2 = Settings.Secure.putInt(cr, SECURE_KEY_DALTONIZER, daltonizer);
             if (r1 && r2) {
+                Log.d(TAG, "Successfully updated AOSP daltonizer secure settings (enable=" + enable + ")");
                 return true;
             }
-        } catch (Exception ignored) {}
+        } catch (SecurityException se) {
+            Log.i(TAG, "WRITE_SECURE_SETTINGS not held; system daltonizer skipped, applying window layer desaturation.");
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed updating daltonizer secure settings", t);
+        }
 
-        // No shell/root fallback: unprivileged exec would silently fail and mislead the UI.
-        // System grayscale requires WRITE_SECURE_SETTINGS (ROM-signed). Window-level
-        // desaturation via applyGrayscaleToWindow() still applies locally.
         return false;
     }
 
@@ -100,6 +112,8 @@ public final class GrayscaleManager {
             } else {
                 decor.setLayerType(View.LAYER_TYPE_NONE, null);
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed applying hardware layer desaturation to window", t);
+        }
     }
 }
