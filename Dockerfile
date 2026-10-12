@@ -89,7 +89,9 @@ ENV PATH=/usr/lib/ccache/bin:/usr/local/bin:/usr/bin:/bin:$PATH
 ENV USE_CCACHE=1
 ENV CCACHE_DIR=/home/tontos/.ccache
 ENV CCACHE_EXEC=/usr/bin/ccache
-ENV SOONG_JOBS=1
+ENV CCACHE_MAXSIZE=50G
+ENV CCACHE_SLOPPINESS=time_macros,include_file_mtime,file_macro
+ENV NINJA_STATUS="[%p %f/%t %e] "
 
 USER tontos
 WORKDIR /home/tontos/aosp

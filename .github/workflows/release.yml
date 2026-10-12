@@ -1,4 +1,4 @@
-name: Automatic Release on Main
+name: Release Workflow
 
 on:
   push:
