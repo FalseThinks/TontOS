@@ -11,6 +11,22 @@ on:
   workflow_dispatch:
 
 jobs:
+  pr-target-guard:
+    name: Validate PR Target Branch
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Enforce PR branch policy
+        run: |
+          echo "Target branch: ${{ github.base_ref }}"
+          echo "Source branch: ${{ github.head_ref }}"
+          echo "Actor: ${{ github.actor }}"
+          if [ "${{ github.base_ref }}" = "main" ] && [ "${{ github.head_ref }}" != "development" ] && [ "${{ github.actor }}" != "FalseThinks" ]; then
+            echo "::error title=Forbidden PR Target::Direct Pull Requests targeting 'main' are forbidden! You must target the 'development' branch."
+            exit 1
+          fi
+          echo "PR target branch policy verified successfully."
+
   rust-quality:
     name: Rust Format, Lint & Test
     runs-on: ubuntu-latest
