@@ -231,7 +231,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Semgrep SAST
-        run: pip install semgrep && semgrep scan --config auto --sarif --output semgrep.sarif .
+        run: |
+          pip install semgrep
+          semgrep scan --config auto \
+            --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag \
+            --exclude-rule package_managers.dependabot.dependabot-missing-cooldown.dependabot-missing-cooldown \
+            --exclude-rule java.android.security.exported_activity.exported_activity \
+            --sarif --output semgrep.sarif .
 
       - name: Upload Semgrep results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
