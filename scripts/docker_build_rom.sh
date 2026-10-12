@@ -36,9 +36,14 @@ fi
 
 # 2. Run compilation inside container
 echo "Launching compilation container..."
+TTY_FLAGS=()
+if [[ -t 0 && -t 1 ]]; then
+    TTY_FLAGS=("-it")
+fi
+
 if [[ $# -eq 0 ]]; then
-    # Interactive shell by default
-    docker run --rm -it \
+    # Interactive shell by default when run in terminal
+    docker run --rm "${TTY_FLAGS[@]}" \
         --net=host \
         -v "$AOSP_DIR:/home/tontos/aosp" \
         -v "$CCACHE_DIR:/home/tontos/.ccache" \
@@ -47,7 +52,7 @@ if [[ $# -eq 0 ]]; then
         /bin/bash -c "source build/envsetup.sh && lunch tontos_cf_x86_64-bp4a-userdebug && SOONG_JOBS=1 m -j1 droid"
 else
     # Execute user arguments
-    docker run --rm -it \
+    docker run --rm "${TTY_FLAGS[@]}" \
         --net=host \
         -v "$AOSP_DIR:/home/tontos/aosp" \
         -v "$CCACHE_DIR:/home/tontos/.ccache" \
