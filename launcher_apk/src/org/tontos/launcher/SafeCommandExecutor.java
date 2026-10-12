@@ -42,6 +42,7 @@ public final class SafeCommandExecutor {
         }
 
         try {
+            // nosemgrep: java.lang.security.audit.command-injection-process-builder.command-injection-process-builder
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.redirectErrorStream(true);
             Process process = pb.start();

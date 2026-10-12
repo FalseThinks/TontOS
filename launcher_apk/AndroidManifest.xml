@@ -68,7 +68,7 @@
 
         <activity
             android:name=".SetupWizardActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="TontOS Setup Wizard"
             android:screenOrientation="portrait" />
     </application>

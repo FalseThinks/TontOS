@@ -10,6 +10,9 @@ on:
     - cron: '0 5 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   pr-target-guard:
     name: Validate PR Target Branch
@@ -17,11 +20,15 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Enforce PR branch policy
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          ACTOR: ${{ github.actor }}
         run: |
-          echo "Target branch: ${{ github.base_ref }}"
-          echo "Source branch: ${{ github.head_ref }}"
-          echo "Actor: ${{ github.actor }}"
-          if [ "${{ github.base_ref }}" = "main" ] && [ "${{ github.head_ref }}" != "development" ] && [ "${{ github.actor }}" != "FalseThinks" ]; then
+          echo "Target branch: $BASE_REF"
+          echo "Source branch: $HEAD_REF"
+          echo "Actor: $ACTOR"
+          if [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" != "development" ] && [ "$ACTOR" != "FalseThinks" ]; then
             echo "::error title=Forbidden PR Target::Direct Pull Requests targeting 'main' are forbidden! You must target the 'development' branch."
             exit 1
           fi
