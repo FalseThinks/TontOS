@@ -1,4 +1,4 @@
-name: TontOS CI, Tests & Security
+name: Main Workflow
 
 on:
   push:
