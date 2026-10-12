@@ -2,8 +2,8 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 use tont_romctl::{
-    detect_devices, ensure_source_tree, inspect_device, plan_build, verify_manifest, RomctlError,
-    SystemRunner,
+    RomctlError, SystemRunner, detect_devices, ensure_source_tree, inspect_device, plan_build,
+    verify_manifest,
 };
 
 fn usage() -> &'static str {

@@ -189,19 +189,27 @@ mod tests {
         let mut settings = TontSettings::default();
 
         // Valid audio extensions
-        assert!(settings
-            .set_custom_ringtone("/home/user/Music/my_ring.ogg".to_string())
-            .is_ok());
-        assert!(settings
-            .set_custom_ringtone("/home/user/Music/custom.mp3".to_string())
-            .is_ok());
+        assert!(
+            settings
+                .set_custom_ringtone("/home/user/Music/my_ring.ogg".to_string())
+                .is_ok()
+        );
+        assert!(
+            settings
+                .set_custom_ringtone("/home/user/Music/custom.mp3".to_string())
+                .is_ok()
+        );
 
         // Invalid non-audio file
-        assert!(settings
-            .set_custom_ringtone("/etc/passwd".to_string())
-            .is_err());
-        assert!(settings
-            .set_custom_ringtone("malicious.sh".to_string())
-            .is_err());
+        assert!(
+            settings
+                .set_custom_ringtone("/etc/passwd".to_string())
+                .is_err()
+        );
+        assert!(
+            settings
+                .set_custom_ringtone("malicious.sh".to_string())
+                .is_err()
+        );
     }
 }

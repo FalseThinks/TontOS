@@ -56,12 +56,12 @@ impl DirectScanoutEvaluator {
         }
 
         // Direct scanout candidate: fullscreen surface with no overlapping layers/status bars
-        if !has_active_overlay {
-            if let (Some(id), Some((w, h))) = (focused_surface_id, focused_surface_size) {
-                if w == self.display_width && h == self.display_height {
-                    return ScanoutDecision::DirectScanout { surface_id: id };
-                }
-            }
+        if !has_active_overlay
+            && let (Some(id), Some((w, h))) = (focused_surface_id, focused_surface_size)
+            && w == self.display_width
+            && h == self.display_height
+        {
+            return ScanoutDecision::DirectScanout { surface_id: id };
         }
 
         ScanoutDecision::CompositeDamage {

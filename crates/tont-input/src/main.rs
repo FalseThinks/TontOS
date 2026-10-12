@@ -28,7 +28,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if listener.is_some() {
         tracing::info!("Volume IPC server listening on {}", socket_path);
     } else {
-        tracing::warn!("Volume IPC socket unavailable at {} (SELinux/restricted). Hardware evdev monitoring active.", socket_path);
+        tracing::warn!(
+            "Volume IPC socket unavailable at {} (SELinux/restricted). Hardware evdev monitoring active.",
+            socket_path
+        );
     }
 
     // Scan /dev/input for key event sources
@@ -36,10 +39,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(entries) = std::fs::read_dir("/dev/input") {
         for entry in entries.flatten() {
             let path = entry.path();
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                if name.starts_with("event") {
-                    input_nodes.push(path);
-                }
+            if let Some(name) = path.file_name().and_then(|n| n.to_str())
+                && name.starts_with("event")
+            {
+                input_nodes.push(path);
             }
         }
     }
@@ -59,47 +62,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tracing::info!("Monitoring evdev node {:?}", node_path);
                 let mut buf = [0u8; 24];
                 while file.read_exact(&mut buf).await.is_ok() {
-                    if let Some(raw) = RawInputEvent::from_bytes(&buf) {
-                        if let Some((key, is_down, ts)) = raw.to_hardware_event() {
-                            let mut p = proc.lock().await;
-                            let action = if is_down {
-                                p.handle_key_down(key, ts);
-                                None
-                            } else {
-                                p.handle_key_up(key, ts)
-                            };
+                    if let Some(raw) = RawInputEvent::from_bytes(&buf)
+                        && let Some((key, is_down, ts)) = raw.to_hardware_event()
+                    {
+                        let mut p = proc.lock().await;
+                        let action = if is_down {
+                            p.handle_key_down(key, ts);
+                            None
+                        } else {
+                            p.handle_key_up(key, ts)
+                        };
 
-                            if let Some(action) = action {
-                                match action {
-                                    KeyAction::VolumeUp => {
-                                        let mut m = mix.lock().await;
-                                        let state = m.volume_up();
-                                        tracing::info!(
-                                            "Hardware VolumeUp -> {}%",
-                                            state.level_percent
-                                        );
-                                    }
-                                    KeyAction::VolumeDown => {
-                                        let mut m = mix.lock().await;
-                                        let state = m.volume_down();
-                                        tracing::info!(
-                                            "Hardware VolumeDown -> {}%",
-                                            state.level_percent
-                                        );
-                                    }
-                                    KeyAction::ToggleDisplay => {
-                                        tracing::info!("Hardware Power Tap -> Toggle Display");
-                                    }
-                                    KeyAction::OpenPowerMenu => {
-                                        tracing::warn!(
-                                            "Hardware Power Long-Press -> Open Power Menu"
-                                        );
-                                    }
-                                    KeyAction::EmergencySos => {
-                                        tracing::error!(
-                                            "Hardware 5-Tap -> EMERGENCY SOS TRIGGERED!"
-                                        );
-                                    }
+                        if let Some(action) = action {
+                            match action {
+                                KeyAction::VolumeUp => {
+                                    let mut m = mix.lock().await;
+                                    let state = m.volume_up();
+                                    tracing::info!("Hardware VolumeUp -> {}%", state.level_percent);
+                                }
+                                KeyAction::VolumeDown => {
+                                    let mut m = mix.lock().await;
+                                    let state = m.volume_down();
+                                    tracing::info!(
+                                        "Hardware VolumeDown -> {}%",
+                                        state.level_percent
+                                    );
+                                }
+                                KeyAction::ToggleDisplay => {
+                                    tracing::info!("Hardware Power Tap -> Toggle Display");
+                                }
+                                KeyAction::OpenPowerMenu => {
+                                    tracing::warn!("Hardware Power Long-Press -> Open Power Menu");
+                                }
+                                KeyAction::EmergencySos => {
+                                    tracing::error!("Hardware 5-Tap -> EMERGENCY SOS TRIGGERED!");
                                 }
                             }
                         }

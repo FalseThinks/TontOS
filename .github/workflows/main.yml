@@ -2,9 +2,9 @@ name: TontOS CI, Tests & Security
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, development]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, development]
   schedule:
     # Daily verification at 05:00 UTC (07:00 AM CEST / Madrid time)
     - cron: '0 5 * * *'

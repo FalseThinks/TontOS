@@ -75,7 +75,9 @@ fn main() {
         } else if Path::new(&format!("/usr{}", path)).exists() {
             format!("/usr{}", path)
         } else {
-            tracing::warn!("  [!] Could not start {name}: {path} not found at /bin or /usr/bin, failing closed (no PATH fallback)");
+            tracing::warn!(
+                "  [!] Could not start {name}: {path} not found at /bin or /usr/bin, failing closed (no PATH fallback)"
+            );
             continue;
         };
 

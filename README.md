@@ -37,3 +37,21 @@ The Alpine Docker image (`Dockerfile`) encapsulates all dependencies (OpenJDK 17
 The legacy-named `scripts/make_gsi_rootfs.sh` creates a Linux rootfs staging archive at `target/linux-rootfs/tontos-linux-rootfs.tar.gz`; it does not build Android or produce a flashable image. `scripts/make_ota_package.sh` fails closed until a signed, target-compatible updater is implemented. Bootloader status is read-only, and the integrity scripts do not claim CTS, Play Integrity, or Verified Boot certification.
 
 Battery charging limits and bypass charging are hardware-specific. TontOS reports these controls as unsupported unless the guest exposes a verified interface; battery savings and performance improvements require measurements on supported physical hardware.
+
+## Open Source, Forking & Collaboration
+
+TontOS is 100% free and open-source software. Community forks, custom device trees, ports, and contributions are actively encouraged.
+
+- **Forks & Derivative ROMs:** Anyone may fork this project and build custom versions.
+- **Attribution Requirement:** Per Apache License 2.0 (Section 4) and MIT terms, any fork or redistribution must retain the original copyright notice and attribute the original author:
+  > **"Based on TontOS by FalseThinks <paproken@protonmail.com>"**
+- **Contribution Guide:** See [CONTRIBUTING.md](CONTRIBUTING.md) for environment setup, code style, and Pull Request guidelines.
+
+## License
+
+TontOS is dual-licensed under:
+- **Apache License, Version 2.0** ([LICENSE](LICENSE))
+- **MIT License** ([LICENSE-MIT](LICENSE-MIT))
+
+See [NOTICE](NOTICE) for project attribution and copyright details.
+Copyright © 2026 FalseThinks <paproken@protonmail.com>.

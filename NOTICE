@@ -1,0 +1,26 @@
+TontOS Minimalist Mobile Operating System
+Copyright 2026 FalseThinks <paproken@protonmail.com>
+
+This product includes software originally designed and developed by
+FalseThinks (<paproken@protonmail.com>).
+
+================================================================================
+ATTRIBUTION & FORK REQUIREMENTS
+================================================================================
+
+Under Section 4(c) and 4(d) of the Apache License 2.0 and the terms of the
+MIT License:
+
+1. Attribution Requirement:
+   Any fork, redistribution, or derivative work of TontOS (whether in source,
+   object, binary, firmware, or ROM distribution format) must retain this NOTICE
+   file and visibly attribute the original project and author:
+   "Based on TontOS by FalseThinks <paproken@protonmail.com>".
+
+2. Documentation & UI Credit:
+   User-facing releases, ROM descriptions, README files, and modified launcher
+   distributions must preserve credit to FalseThinks as the original creator.
+
+3. Preservation of Copyright Notices:
+   All copyright notices in individual source headers across the Rust workspace
+   and Android Java components must be preserved intact.

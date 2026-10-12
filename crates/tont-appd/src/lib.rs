@@ -43,23 +43,23 @@ fn validated_cgroup_file(
         )));
     }
     let base = Path::new(CGROUP_BASE);
-    if let Ok(canonical_base) = base.canonicalize() {
-        if !canonical_dir.starts_with(&canonical_base) {
-            // cargo nextest / `CARGO_MANIFEST_DIR=.../crates/tont-appd` uses
-            // `target/tont-appd-tests` under every runner's workspace root;
-            // allow that canonicalized path during tests without leaking to prod.
-            let is_test_workspace_tmp = canonical_dir
-                .to_string_lossy()
-                .contains("target/tont-appd-tests");
-            if !(is_test_workspace_tmp
-                || std::env::var("TONTOS_ALLOW_TMP_CGROUP").as_deref() == Ok("1"))
-            {
-                return Err(AppdError::Parse(format!(
-                    "cgroup path {} escapes base {}",
-                    canonical_dir.display(),
-                    canonical_base.display()
-                )));
-            }
+    if let Ok(canonical_base) = base.canonicalize()
+        && !canonical_dir.starts_with(&canonical_base)
+    {
+        // cargo nextest / `CARGO_MANIFEST_DIR=.../crates/tont-appd` uses
+        // `target/tont-appd-tests` under every runner's workspace root;
+        // allow that canonicalized path during tests without leaking to prod.
+        let is_test_workspace_tmp = canonical_dir
+            .to_string_lossy()
+            .contains("target/tont-appd-tests");
+        if !(is_test_workspace_tmp
+            || std::env::var("TONTOS_ALLOW_TMP_CGROUP").as_deref() == Ok("1"))
+        {
+            return Err(AppdError::Parse(format!(
+                "cgroup path {} escapes base {}",
+                canonical_dir.display(),
+                canonical_base.display()
+            )));
         }
     }
     Ok(canonical_dir.join(file_name))

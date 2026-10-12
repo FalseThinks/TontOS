@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "tont-appd"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "rustix",
  "thiserror",
@@ -441,7 +441,7 @@ dependencies = [
 
 [[package]]
 name = "tont-backup"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -458,7 +458,7 @@ dependencies = [
 
 [[package]]
 name = "tont-common"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -467,7 +467,7 @@ dependencies = [
 
 [[package]]
 name = "tont-compositor"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "thiserror",
  "tokio",
@@ -478,7 +478,7 @@ dependencies = [
 
 [[package]]
 name = "tont-init"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "libc",
  "rustix",
@@ -490,7 +490,7 @@ dependencies = [
 
 [[package]]
 name = "tont-input"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -503,7 +503,7 @@ dependencies = [
 
 [[package]]
 name = "tont-powerd"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "rustix",
  "thiserror",
@@ -515,7 +515,7 @@ dependencies = [
 
 [[package]]
 name = "tont-romctl"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -525,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "tont-sensors"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "thiserror",
@@ -537,7 +537,7 @@ dependencies = [
 
 [[package]]
 name = "tont-settings"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -550,7 +550,7 @@ dependencies = [
 
 [[package]]
 name = "tont-settings-app"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "thiserror",
@@ -563,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "tont-shell"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "thiserror",
@@ -575,7 +575,7 @@ dependencies = [
 
 [[package]]
 name = "tont-syncd"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "rustix",
  "thiserror",
@@ -587,7 +587,7 @@ dependencies = [
 
 [[package]]
 name = "tont-telephony"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
