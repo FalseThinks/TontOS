@@ -37,7 +37,7 @@ fi
 # 2. Run compilation inside container
 echo "Launching compilation container..."
 TTY_FLAGS=()
-if [[ -t 0 && -t 1 ]]; then
+if [[ -t 0 && -t 1 && -z "${CI:-}" && -z "${GITHUB_ACTIONS:-}" ]]; then
     TTY_FLAGS=("-it")
 fi
 
