@@ -14,7 +14,7 @@
 **Intentional Mobile Computing · Bloat-Free AOSP · Low-Dopamine Monospace Architecture**
 
 [![Main Workflow](https://img.shields.io/github/actions/workflow/status/FalseThinks/TontOS/main.yml?branch=main&style=flat-square&label=Main%20Workflow&logo=githubactions&logoColor=white)](https://github.com/FalseThinks/TontOS/actions/workflows/main.yml)
-[![Release Workflow](https://img.shields.io/badge/release-v0.0.1--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
+[![Release Workflow](https://img.shields.io/badge/release-v0.0.2--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
 [![Rust](https://img.shields.io/badge/rust-1.99.0%20(2024%20Edition)-DEA584.svg?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Android](https://img.shields.io/badge/AOSP-16%20(BP4A)%20|%20API%2034-3DDC84.svg?style=flat-square&logo=android&logoColor=white)](https://source.android.com/)
 [![Tests](https://img.shields.io/badge/tests-53%20passed%20(100%25)-10B981.svg?style=flat-square)](crates/)
