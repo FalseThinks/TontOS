@@ -2,6 +2,7 @@
 <!-- Provide a clear, concise summary of the changes in this Pull Request. -->
 
 ## Changes Checklist
+- [ ] PR targets the `development` branch (not `main`)
 - [ ] Code follows project formatting: `cargo fmt --all -- --check`
 - [ ] Clippy passes with zero warnings: `cargo clippy --workspace --all-targets -- -D warnings`
 - [ ] All workspace tests pass: `cargo test --workspace`

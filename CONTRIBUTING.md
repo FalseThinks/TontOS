@@ -70,13 +70,14 @@ jq empty platform/manifests/pinned.json tests/ui/package.json
 
 ## 5. Submitting a Pull Request
 
-1. Create a feature branch from `main`:
+1. Create a feature branch branched from `development` (never from `main`):
    ```bash
-   git checkout -b feat/my-improvement
+   git checkout -b feat/my-improvement upstream/development
    ```
 2. Make atomic, well-tested commits following Conventional Commits (`feat: ...`, `fix: ...`, `docs: ...`).
-3. Push to your fork and open a Pull Request targeting `main`.
-4. Ensure all CI quality gates pass.
-5. Every Pull Request requires review and approval from `@FalseThinks` before merging.
+3. Push to your fork and open a Pull Request targeting the **`development`** branch.
+4. Ensure all CI quality gates pass on GitHub Actions.
+5. Every Pull Request requires review and explicit approval from `@FalseThinks` before merging into `development`.
+6. Merges from `development` into `main` are restricted exclusively to `@FalseThinks`. Pushing to `main` automatically triggers official version tagging and GitHub Release generation.
 
 Thank you for helping build a calmer, more intentional mobile operating system!
