@@ -6,13 +6,14 @@ on:
   pull_request:
     branches: [main, master]
   schedule:
-    - cron: '30 4 * * 0'
+    # Daily verification at 05:00 UTC (07:00 AM CEST / Madrid time)
+    - cron: '0 5 * * *'
+  workflow_dispatch:
 
 jobs:
   rust-quality:
     name: Rust Format, Lint & Test
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -45,7 +46,6 @@ jobs:
   rust-security:
     name: Rust Dependency Security Audit
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -70,7 +70,6 @@ jobs:
   android-build:
     name: Android Launcher Verification
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -113,7 +112,6 @@ jobs:
   hygiene-and-scripts:
     name: Repository Hygiene, Scripts & Secrets
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -126,13 +124,14 @@ jobs:
 
       - name: Run Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   trivy-security-scan:
     name: Trivy Vulnerability & Misconfig Scan
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
     permissions:
       actions: read
       contents: read
@@ -164,7 +163,6 @@ jobs:
   semgrep-sast-scan:
     name: Semgrep SAST Code Quality & Security
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
     permissions:
       actions: read
       contents: read
@@ -190,7 +188,6 @@ jobs:
   playwright-ui:
     name: Playwright UI Visual & DOM Tests
     runs-on: ubuntu-latest
-    if: github.event_name != 'schedule'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

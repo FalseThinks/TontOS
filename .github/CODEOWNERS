@@ -1,5 +1,3 @@
-# Require review from the repository owner for every pull request.
+# Global Code Owners for TontOS
+# Every change across the repository requires approval from FalseThinks
 * @FalseThinks
-
-# Keep changes to this ownership policy under the same review requirement.
-/.github/CODEOWNERS @FalseThinks
