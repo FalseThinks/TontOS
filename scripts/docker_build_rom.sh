@@ -26,7 +26,7 @@ else
     SUGGESTED_JOBS=$RAM_JOBS
 fi
 BUILD_JOBS="${BUILD_JOBS:-$SUGGESTED_JOBS}"
-BUILD_TARGET="${BUILD_TARGET:-bootimage systemimage vbmetaimage}"
+BUILD_TARGET="${BUILD_TARGET:-droid}"
 
 echo "=== TontOS Docker ROM Build Helper (Parallel High-Performance) ==="
 echo "Dockerfile:    $DOCKERFILE"
@@ -51,6 +51,12 @@ if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
     docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" "$ROOT_DIR"
 fi
 
+# Ensure CCache directory is writable by container user (UID 1000)
+if [[ ! -w "$CCACHE_DIR" ]]; then
+    echo "Configuring permissions on $CCACHE_DIR..."
+    docker run --rm --user 0 -v "$CCACHE_DIR:/target" "$IMAGE_NAME" chown -R 1000:1000 /target
+fi
+
 # 2. Run compilation inside container
 echo "Launching compilation container with $BUILD_JOBS parallel threads..."
 TTY_FLAGS=()
@@ -61,22 +67,30 @@ fi
 if [[ $# -eq 0 ]]; then
     # Interactive compilation by default using multi-threaded Ninja & ccache
     docker run --rm "${TTY_FLAGS[@]}" \
+        --privileged \
+        --cpus=4 \
         --net=host \
-        --shm-size=2g \
+        --shm-size=4g \
         -e BUILD_JOBS="$BUILD_JOBS" \
+        -e GOMAXPROCS=2 \
+        -e MALLOC_ARENA_MAX=2 \
         -e USE_CCACHE=1 \
         -e CCACHE_DIR=/home/tontos/.ccache \
         -v "$AOSP_DIR:/home/tontos/aosp" \
         -v "$CCACHE_DIR:/home/tontos/.ccache" \
         -w "/home/tontos/aosp" \
         "$IMAGE_NAME" \
-        /bin/bash -c "ccache -M 50G && source build/envsetup.sh && lunch tontos_cf_x86_64-bp4a-userdebug && m -j$BUILD_JOBS $BUILD_TARGET"
+        /bin/bash -c "export GOMAXPROCS=2 && export MALLOC_ARENA_MAX=2 && ccache -M 50G && source build/envsetup.sh && lunch tontos_cf_x86_64-trunk_staging-userdebug && m -j$BUILD_JOBS $BUILD_TARGET"
 else
     # Execute user arguments
     docker run --rm "${TTY_FLAGS[@]}" \
+        --privileged \
+        --cpus=4 \
         --net=host \
-        --shm-size=2g \
+        --shm-size=4g \
         -e BUILD_JOBS="$BUILD_JOBS" \
+        -e GOMAXPROCS=2 \
+        -e MALLOC_ARENA_MAX=2 \
         -e USE_CCACHE=1 \
         -e CCACHE_DIR=/home/tontos/.ccache \
         -v "$AOSP_DIR:/home/tontos/aosp" \

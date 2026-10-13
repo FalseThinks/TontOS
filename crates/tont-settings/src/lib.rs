@@ -108,12 +108,41 @@ impl Default for DisplayConfig {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LockScreenConfig {
+    pub enabled: bool,
+    pub clock_style: String,
+    pub theme_override: String,
+    pub show_detox: bool,
+    pub show_battery: bool,
+    pub owner_info: String,
+    pub shortcut_left: String,
+    pub shortcut_right: String,
+}
+
+impl Default for LockScreenConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            clock_style: "THEME_DEFAULT".to_string(),
+            theme_override: "MATCH_ACTIVE".to_string(),
+            show_detox: true,
+            show_battery: true,
+            owner_info: String::new(),
+            shortcut_left: "TORCH".to_string(),
+            shortcut_right: "CAMERA".to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TontSettings {
     pub connectivity: ConnectivityConfig,
     pub default_apps: DefaultAppsConfig,
     pub sound: SoundConfig,
     pub display: DisplayConfig,
+    #[serde(default)]
+    pub lock_screen: LockScreenConfig,
 }
 
 const EMBEDDED_DEFAULT_JSON: &str = include_str!("default_settings.json");
@@ -211,5 +240,18 @@ mod tests {
                 .set_custom_ringtone("malicious.sh".to_string())
                 .is_err()
         );
+    }
+
+    #[test]
+    fn test_lock_screen_config_default_and_embedded() {
+        let default_lock = LockScreenConfig::default();
+        assert!(default_lock.enabled);
+        assert_eq!(default_lock.clock_style, "THEME_DEFAULT");
+        assert_eq!(default_lock.shortcut_left, "TORCH");
+        assert_eq!(default_lock.shortcut_right, "CAMERA");
+
+        let embedded = TontSettings::embedded_default();
+        assert!(embedded.lock_screen.enabled);
+        assert_eq!(embedded.lock_screen.theme_override, "MATCH_ACTIVE");
     }
 }

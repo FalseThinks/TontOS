@@ -29,5 +29,15 @@
     "font_scale": 1.0,
     "screen_time_budget_mins": 120,
     "theme": "amoled_black"
+  },
+  "lock_screen": {
+    "enabled": true,
+    "clock_style": "THEME_DEFAULT",
+    "theme_override": "MATCH_ACTIVE",
+    "show_detox": true,
+    "show_battery": true,
+    "owner_info": "",
+    "shortcut_left": "TORCH",
+    "shortcut_right": "CAMERA"
   }
 }

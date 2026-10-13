@@ -1,0 +1,10 @@
+android_app_import {
+    name: "TontOSLauncher",
+    apk: "TontOSLauncher.apk",
+    certificate: "platform",
+    privileged: true,
+    system_ext_specific: true,
+    dex_preopt: {
+        enabled: false,
+    },
+}

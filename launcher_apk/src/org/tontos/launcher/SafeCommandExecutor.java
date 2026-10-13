@@ -89,4 +89,24 @@ public final class SafeCommandExecutor {
             return false;
         }
     }
+
+    /**
+     * Executes a command directly, falling back to su privilege escalation if initial execution fails.
+     */
+    public static boolean executePrivileged(String... command) {
+        if (command == null || command.length == 0) return false;
+        if (execute(command)) {
+            return true;
+        }
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < command.length; i++) {
+                if (i > 0) sb.append(' ');
+                sb.append(command[i]);
+            }
+            return execute("su", "-c", sb.toString());
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 }

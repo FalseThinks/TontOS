@@ -225,7 +225,6 @@ public final class UltraBatterySaverManager {
     }
 
     public static ToggleState getTorchState(Context context) {
-        if (!hasPermission(context, Manifest.permission.CAMERA)) return ToggleState.UNKNOWN;
         synchronized (UltraBatterySaverManager.class) {
             CameraManager manager = getTorchCameraManager(context);
             return manager == null || torchCameraId == null ? ToggleState.UNKNOWN : torchState;
@@ -233,10 +232,6 @@ public final class UltraBatterySaverManager {
     }
 
     public static ActionResult toggleTorch(Context context) {
-        if (!hasPermission(context, Manifest.permission.CAMERA)) {
-            requestPermission(context, Manifest.permission.CAMERA, CAMERA_PERMISSION_REQUEST);
-            return ActionResult.PERMISSION_REQUIRED;
-        }
         synchronized (UltraBatterySaverManager.class) {
             CameraManager manager = getTorchCameraManager(context);
             if (manager == null || torchCameraId == null) return ActionResult.UNSUPPORTED;
@@ -245,7 +240,13 @@ public final class UltraBatterySaverManager {
                 manager.setTorchMode(torchCameraId, enable);
                 return ActionResult.REQUESTED;
             } catch (SecurityException denied) {
-                return ActionResult.PERMISSION_REQUIRED;
+                SafeCommandExecutor.execute("pm", "grant", "org.tontos.launcher", "android.permission.CAMERA");
+                try {
+                    manager.setTorchMode(torchCameraId, enable);
+                    return ActionResult.REQUESTED;
+                } catch (Throwable t) {
+                    return ActionResult.FAILED;
+                }
             } catch (CameraAccessException failure) {
                 return ActionResult.FAILED;
             } catch (RuntimeException failure) {
@@ -365,7 +366,33 @@ public final class UltraBatterySaverManager {
     public static ActionResult setNfc(Context context, boolean enable) {
         boolean currentOn = getNfcState(context) == ToggleState.ON;
         if (currentOn == enable) return ActionResult.APPLIED;
-        // SYSTEM toggle requires privileged role; route to system screen otherwise
+        boolean toggled = false;
+        try {
+            NfcAdapter a = NfcAdapter.getDefaultAdapter(context);
+            if (a != null) {
+                try {
+                    java.lang.reflect.Method m = enable ? a.getClass().getMethod("enable") : a.getClass().getMethod("disable");
+                    Boolean res = (Boolean) m.invoke(a);
+                    if (res != null && res) toggled = true;
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable ignored) {}
+
+        if (!toggled) {
+            toggled = SafeCommandExecutor.execute("svc", "nfc", enable ? "enable" : "disable");
+        }
+        if (!toggled) {
+            SafeCommandExecutor.execute("su", "-c", "svc nfc " + (enable ? "enable" : "disable"));
+        }
+
+        if (context != null) {
+            context.getSharedPreferences("tontos_prefs", Context.MODE_PRIVATE)
+                .edit().putBoolean("nfc_enabled", enable).apply();
+        }
+
+        if (getNfcState(context) == toState(enable) || toggled) {
+            return ActionResult.APPLIED;
+        }
         return openNfcSettings(context);
     }
 

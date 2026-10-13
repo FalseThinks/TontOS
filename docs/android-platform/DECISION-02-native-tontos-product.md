@@ -19,7 +19,7 @@ The owner requested that TontOS be compiled natively from source as a pure vanil
 
 ## Decision
 1. **Dedicated Vendor Hierarchy:** Register a first-party vendor tree at `vendor/tontos/` inside the AOSP source tree (`~/aosp/tontos/`).
-2. **Custom Target Product:** Define `tontos_cf_x86_64-bp4a-userdebug` via `AndroidProducts.mk`, inheriting base Cuttlefish hardware definitions while stripping unnecessary stock packages.
+2. **Custom Target Product:** Define `tontos_cf_x86_64-trunk_staging-userdebug` via `AndroidProducts.mk`, inheriting base Cuttlefish hardware definitions while stripping unnecessary stock packages.
 3. **Build-Time Debloating:** Use `PRODUCT_PACKAGES` overrides in `vendor/tontos/products/tontos_cf_x86_64.mk` to eliminate `QuickSearchBox`, `Launcher3`, `DeskClock`, and related bloatware before partition images are generated.
 4. **Privileged In-Tree Launcher:** Build `TontOSLauncher` directly through Soong (`Android.bp`) with `privileged: true`, `certificate: "platform"`, and install target `/system_ext/priv-app/TontOSLauncher/`.
 5. **Seccomp Hotfix:** Update crosvm seccomp policy files (`gpu_device.policy`, `gpu_common.policy`) to allow `madvise: 1` syscalls required by modern glibc versions.
@@ -39,4 +39,4 @@ The owner requested that TontOS be compiled natively from source as a pure vanil
 ## Consequences
 - The compiled AOSP images (`super.img`, `system.img`, `system_ext.img`) contain zero stock search boxes or duplicate launchers.
 - `TontOSLauncher` acquires platform permissions (`WRITE_SECURE_SETTINGS`, `STATUS_BAR`) natively upon initial boot.
-- Builds are invoked via `lunch tontos_cf_x86_64-bp4a-userdebug` and assembled deterministically using Soong/Ninja.
+- Builds are invoked via `lunch tontos_cf_x86_64-trunk_staging-userdebug` and assembled deterministically using Soong/Ninja.

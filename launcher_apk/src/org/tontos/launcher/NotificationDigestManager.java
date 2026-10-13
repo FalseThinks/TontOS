@@ -86,6 +86,18 @@ public final class NotificationDigestManager {
                             break;
                     }
                     nm.setInterruptionFilter(interruptionFilter);
+                    if (mode == DeliveryMode.IMMEDIATE) {
+                        try {
+                            android.media.AudioManager am = (android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                            if (am != null && am.getRingerMode() == android.media.AudioManager.RINGER_MODE_NORMAL) {
+                                int curN = am.getStreamVolume(android.media.AudioManager.STREAM_NOTIFICATION);
+                                if (curN == 0) {
+                                    int maxN = am.getStreamMaxVolume(android.media.AudioManager.STREAM_NOTIFICATION);
+                                    am.setStreamVolume(android.media.AudioManager.STREAM_NOTIFICATION, Math.max(1, (int)(maxN * 0.7)), 0);
+                                }
+                            }
+                        } catch (Throwable ignored) {}
+                    }
                 } catch (SecurityException ignored) {
                 }
             }

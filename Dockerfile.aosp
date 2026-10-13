@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # ==============================================================================
 # TontOS AOSP ROM Native Builder (Debian Slim)
-# Ultra-lightweight (28MB base) glibc container tested and verified for AOSP 16 (BP4A).
+# Ultra-lightweight (28MB base) glibc container tested and verified for AOSP 17 (android-17.0.0_r1 / Baklava).
 # Maintainer: FalseThinks <paproken@protonmail.com>
 # ==============================================================================
 

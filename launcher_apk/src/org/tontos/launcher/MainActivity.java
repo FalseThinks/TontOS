@@ -226,6 +226,8 @@ public class MainActivity extends Activity {
         }
 
         applyBackgroundPolicy(this);
+        SystemProvisioningManager.executeInitialProvisioning(this);
+        LockScreenManager.registerScreenReceiver(this);
 
         handler = new Handler(Looper.getMainLooper());
         screenTimeTodaySecs = prefs.getLong(KEY_SCREEN_TIME_SECS, 0L);
