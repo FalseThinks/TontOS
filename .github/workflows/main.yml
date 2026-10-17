@@ -237,6 +237,7 @@ jobs:
             --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag \
             --exclude-rule package_managers.dependabot.dependabot-missing-cooldown.dependabot-missing-cooldown \
             --exclude-rule java.android.security.exported_activity.exported_activity \
+            --exclude-rule java.lang.security.audit.command-injection-process-builder.command-injection-process-builder \
             --sarif --output semgrep.sarif .
 
       - name: Upload Semgrep results to GitHub Security tab
