@@ -69,6 +69,8 @@ RUN curl -s https://storage.googleapis.com/git-repo-downloads/repo > /usr/local/
 # Prevents file permission conflicts with host workspace
 RUN groupadd -g 1000 tontos && \
     useradd -u 1000 -g tontos -m -s /bin/bash tontos && \
+    mkdir -p /home/tontos/aosp && \
+    chown -R tontos:tontos /home/tontos && \
     echo "tontos ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # 5. Environment configuration: project-internal cache & output paths

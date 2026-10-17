@@ -10,7 +10,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 AOSP_DIR="${AOSP_DIR:-$HOME/aosp/tontos}"
 OUTPUT_ROOT="${OUTPUT_DIR:-$ROOT_DIR/out/gsi}"
 CCACHE_DIR="${CCACHE_DIR:-$HOME/.ccache}"

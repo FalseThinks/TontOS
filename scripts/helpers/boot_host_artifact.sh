@@ -12,9 +12,9 @@ set -euo pipefail
 #     unprivileged nspawn) or reports readiness for VM boot.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ARCHIVE="$ROOT/target/linux-rootfs/tontos-linux-rootfs.tar.gz"
-MAKER="$ROOT/scripts/make_gsi_rootfs.sh"
+MAKER="$SCRIPT_DIR/make_gsi_rootfs.sh"
 MODE="verify"
 OVERLAY_DIR=""
 

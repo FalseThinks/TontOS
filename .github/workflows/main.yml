@@ -54,7 +54,7 @@ jobs:
         run: jq empty platform/manifests/pinned.json tests/ui/package.json
 
       - name: Check Shell scripts syntax
-        run: bash -n scripts/*.sh
+        run: bash -n scripts/*.sh scripts/helpers/*.sh
 
       - name: Run Gitleaks secret scan
         uses: gitleaks/gitleaks-action@v2
@@ -150,7 +150,7 @@ jobs:
 
       - name: Build TontOS ROM Builder Container
         run: |
-          docker build -t tontos-builder:latest -f Dockerfile.aosp .
+          docker build -t tontos-builder:latest -f Dockerfile .
 
       - name: Verify Dependencies & Glibc Toolchain
         run: |
@@ -187,7 +187,7 @@ jobs:
           mkdir -p "$TMP_DIR/build"
           echo 'echo "Mock envsetup loaded"' > "$TMP_DIR/build/envsetup.sh"
           chmod -R 777 "$TMP_DIR"
-          AOSP_DIR="$TMP_DIR" ./scripts/docker_build_rom.sh bash -c "source build/envsetup.sh && echo 'AOSP compile pipeline bootstrap successful!'"
+          AOSP_DIR="$TMP_DIR" ./scripts/docker_build_rom.sh bash -c "cd /home/tontos/aosp && source build/envsetup.sh && echo 'AOSP compile pipeline bootstrap successful!'"
           rm -rf "$TMP_DIR"
 
   # ============================================================================

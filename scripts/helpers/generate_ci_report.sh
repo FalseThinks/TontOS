@@ -8,7 +8,7 @@ set -euo pipefail
 
 TARGET_FILE="${1:-${GITHUB_STEP_SUMMARY:-/dev/stdout}}"
 
-ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 # 1. Gather Metrics

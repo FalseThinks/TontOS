@@ -125,7 +125,7 @@ case "$ACTION" in
         echo "[✓] Internal build directories cleaned."
         exit 0
         ;;
-    --shell|shell|sh|bash)
+    --shell|shell)
         ensure_directories
         ensure_image
         print_header

@@ -5,7 +5,7 @@ set -euo pipefail
 # it does not build Android, a GSI, or a flashable system image.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OUTPUT_DIR="$ROOT/target/linux-rootfs"
 OUTPUT_ARCHIVE="$OUTPUT_DIR/tontos-linux-rootfs.tar.gz"
 TARGET_ARCH="${TARGET_ARCH:-x86_64-unknown-linux-gnu}"

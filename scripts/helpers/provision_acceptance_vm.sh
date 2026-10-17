@@ -12,7 +12,7 @@ set -euo pipefail
 #     missing prerequisites -> fail JSON, exit 1. No skips for boot/app/net.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VM_DIR="$ROOT/target/vm"
 VM_NAME="${TONTOS_VM_NAME:-tontos-acceptance}"
 VIRSH_URI="${TONTOS_VIRSH_URI:-qemu:///session}"
