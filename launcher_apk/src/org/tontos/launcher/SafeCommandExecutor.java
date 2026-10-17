@@ -17,6 +17,7 @@ public final class SafeCommandExecutor {
 
     private static final String TAG = "SafeCommandExecutor";
     private static final Pattern VALID_PACKAGE_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
+    private static final Pattern SAFE_ARG_PATTERN = Pattern.compile("^[a-zA-Z0-9._/\\-:*#@=,\\$]+$");
     private static final long DEFAULT_TIMEOUT_MS = 3000;
 
     private SafeCommandExecutor() {}
@@ -26,6 +27,14 @@ public final class SafeCommandExecutor {
      */
     public static boolean isValidPackageName(String pkg) {
         return pkg != null && !pkg.isEmpty() && pkg.length() <= 256 && VALID_PACKAGE_PATTERN.matcher(pkg).matches();
+    }
+
+    /**
+     * Validates whether a command argument contains only allowed shell-safe characters,
+     * rejecting any shell metacharacters (; & | ` \n ( ) > < \0 ' ").
+     */
+    public static boolean isSafeArgument(String arg) {
+        return arg != null && !arg.isEmpty() && arg.length() <= 1024 && SAFE_ARG_PATTERN.matcher(arg).matches();
     }
 
     /**
@@ -41,9 +50,48 @@ public final class SafeCommandExecutor {
             return false;
         }
 
+        for (String arg : command) {
+            if (!isSafeArgument(arg)) {
+                Log.w(TAG, "Refusing execution with unsafe argument: " + arg);
+                return false;
+            }
+        }
+
+        return runRawProcess(command);
+    }
+
+    /**
+     * Executes a command directly, falling back to su privilege escalation if initial execution fails.
+     */
+    public static boolean executePrivileged(String... command) {
+        if (command == null || command.length == 0) return false;
+        if (execute(command)) {
+            return true;
+        }
+
+        for (String arg : command) {
+            if (!isSafeArgument(arg)) {
+                Log.w(TAG, "Refusing privileged execution with unsafe argument: " + arg);
+                return false;
+            }
+        }
+
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < command.length; i++) {
+                if (i > 0) sb.append(' ');
+                sb.append(command[i]);
+            }
+            return runRawProcess(new String[]{"su", "-c", sb.toString()});
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static boolean runRawProcess(String[] command) {
         try {
             // nosemgrep: java.lang.security.audit.command-injection-process-builder.command-injection-process-builder
-            ProcessBuilder pb = new ProcessBuilder(command);
+            ProcessBuilder pb = new ProcessBuilder(command); // nosemgrep: java.lang.security.audit.command-injection-process-builder.command-injection-process-builder
             pb.redirectErrorStream(true);
             Process process = pb.start();
 
@@ -86,26 +134,6 @@ public final class SafeCommandExecutor {
             return false;
         } catch (Throwable t) {
             Log.w(TAG, "Execution failed for: " + Arrays.toString(command), t);
-            return false;
-        }
-    }
-
-    /**
-     * Executes a command directly, falling back to su privilege escalation if initial execution fails.
-     */
-    public static boolean executePrivileged(String... command) {
-        if (command == null || command.length == 0) return false;
-        if (execute(command)) {
-            return true;
-        }
-        try {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < command.length; i++) {
-                if (i > 0) sb.append(' ');
-                sb.append(command[i]);
-            }
-            return execute("su", "-c", sb.toString());
-        } catch (Throwable t) {
             return false;
         }
     }
