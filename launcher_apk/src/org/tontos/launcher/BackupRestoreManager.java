@@ -262,6 +262,15 @@ public final class BackupRestoreManager {
                     Toast.makeText(activity, isEs ? "Introduce un nombre válido" : "Enter a valid filename", Toast.LENGTH_SHORT).show();
                     return;
                 }
+                // Enforce a safe single filename component to prevent path traversal/injection.
+                if (fileName.contains("..")
+                        || fileName.contains("/")
+                        || fileName.contains("\\")
+                        || fileName.startsWith(".")
+                        || !fileName.matches("[A-Za-z0-9 _.-]+")) {
+                    Toast.makeText(activity, isEs ? "Nombre de archivo no válido" : "Invalid filename", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 if (!fileName.endsWith(".tontbak") && !fileName.endsWith(".json")) {
                     fileName += ".tontbak";
                 }
