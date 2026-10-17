@@ -246,8 +246,7 @@ enum WizardStep {
  */
 enum UpdateChannel {
     RELEASE("RELEASE", "Release", "https://github.com/FalseThinks/TontOS/releases/latest"),
-    BETA("BETA", "Beta", "https://github.com/FalseThinks/TontOS/releases"),
-    NIGHTLY("NIGHTLY", "Nightly", "https://github.com/FalseThinks/TontOS/releases/tag/nightly");
+    BETA("BETA", "Beta", "https://github.com/FalseThinks/TontOS/releases");
 
     private final String code;
     private final String label;

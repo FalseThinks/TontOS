@@ -45,7 +45,6 @@ public final class QuickStartGuideDialog {
             } catch (Throwable ignored) {}
         }
 
-        final boolean isEs = "es".equalsIgnoreCase(langCode);
         float density = context.getResources().getDisplayMetrics().density;
         int pHoriz = (int) (24 * density);
         int pVert = (int) (32 * density);
@@ -57,7 +56,7 @@ public final class QuickStartGuideDialog {
 
         // Header Title
         TextView header = new TextView(context);
-        header.setText(isEs ? "=== TontOS · GUÍA RÁPIDA ===" : "=== TontOS · QUICK GUIDE ===");
+        header.setText(I18n.get(I18n.KEY_GUIDE_HEADER, langCode));
         header.setTextColor(tokens.accent);
         header.setTextSize(16);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -65,7 +64,7 @@ public final class QuickStartGuideDialog {
         root.addView(header);
 
         TextView subtitle = new TextView(context);
-        subtitle.setText(isEs ? "Funciones esenciales para desintoxicación digital" : "Essential features for digital minimalism");
+        subtitle.setText(I18n.get(I18n.KEY_GUIDE_SUBTITLE, langCode));
         subtitle.setTextColor(tokens.textMuted);
         subtitle.setTextSize(12);
         subtitle.setTypeface(Typeface.MONOSPACE);
@@ -90,33 +89,28 @@ public final class QuickStartGuideDialog {
 
         // Feature 1: Home & Drawer
         addCard(context, cardsContainer, tokens, density,
-            isEs ? "1. PANTALLA Y CAJÓN DE APPS" : "1. HOME SCREEN & APP DRAWER",
-            isEs ? "Solo apps indispensables en pantalla. Desliza o toca [ TODAS LAS APPS ] para el cajón completo alfabético. Mantén pulsada cualquier app para ver y restringir sus permisos."
-                 : "Only essential apps on home. Swipe or tap [ ALL APPS ] for alphabetical drawer. Long press any app to inspect and restrict its permissions.");
+            I18n.get(I18n.KEY_GUIDE_CARD1_TITLE, langCode),
+            I18n.get(I18n.KEY_GUIDE_CARD1_DESC, langCode));
 
         // Feature 2: Background Task Termination
         addCard(context, cardsContainer, tokens, density,
-            isEs ? "2. CIERRE AGRESIVO EN SEGUNDO PLANO" : "2. BACKGROUND APP TERMINATION",
-            isEs ? "Al volver al inicio, TontOS cierra automáticamente los procesos de la app para ahorrar batería y proteger tu privacidad, a menos que esté en la lista blanca de Ajustes > Conectividad."
-                 : "Returning home halts app processes immediately to reclaim RAM and preserve privacy, unless explicitly whitelisted in Settings > Connectivity.");
+            I18n.get(I18n.KEY_GUIDE_CARD2_TITLE, langCode),
+            I18n.get(I18n.KEY_GUIDE_CARD2_DESC, langCode));
 
         // Feature 3: Mindful Pause
         addCard(context, cardsContainer, tokens, density,
-            isEs ? "3. PAUSA CONSCIENTE (FRICCIÓN)" : "3. MINDFUL LAUNCH PAUSE",
-            isEs ? "Retardo voluntario antes de abrir aplicaciones distractoras con temporizador de respiración para frenar el impulso compulsivo."
-                 : "Intentional countdown delay before opening distracting applications with a mindful pause to break dopamine-seeking loops.");
+            I18n.get(I18n.KEY_GUIDE_CARD3_TITLE, langCode),
+            I18n.get(I18n.KEY_GUIDE_CARD3_DESC, langCode));
 
         // Feature 4: Detox Budget & Monochrome
         addCard(context, cardsContainer, tokens, density,
-            isEs ? "4. PRESUPUESTO DETOX & ESCALA DE GRISES" : "4. DETOX BUDGET & GRAYSCALE",
-            isEs ? "Controla el tiempo total de pantalla diario en la cabecera. Activa el modo monocromo en Ajustes para eliminar los colores hiperestimulantes."
-                 : "Track daily screen time budget in top bar. Activate system-wide grayscale in Settings to remove dopamine-inducing colors.");
+            I18n.get(I18n.KEY_GUIDE_CARD4_TITLE, langCode),
+            I18n.get(I18n.KEY_GUIDE_CARD4_DESC, langCode));
 
         // Feature 5: Ultra Shade
         addCard(context, cardsContainer, tokens, density,
-            isEs ? "5. CORTINA ULTRA SHADE" : "5. ULTRA SHADE ACCESS",
-            isEs ? "Toca la hora o el porcentaje de batería en la barra superior para abrir la cortina minimalista con controles de Wi-Fi, Bluetooth, Linterna y No Molestar."
-                 : "Tap the clock or battery percentage on top bar to open the minimalist Ultra Shade for quick Wi-Fi, Bluetooth, Torch and DND toggles.");
+            I18n.get(I18n.KEY_GUIDE_CARD5_TITLE, langCode),
+            I18n.get(I18n.KEY_GUIDE_CARD5_DESC, langCode));
 
         scroll.addView(cardsContainer);
         root.addView(scroll);
@@ -128,7 +122,7 @@ public final class QuickStartGuideDialog {
 
         // Skip Button
         TextView skipBtn = new TextView(context);
-        skipBtn.setText(isEs ? "[ SALTAR GUÍA ]" : "[ SKIP GUIDE ]");
+        skipBtn.setText(I18n.get(I18n.KEY_GUIDE_SKIP, langCode));
         skipBtn.setTextColor(tokens.textMuted);
         skipBtn.setTextSize(13);
         skipBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -151,7 +145,7 @@ public final class QuickStartGuideDialog {
 
         // Done / Start Button
         TextView doneBtn = new TextView(context);
-        doneBtn.setText(isEs ? "[ COMENZAR ]" : "[ GET STARTED ]");
+        doneBtn.setText(I18n.get(I18n.KEY_GUIDE_START, langCode));
         doneBtn.setTextColor(tokens.isLight ? Color.WHITE : tokens.navAccent);
         doneBtn.setTextSize(13);
         doneBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);

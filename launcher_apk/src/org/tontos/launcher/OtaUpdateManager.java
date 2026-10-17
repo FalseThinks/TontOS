@@ -122,9 +122,7 @@ public final class OtaUpdateManager {
         final Handler mainHandler = new Handler(Looper.getMainLooper());
         final String curVersion = getInstalledVersion(activity);
 
-        String checkingMsg = "es".equalsIgnoreCase(langCode)
-            ? "Comprobando actualizaciones OTA en GitHub (" + channel.getCode() + ")..."
-            : "Checking for OTA updates on GitHub (" + channel.getCode() + ")...";
+        String checkingMsg = I18n.format(I18n.KEY_OTA_CHECKING_FMT, langCode, channel.getCode());
         Toast.makeText(activity, checkingMsg, Toast.LENGTH_SHORT).show();
 
         new Thread(new Runnable() {
@@ -182,13 +180,11 @@ public final class OtaUpdateManager {
                             if (channel == UpdateChannel.RELEASE && !prerelease) {
                                 targetRelease = parseRelease(obj);
                                 break;
-                            } else if (channel == UpdateChannel.NIGHTLY && tag.toLowerCase().contains("nightly")) {
-                                targetRelease = parseRelease(obj);
-                                break;
-                            } else if (channel == UpdateChannel.BETA) {
+                            } else if (channel == UpdateChannel.BETA && (prerelease || tag.toLowerCase().contains("beta") || tag.toLowerCase().contains("alpha"))) {
                                 targetRelease = parseRelease(obj);
                                 break;
                             }
+
                         }
                         if (targetRelease == null && array.length() > 0) {
                             targetRelease = parseRelease(array.optJSONObject(0));
@@ -265,7 +261,6 @@ public final class OtaUpdateManager {
         final UpdateChannel channel
     ) {
         float density = activity.getResources().getDisplayMetrics().density;
-        boolean isEs = "es".equalsIgnoreCase(langCode);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(
             activity,
@@ -278,7 +273,7 @@ public final class OtaUpdateManager {
         root.setBackgroundColor(tokens.bg);
 
         TextView title = new TextView(activity);
-        title.setText(isEs ? "=== NUEVA VERSIÓN DISPONIBLE ===" : "=== NEW VERSION AVAILABLE ===");
+        title.setText(I18n.get(I18n.KEY_OTA_NEW_VERSION_TITLE, langCode));
         title.setTextColor(tokens.accent);
         title.setTextSize(15);
         title.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -286,9 +281,9 @@ public final class OtaUpdateManager {
         root.addView(title);
 
         TextView versionHeader = new TextView(activity);
-        String vText = (isEs ? "Versión: " : "Version: ") + release.tagName
+        String vText = I18n.get(I18n.KEY_OTA_VERSION_LABEL, langCode) + release.tagName
             + " [" + channel.getCode() + "]\n"
-            + (isEs ? "Instalada: v" : "Current: v") + curVersion;
+            + I18n.get(I18n.KEY_OTA_CURRENT_LABEL, langCode) + curVersion;
         versionHeader.setText(vText);
         versionHeader.setTextColor(tokens.textPrimary);
         versionHeader.setTextSize(13);
@@ -306,7 +301,7 @@ public final class OtaUpdateManager {
 
         TextView bodyText = new TextView(activity);
         String cleanBody = formatChangelogSummary(release.body);
-        bodyText.setText(cleanBody.isEmpty() ? (isEs ? "(Sin notas de cambios)" : "(No release notes)") : cleanBody);
+        bodyText.setText(cleanBody.isEmpty() ? I18n.get(I18n.KEY_OTA_NO_NOTES, langCode) : cleanBody);
         bodyText.setTextColor(tokens.textMuted);
         bodyText.setTextSize(12);
         bodyText.setTypeface(Typeface.MONOSPACE);
@@ -323,8 +318,8 @@ public final class OtaUpdateManager {
             : release.htmlUrl;
 
         String actionLabel = (release.apkUrl != null)
-            ? (isEs ? "[ DESCARGAR APK ]" : "[ DOWNLOAD APK ]")
-            : (isEs ? "[ VER EN GITHUB ]" : "[ VIEW ON GITHUB ]");
+            ? I18n.get(I18n.KEY_OTA_DOWNLOAD_APK, langCode)
+            : I18n.get(I18n.KEY_OTA_VIEW_GITHUB, langCode);
 
         Button downloadBtn = new Button(activity);
         downloadBtn.setText(actionLabel);
@@ -342,7 +337,7 @@ public final class OtaUpdateManager {
         root.addView(btnDock);
 
         builder.setView(root);
-        builder.setNegativeButton(isEs ? "CERRAR" : "DISMISS", null);
+        builder.setNegativeButton(I18n.get(I18n.KEY_OTA_DISMISS, langCode), null);
 
         final AlertDialog dialog = builder.create();
         dialog.show();
@@ -364,22 +359,19 @@ public final class OtaUpdateManager {
         UpdateChannel channel,
         String remoteTag
     ) {
-        boolean isEs = "es".equalsIgnoreCase(langCode);
         AlertDialog.Builder builder = new AlertDialog.Builder(
             activity,
             tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
         );
-        builder.setTitle(isEs ? "SISTEMA ACTUALIZADO" : "SYSTEM UP TO DATE");
+        builder.setTitle(I18n.get(I18n.KEY_OTA_UP_TO_DATE_TITLE, langCode));
 
-        String msg = isEs
-            ? "TontOS está actualizado.\n\n• Canal: " + channel.getCode()
-                + "\n• Versión instalada: v" + curVersion
-                + "\n• Versión en GitHub: " + (remoteTag != null ? remoteTag : "v" + curVersion)
-                + "\n\nNo hay nuevas actualizaciones disponibles."
-            : "TontOS is up to date.\n\n• Channel: " + channel.getCode()
-                + "\n• Installed: v" + curVersion
-                + "\n• GitHub tag: " + (remoteTag != null ? remoteTag : "v" + curVersion)
-                + "\n\nNo newer releases found.";
+        String msg = I18n.format(
+            I18n.KEY_OTA_UP_TO_DATE_MSG_FMT,
+            langCode,
+            channel.getCode(),
+            curVersion,
+            (remoteTag != null ? remoteTag : "v" + curVersion)
+        );
 
         builder.setMessage(msg);
         builder.setPositiveButton("OK", null);
@@ -401,17 +393,12 @@ public final class OtaUpdateManager {
         String langCode,
         String errorDetail
     ) {
-        boolean isEs = "es".equalsIgnoreCase(langCode);
         AlertDialog.Builder builder = new AlertDialog.Builder(
             activity,
             tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
         );
-        builder.setTitle(isEs ? "ERROR OTA GITHUB" : "OTA UPDATE ERROR");
-        String msg = isEs
-            ? "No se pudo consultar el repositorio de actualizaciones:\n\n" + errorDetail
-                + "\n\nVerifique su conexión a Internet o inténtelo de nuevo más tarde."
-            : "Could not query GitHub release repository:\n\n" + errorDetail
-                + "\n\nPlease verify network connection or try again later.";
+        builder.setTitle(I18n.get(I18n.KEY_OTA_ERROR_TITLE, langCode));
+        String msg = I18n.format(I18n.KEY_OTA_ERROR_MSG_FMT, langCode, errorDetail);
         builder.setMessage(msg);
         builder.setPositiveButton("OK", null);
         AlertDialog dialog = builder.create();

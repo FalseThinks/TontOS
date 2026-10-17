@@ -1097,18 +1097,17 @@ public class SettingsActivity extends Activity {
         }, tokens);
 
         final NotificationDigestManager.DeliveryMode curDeliveryMode = NotificationDigestManager.getDeliveryMode(this);
-        final boolean isEs = "es".equalsIgnoreCase(curLangCode);
         String curDeliveryLabel;
         switch (curDeliveryMode) {
             case SCHEDULED_DIGEST:
-                curDeliveryLabel = "Digest";
+                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode);
                 break;
             case STARRED_ONLY:
-                curDeliveryLabel = isEs ? "Favoritos" : "Starred";
+                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode);
                 break;
             case IMMEDIATE:
             default:
-                curDeliveryLabel = isEs ? "Inmediata" : "Immediate";
+                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode);
                 break;
         }
 
@@ -1118,15 +1117,15 @@ public class SettingsActivity extends Activity {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
                 options.add(new SingleChoiceSelectorDialog.Option(
                     NotificationDigestManager.DeliveryMode.IMMEDIATE.name(),
-                    isEs ? "Inmediata" : "Immediate"
+                    I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode)
                 ));
                 options.add(new SingleChoiceSelectorDialog.Option(
                     NotificationDigestManager.DeliveryMode.SCHEDULED_DIGEST.name(),
-                    "Digest"
+                    I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode)
                 ));
                 options.add(new SingleChoiceSelectorDialog.Option(
                     NotificationDigestManager.DeliveryMode.STARRED_ONLY.name(),
-                    isEs ? "Favoritos" : "Starred"
+                    I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode)
                 ));
 
                 SingleChoiceSelectorDialog.show(
@@ -1266,9 +1265,8 @@ public class SettingsActivity extends Activity {
         addBackHeader(SettingsSection.HOME_DRAWER.getTitle(curLangCode), tokens);
 
         final int currentLimit = preferences.getInt(KEY_APP_LIMIT, MainActivity.DEFAULT_HOME_APP_LIMIT);
-        final boolean isEs = "es".equalsIgnoreCase(curLangCode);
         final String limitDisplay = (currentLimit >= 999)
-            ? (isEs ? "Sin límite" : "Unlimited")
+            ? I18n.get(I18n.KEY_APP_LIMIT_UNLIMITED, curLangCode)
             : String.valueOf(currentLimit);
 
         addSelectorRow(I18n.get(I18n.KEY_APP_LIMIT_TITLE, curLangCode), limitDisplay, new View.OnClickListener() {
@@ -1281,7 +1279,7 @@ public class SettingsActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("6", "6"));
                 options.add(new SingleChoiceSelectorDialog.Option("8", "8"));
                 options.add(new SingleChoiceSelectorDialog.Option("10", "10"));
-                options.add(new SingleChoiceSelectorDialog.Option("999", isEs ? "Sin límite" : "Unlimited"));
+                options.add(new SingleChoiceSelectorDialog.Option("999", I18n.get(I18n.KEY_APP_LIMIT_UNLIMITED, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -1316,9 +1314,7 @@ public class SettingsActivity extends Activity {
 
                 float density = getResources().getDisplayMetrics().density;
                 TextView helpBox = new TextView(SettingsActivity.this);
-                helpBox.setText(isEs
-                    ? "Temporizador consciente que retrasa la apertura de aplicaciones para evitar impulsos compulsivos o distracciones."
-                    : "Mindful countdown delay before opening applications to avoid impulsive or habitual distractions.");
+                helpBox.setText(I18n.get(I18n.KEY_FRICTION_HELP, curLangCode));
                 helpBox.setTextColor(tokens.textMuted);
                 helpBox.setTextSize(12);
                 helpBox.setTypeface(Typeface.MONOSPACE);
@@ -1616,19 +1612,18 @@ public class SettingsActivity extends Activity {
 
         // Background App Execution Policy
         final String curBgPolicy = preferences.getString("bg_policy", "whitelist");
-        final boolean isEs = "es".equalsIgnoreCase(curLangCode);
         String bgPolicyDisplay;
-        if ("strict".equals(curBgPolicy)) bgPolicyDisplay = isEs ? "Estricta" : "Strict";
-        else if ("allowed".equals(curBgPolicy)) bgPolicyDisplay = isEs ? "Permitir" : "Allow All";
-        else bgPolicyDisplay = "Whitelist";
+        if ("strict".equals(curBgPolicy)) bgPolicyDisplay = I18n.get(I18n.KEY_BG_STRICT, curLangCode);
+        else if ("allowed".equals(curBgPolicy)) bgPolicyDisplay = I18n.get(I18n.KEY_BG_ALLOWED_ALL, curLangCode);
+        else bgPolicyDisplay = I18n.get(I18n.KEY_BG_WHITELIST, curLangCode);
 
         addSelectorRow(I18n.get(I18n.KEY_BG_POLICY, curLangCode), bgPolicyDisplay, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("whitelist", "Whitelist"));
-                options.add(new SingleChoiceSelectorDialog.Option("strict", isEs ? "Estricta" : "Strict"));
-                options.add(new SingleChoiceSelectorDialog.Option("allowed", isEs ? "Permitir todas" : "Allow All"));
+                options.add(new SingleChoiceSelectorDialog.Option("whitelist", I18n.get(I18n.KEY_BG_WHITELIST, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("strict", I18n.get(I18n.KEY_BG_STRICT, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("allowed", I18n.get(I18n.KEY_BG_ALLOWED_ALL, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -1674,7 +1669,7 @@ public class SettingsActivity extends Activity {
 
         final boolean nfcSupported = getNfcHardwareState();
         if (nfcSupported) {
-            addButtonRow(isEs ? "Ajustes de pagos NFC" : "NFC Payment Settings", I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
+            addButtonRow(I18n.get(I18n.KEY_NFC_PAYMENTS, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     try {
@@ -1683,7 +1678,7 @@ public class SettingsActivity extends Activity {
                         try {
                             startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));
                         } catch (Throwable t) {
-                            Toast.makeText(SettingsActivity.this, isEs ? "Ajustes NFC no disponibles" : "NFC settings not available", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_NFC_NOT_AVAILABLE, curLangCode), Toast.LENGTH_SHORT).show();
                         }
                     }
                 }
@@ -1758,7 +1753,7 @@ public class SettingsActivity extends Activity {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
                 options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.RELEASE.getCode(), "Release"));
                 options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.BETA.getCode(), "Beta"));
-                options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.NIGHTLY.getCode(), "Nightly"));
+
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -1896,8 +1891,7 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        final boolean isEsLang = "es".equalsIgnoreCase(curLangCode);
-        addButtonRow(isEsLang ? "Guía de funciones esenciales" : "Essential Features Guide", I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
+        addButtonRow(I18n.get(I18n.KEY_GUIDE_SETTINGS_ROW, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 QuickStartGuideDialog.show(SettingsActivity.this, tokens, curLangCode);

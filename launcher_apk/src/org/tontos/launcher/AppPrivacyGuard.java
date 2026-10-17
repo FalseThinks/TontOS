@@ -298,16 +298,15 @@ public final class AppPrivacyGuard {
         scroll.addView(content);
         root.addView(scroll);
 
-        final boolean isEs = "es".equalsIgnoreCase(langCode);
         final int blockedColor = tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555");
         final int allowedColor = tokens.navAccent;
-        final String blockedLabel = isEs ? "BLOQUEADO" : "BLOCKED";
-        final String allowedLabel = isEs ? "PERMITIDO" : "ALLOWED";
-        final String restrictedLabel = isEs ? "RESTRINGIDO" : "RESTRICTED";
+        final String blockedLabel = I18n.get(I18n.KEY_STATUS_BLOCKED, langCode);
+        final String allowedLabel = I18n.get(I18n.KEY_STATUS_ALLOWED, langCode);
+        final String restrictedLabel = I18n.get(I18n.KEY_STATUS_RESTRICTED, langCode);
 
         // Section 1 Header: PERMISOS / PERMISSIONS
         TextView permHeader = new TextView(activity);
-        permHeader.setText(isEs ? "=== PERMISOS ===" : "=== PERMISSIONS ===");
+        permHeader.setText(I18n.get(I18n.KEY_PERMS_HEADER, langCode));
         permHeader.setTextColor(tokens.accent);
         permHeader.setTextSize(14);
         permHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -322,8 +321,8 @@ public final class AppPrivacyGuard {
             activity,
             tokens,
             density,
-            isEs ? "Red & Conectividad" : "Network Access (Internet)",
-            isEs ? "Denegar sockets de internet, telemetría y tráfico saliente" : "Revoke INTERNET socket permission (blocks outbound traffic & telemetry)",
+            I18n.get(I18n.KEY_PERM_NET_TITLE, langCode),
+            I18n.get(I18n.KEY_PERM_NET_DESC, langCode),
             initialNetBlocked,
             netToggleBtn,
             blockedColor,
@@ -349,8 +348,8 @@ public final class AppPrivacyGuard {
             activity,
             tokens,
             density,
-            isEs ? "Sensores & Movimiento" : "Sensors & Motion",
-            isEs ? "Acelerómetro, giroscopio, podómetro y biometría física" : "Revoke accelerometer, gyroscope, step counter & biometric sensors",
+            I18n.get(I18n.KEY_PERM_SENSORS_TITLE, langCode),
+            I18n.get(I18n.KEY_PERM_SENSORS_DESC, langCode),
             initialSensorsBlocked,
             sensorsToggleBtn,
             blockedColor,
@@ -376,8 +375,8 @@ public final class AppPrivacyGuard {
             activity,
             tokens,
             density,
-            isEs ? "Cámara & Micrófono" : "Camera & Microphone",
-            isEs ? "Captura de fotografías, vídeo y grabación de audio ambiental" : "Revoke photo/video capture and background microphone recording",
+            I18n.get(I18n.KEY_PERM_CAM_MIC_TITLE, langCode),
+            I18n.get(I18n.KEY_PERM_CAM_MIC_DESC, langCode),
             initialCamMicBlocked,
             camMicToggleBtn,
             blockedColor,
@@ -403,8 +402,8 @@ public final class AppPrivacyGuard {
             activity,
             tokens,
             density,
-            isEs ? "Ubicación & GPS" : "Location & GPS",
-            isEs ? "Posicionamiento satelital GPS, antenas móviles y Wi-Fi" : "Revoke precise GPS satellite and network positioning",
+            I18n.get(I18n.KEY_PERM_LOC_TITLE, langCode),
+            I18n.get(I18n.KEY_PERM_LOC_DESC, langCode),
             initialLocBlocked,
             locToggleBtn,
             blockedColor,
@@ -430,8 +429,8 @@ public final class AppPrivacyGuard {
             activity,
             tokens,
             density,
-            isEs ? "Almacenamiento & Archivos" : "Storage & Files",
-            isEs ? "Acceso a fotos, medios compartidos y documentos del dispositivo" : "Revoke access to photos, media, downloads and shared files",
+            I18n.get(I18n.KEY_PERM_STORAGE_TITLE, langCode),
+            I18n.get(I18n.KEY_PERM_STORAGE_DESC, langCode),
             initialStorageBlocked,
             storageToggleBtn,
             blockedColor,
@@ -457,8 +456,8 @@ public final class AppPrivacyGuard {
             activity,
             tokens,
             density,
-            isEs ? "Contactos & Llamadas" : "Contacts & Calls",
-            isEs ? "Agenda de contactos telefónicos, llamadas y marcación" : "Revoke address book, phone dialer and call history access",
+            I18n.get(I18n.KEY_PERM_CONTACTS_TITLE, langCode),
+            I18n.get(I18n.KEY_PERM_CONTACTS_DESC, langCode),
             initialContactsBlocked,
             contactsToggleBtn,
             blockedColor,
@@ -484,8 +483,8 @@ public final class AppPrivacyGuard {
             activity,
             tokens,
             density,
-            isEs ? "Segundo plano" : "Background Execution",
-            isEs ? "Congelar procesos en reposo y evitar servicios persistentes" : "Freeze process when idle and deny background wake services",
+            I18n.get(I18n.KEY_PERM_BG_TITLE, langCode),
+            I18n.get(I18n.KEY_PERM_BG_DESC, langCode),
             initialBgRestricted,
             bgToggleBtn,
             blockedColor,
@@ -516,7 +515,7 @@ public final class AppPrivacyGuard {
 
         // Section 2 Header: ACCIONES / ACTIONS
         TextView actHeader = new TextView(activity);
-        actHeader.setText(isEs ? "=== ACCIONES ===" : "=== ACTIONS ===");
+        actHeader.setText(I18n.get(I18n.KEY_ACTIONS_HEADER, langCode));
         actHeader.setTextColor(tokens.accent);
         actHeader.setTextSize(14);
         actHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -524,7 +523,7 @@ public final class AppPrivacyGuard {
         content.addView(actHeader);
 
         // --- ACTION 1: FORCE STOP ---
-        addActionButton(content, activity, tokens, density, isEs ? "[ FORZAR DETENCIÓN ]" : "[ FORCE STOP APP ]", tokens.accent, new View.OnClickListener() {
+        addActionButton(content, activity, tokens, density, I18n.get(I18n.KEY_ACTION_FORCE_STOP, langCode), tokens.accent, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 forceStopApp(activity, pkg);
@@ -532,7 +531,7 @@ public final class AppPrivacyGuard {
         });
 
         // --- ACTION 2: AJUSTES DE ANDROID ---
-        addActionButton(content, activity, tokens, density, "[ AJUSTES DE ANDROID ]", tokens.textPrimary, new View.OnClickListener() {
+        addActionButton(content, activity, tokens, density, I18n.get(I18n.KEY_ACTION_ANDROID_SETTINGS, langCode), tokens.textPrimary, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 openAppDetails(activity, pkg);
@@ -540,7 +539,7 @@ public final class AppPrivacyGuard {
         });
 
         // --- ACTION 3: DESINSTALAR APLICACIÓN ---
-        addActionButton(content, activity, tokens, density, isEs ? "[ DESINSTALAR APLICACIÓN ]" : "[ UNINSTALL APPLICATION ]", blockedColor, new View.OnClickListener() {
+        addActionButton(content, activity, tokens, density, I18n.get(I18n.KEY_ACTION_UNINSTALL, langCode), blockedColor, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
@@ -902,8 +901,6 @@ public final class AppPrivacyGuard {
         container.removeAllViews();
         String q = (query != null) ? query.toLowerCase(Locale.ROOT) : "";
         int matchCount = 0;
-        final boolean isEs = "es".equalsIgnoreCase(langCode);
-
         int restrictedAppsCount = 0;
 
         for (final AppNetworkFirewall.AppEntry app : allApps) {
@@ -955,17 +952,17 @@ public final class AppPrivacyGuard {
             textCol.addView(labelView);
 
             StringBuilder statusSb = new StringBuilder();
-            if (netBlocked) statusSb.append(isEs ? "[RED] " : "[NET] ");
-            if (sensorsBlocked) statusSb.append(isEs ? "[SENSORES] " : "[SENSORS] ");
-            if (camMicBlocked) statusSb.append(isEs ? "[CÁMARA/MIC] " : "[CAM/MIC] ");
-            if (locBlocked) statusSb.append(isEs ? "[GPS] " : "[GPS] ");
-            if (storageBlocked) statusSb.append(isEs ? "[ALMACÉN] " : "[STORAGE] ");
-            if (contactsBlocked) statusSb.append(isEs ? "[CONTACTOS] " : "[CONTACTS] ");
-            if (bgRestricted) statusSb.append(isEs ? "[2° PLANO] " : "[BG] ");
+            if (netBlocked) statusSb.append(I18n.get(I18n.KEY_PRIVACY_TAG_NET, langCode));
+            if (sensorsBlocked) statusSb.append(I18n.get(I18n.KEY_PRIVACY_TAG_SENSORS, langCode));
+            if (camMicBlocked) statusSb.append(I18n.get(I18n.KEY_PRIVACY_TAG_CAM_MIC, langCode));
+            if (locBlocked) statusSb.append(I18n.get(I18n.KEY_PRIVACY_TAG_GPS, langCode));
+            if (storageBlocked) statusSb.append(I18n.get(I18n.KEY_PRIVACY_TAG_STORAGE, langCode));
+            if (contactsBlocked) statusSb.append(I18n.get(I18n.KEY_PRIVACY_TAG_CONTACTS, langCode));
+            if (bgRestricted) statusSb.append(I18n.get(I18n.KEY_PRIVACY_TAG_BG, langCode));
             if (statusSb.length() == 0) {
-                statusSb.append(isEs ? "Permisos estándar" : "Standard Permissions");
+                statusSb.append(I18n.get(I18n.KEY_PRIVACY_STANDARD, langCode));
             } else {
-                statusSb.append(isEs ? "BLOQUEADO" : "BLOCKED");
+                statusSb.append(I18n.get(I18n.KEY_STATUS_BLOCKED, langCode));
             }
 
             TextView statusView = new TextView(activity);
@@ -978,7 +975,7 @@ public final class AppPrivacyGuard {
             row.addView(textCol);
 
             TextView configBtn = new TextView(activity);
-            configBtn.setText(isEs ? "[ CONFIGURAR ]" : "[ CONFIGURE ]");
+            configBtn.setText(I18n.get(I18n.KEY_PRIVACY_CONFIGURE, langCode));
             configBtn.setTextColor(tokens.navAccent);
             configBtn.setTextSize(12);
             configBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -1000,10 +997,6 @@ public final class AppPrivacyGuard {
             container.addView(row);
         }
 
-        if (isEs) {
-            summaryView.setText(allApps.size() + " apps · " + restrictedAppsCount + " con restricciones de privacidad");
-        } else {
-            summaryView.setText(allApps.size() + " apps · " + restrictedAppsCount + " with privacy restrictions");
-        }
+        summaryView.setText(I18n.format(I18n.KEY_PRIVACY_SUMMARY_FMT, langCode, allApps.size(), restrictedAppsCount));
     }
 }

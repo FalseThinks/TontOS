@@ -256,51 +256,28 @@ public final class UltraBatterySaverManager {
     }
 
     public static String getActionResultDisplay(ActionResult result, String langCode) {
-        String lang = langCode == null ? "en" : langCode.toLowerCase();
         if (result == ActionResult.SETTINGS_REQUIRED) {
-            if (lang.startsWith("de")) return "In den Systemeinstellungen ändern.";
-            if (lang.startsWith("pl")) return "Zmień w ustawieniach systemowych.";
-            if (lang.startsWith("es")) return "Cámbialo en los ajustes del sistema.";
-            return "Change this in system settings.";
+            return I18n.get(I18n.KEY_ACTION_SETTINGS_REQ, langCode);
         }
         if (result == ActionResult.PERMISSION_REQUIRED) {
-            if (lang.startsWith("de")) return "Berechtigung erteilen und danach erneut tippen.";
-            if (lang.startsWith("pl")) return "Nadaj uprawnienie i dotknij ponownie.";
-            if (lang.startsWith("es")) return "Concede el permiso y vuelve a tocar.";
-            return "Grant the permission, then tap again.";
+            return I18n.get(I18n.KEY_ACTION_PERM_REQ, langCode);
         }
         if (result == ActionResult.UNSUPPORTED) {
-            if (lang.startsWith("de")) return "Auf diesem Gerät nicht unterstützt.";
-            if (lang.startsWith("pl")) return "Nieobsługiwane na tym urządzeniu.";
-            if (lang.startsWith("es")) return "No compatible con este dispositivo.";
-            return "Not supported on this device.";
+            return I18n.get(I18n.KEY_ACTION_UNSUPPORTED, langCode);
         }
         if (result == ActionResult.FAILED) {
-            if (lang.startsWith("de")) return "Aktion fehlgeschlagen; der angezeigte Zustand ist unverändert.";
-            if (lang.startsWith("pl")) return "Niepowodzenie; wyświetlany stan nie został zmieniony.";
-            if (lang.startsWith("es")) return "Acción fallida; el estado mostrado no se ha cambiado.";
-            return "Action failed; the displayed state was not changed.";
+            return I18n.get(I18n.KEY_ACTION_FAILED, langCode);
         }
         if (result == ActionResult.APPLIED) {
-            if (lang.startsWith("de")) return "Systemzustand aktualisiert.";
-            if (lang.startsWith("pl")) return "Stan systemu zaktualizowany.";
-            if (lang.startsWith("es")) return "Estado del sistema actualizado.";
-            return "System state updated.";
+            return I18n.get(I18n.KEY_ACTION_APPLIED, langCode);
         }
-        if (lang.startsWith("de")) return "Warten auf die Systemaktualisierung.";
-        if (lang.startsWith("pl")) return "Oczekiwanie na aktualizację stanu systemu.";
-        if (lang.startsWith("es")) return "Esperando a que se actualice el estado del sistema.";
-        return "Waiting for the system state to update.";
+        return I18n.get(I18n.KEY_ACTION_WAITING, langCode);
     }
 
     public static String getToggleStateDisplay(ToggleState state, String langCode) {
         if (state == ToggleState.ON) return I18n.get(I18n.KEY_STATE_ON, langCode);
         if (state == ToggleState.OFF) return I18n.get(I18n.KEY_STATE_OFF, langCode);
-        String lang = langCode == null ? "en" : langCode.toLowerCase();
-        if (lang.startsWith("de")) return "UNBEKANNT";
-        if (lang.startsWith("pl")) return "NIEZNANY";
-        if (lang.startsWith("es")) return "DESCONOCIDO";
-        return "UNKNOWN";
+        return I18n.get(I18n.KEY_STATE_UNKNOWN, langCode);
     }
 
     private static NotificationManager getNotificationManager(Context context) {

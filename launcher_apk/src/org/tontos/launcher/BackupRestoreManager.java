@@ -111,7 +111,6 @@ public final class BackupRestoreManager {
         final SharedPreferences prefs
     ) {
         final float density = activity.getResources().getDisplayMetrics().density;
-        final boolean isEs = "es".equalsIgnoreCase(langCode);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(
             activity,
@@ -125,7 +124,7 @@ public final class BackupRestoreManager {
 
         // Header Title
         TextView header = new TextView(activity);
-        header.setText(isEs ? "=== CREAR COPIA DE SEGURIDAD ===" : "=== CREATE BACKUP SNAPSHOT ===");
+        header.setText(I18n.get(I18n.KEY_BACKUP_CREATE_TITLE, langCode));
         header.setTextColor(tokens.accent);
         header.setTextSize(15);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -135,9 +134,7 @@ public final class BackupRestoreManager {
         // Summary Info
         TextView info = new TextView(activity);
         int keyCount = prefs.getAll().size();
-        info.setText(isEs
-            ? ("Respaldo criptográfico de " + keyCount + " ajustes (tema, launcher, audio, redes).")
-            : ("Cryptographic snapshot of " + keyCount + " preferences (theme, apps, sound, radios)."));
+        info.setText(I18n.format(I18n.KEY_BACKUP_CREATE_SUMMARY_FMT, langCode, keyCount));
         info.setTextColor(tokens.textMuted);
         info.setTextSize(12);
         info.setTypeface(Typeface.MONOSPACE);
@@ -146,7 +143,7 @@ public final class BackupRestoreManager {
 
         // File Name Label
         TextView nameLabel = new TextView(activity);
-        nameLabel.setText(isEs ? "Nombre del archivo:" : "Backup File Name:");
+        nameLabel.setText(I18n.get(I18n.KEY_BACKUP_FILE_NAME_LABEL, langCode));
         nameLabel.setTextColor(tokens.textPrimary);
         nameLabel.setTextSize(13);
         nameLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -173,7 +170,7 @@ public final class BackupRestoreManager {
 
         // Destination Label
         TextView destLabel = new TextView(activity);
-        destLabel.setText(isEs ? "Ruta / Destino de guardado:" : "Storage Destination:");
+        destLabel.setText(I18n.get(I18n.KEY_BACKUP_DEST_LABEL, langCode));
         destLabel.setTextColor(tokens.textPrimary);
         destLabel.setTextSize(13);
         destLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -186,15 +183,14 @@ public final class BackupRestoreManager {
         optionsContainer.setOrientation(LinearLayout.VERTICAL);
 
         final List<TextView> optionViews = new ArrayList<>();
+        final String destDownload = I18n.get(I18n.KEY_BACKUP_DEST_DOWNLOADS, langCode);
+        final String destApp = I18n.get(I18n.KEY_BACKUP_DEST_APP, langCode);
+        final String destSaf = I18n.get(I18n.KEY_BACKUP_DEST_SAF, langCode);
+        final String[] destPrefixes = new String[]{destDownload, destApp, destSaf};
         final String[] destTitles = new String[]{
-            isEs ? "[X] Carpeta Descargas (/sdcard/Download)" : "[X] Downloads (/sdcard/Download)",
-            isEs ? "[ ] Carpeta TontOS (/Android/data/backup)" : "[ ] TontOS App Folder (/backup)",
-            isEs ? "[ ] Explorador del sistema (Elegir carpeta...)" : "[ ] System File Picker (Choose...)"
-        };
-        final String[] destPrefixes = new String[]{
-            isEs ? "Carpeta Descargas (/sdcard/Download)" : "Downloads (/sdcard/Download)",
-            isEs ? "Carpeta TontOS (/Android/data/backup)" : "TontOS App Folder (/backup)",
-            isEs ? "Explorador del sistema (Elegir carpeta...)" : "System File Picker (Choose...)"
+            "[X] " + destDownload,
+            "[ ] " + destApp,
+            "[ ] " + destSaf
         };
 
         for (int i = 0; i < 3; i++) {
@@ -240,7 +236,7 @@ public final class BackupRestoreManager {
         dock.setGravity(Gravity.END);
         dock.setPadding(0, (int) (16 * density), 0, 0);
 
-        TextView cancelBtn = createDialogButton(activity, isEs ? "CANCELAR" : "CANCEL", false, tokens);
+        TextView cancelBtn = createDialogButton(activity, I18n.get(I18n.KEY_CANCEL, langCode), false, tokens);
         cancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -253,13 +249,13 @@ public final class BackupRestoreManager {
         spacer.setLayoutParams(new LinearLayout.LayoutParams((int) (12 * density), 1));
         dock.addView(spacer);
 
-        TextView saveBtn = createDialogButton(activity, isEs ? "GUARDAR COPIA" : "SAVE BACKUP", true, tokens);
+        TextView saveBtn = createDialogButton(activity, I18n.get(I18n.KEY_BACKUP_SAVE_BTN, langCode), true, tokens);
         saveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String fileName = nameInput.getText().toString().trim();
                 if (fileName.isEmpty()) {
-                    Toast.makeText(activity, isEs ? "Introduce un nombre válido" : "Enter a valid filename", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_ERR_EMPTY_NAME, langCode), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 // Enforce a safe single filename component to prevent path traversal/injection.
@@ -268,7 +264,7 @@ public final class BackupRestoreManager {
                         || fileName.contains("\\")
                         || fileName.startsWith(".")
                         || !fileName.matches("[A-Za-z0-9 _.-]+")) {
-                    Toast.makeText(activity, isEs ? "Nombre de archivo no válido" : "Invalid filename", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_ERR_INVALID_NAME, langCode), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 if (!fileName.endsWith(".tontbak") && !fileName.endsWith(".json")) {
@@ -338,8 +334,7 @@ public final class BackupRestoreManager {
                 os.write(sPendingBackupPayload.getBytes(StandardCharsets.UTF_8));
                 os.flush();
                 os.close();
-                boolean isEs = "es".equalsIgnoreCase(langCode);
-                Toast.makeText(activity, isEs ? "Copia guardada con éxito en SAF" : "Backup saved via SAF", Toast.LENGTH_LONG).show();
+                Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_SAF_SUCCESS, langCode), Toast.LENGTH_LONG).show();
             }
         } catch (Exception e) {
             Toast.makeText(activity, "SAF Write Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -355,7 +350,6 @@ public final class BackupRestoreManager {
         final File targetFile
     ) {
         final float density = activity.getResources().getDisplayMetrics().density;
-        final boolean isEs = "es".equalsIgnoreCase(langCode);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(
             activity,
@@ -368,7 +362,7 @@ public final class BackupRestoreManager {
         root.setBackgroundColor(tokens.bg);
 
         TextView header = new TextView(activity);
-        header.setText(isEs ? "=== COPIA GUARDADA CON ÉXITO ===" : "=== BACKUP CREATED SUCCESSFULLY ===");
+        header.setText(I18n.get(I18n.KEY_BACKUP_SUCCESS_TITLE, langCode));
         header.setTextColor(tokens.accent);
         header.setTextSize(14);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -378,10 +372,10 @@ public final class BackupRestoreManager {
         TextView details = new TextView(activity);
         long bytes = targetFile.length();
         details.setText(
-            (isEs ? "Archivo:  " : "File:     ") + targetFile.getName() + "\n" +
-            (isEs ? "Ruta:     " : "Path:     ") + targetFile.getParent() + "\n" +
-            (isEs ? "Tamaño:   " : "Size:     ") + bytes + " bytes\n" +
-            (isEs ? "Estado:   " : "Status:   ") + "[ ÍNTEGRO & VERIFICADO ]"
+            I18n.get(I18n.KEY_BACKUP_DETAILS_FILE, langCode) + targetFile.getName() + "\n" +
+            I18n.get(I18n.KEY_BACKUP_DETAILS_PATH, langCode) + targetFile.getParent() + "\n" +
+            I18n.get(I18n.KEY_BACKUP_DETAILS_SIZE, langCode) + bytes + " bytes\n" +
+            I18n.get(I18n.KEY_BACKUP_DETAILS_STATUS, langCode) + I18n.get(I18n.KEY_BACKUP_STATUS_VERIFIED, langCode)
         );
         details.setTextColor(tokens.textPrimary);
         details.setTextSize(12);
@@ -414,7 +408,6 @@ public final class BackupRestoreManager {
         final Runnable onRestored
     ) {
         final float density = activity.getResources().getDisplayMetrics().density;
-        final boolean isEs = "es".equalsIgnoreCase(langCode);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(
             activity,
@@ -427,7 +420,7 @@ public final class BackupRestoreManager {
         root.setBackgroundColor(tokens.bg);
 
         TextView header = new TextView(activity);
-        header.setText(isEs ? "=== RESTAURAR COPIA DE SEGURIDAD ===" : "=== RESTORE BACKUP SNAPSHOT ===");
+        header.setText(I18n.get(I18n.KEY_RESTORE_TITLE, langCode));
         header.setTextColor(tokens.accent);
         header.setTextSize(14);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -448,7 +441,7 @@ public final class BackupRestoreManager {
 
         if (backupFiles.isEmpty()) {
             TextView none = new TextView(activity);
-            none.setText(isEs ? "No se encontraron copias en Descargas o carpeta TontOS." : "No backup files found in Downloads or App folder.");
+            none.setText(I18n.get(I18n.KEY_RESTORE_NO_BACKUPS, langCode));
             none.setTextColor(tokens.textMuted);
             none.setTextSize(12);
             none.setTypeface(Typeface.MONOSPACE);
@@ -494,7 +487,7 @@ public final class BackupRestoreManager {
         dock.setGravity(Gravity.END);
         dock.setPadding(0, (int) (12 * density), 0, 0);
 
-        TextView safBtn = createDialogButton(activity, isEs ? "ELEGIR ARCHIVO (SAF)" : "OPEN FILE (SAF)", false, tokens);
+        TextView safBtn = createDialogButton(activity, I18n.get(I18n.KEY_RESTORE_SAF_BTN, langCode), false, tokens);
         safBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -511,7 +504,7 @@ public final class BackupRestoreManager {
         sp.setLayoutParams(new LinearLayout.LayoutParams((int) (8 * density), 1));
         dock.addView(sp);
 
-        TextView cancelBtn = createDialogButton(activity, isEs ? "CERRAR" : "CLOSE", false, tokens);
+        TextView cancelBtn = createDialogButton(activity, I18n.get(I18n.KEY_RESTORE_CLOSE_BTN, langCode), false, tokens);
         cancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { dialog.dismiss(); }
         });
@@ -613,12 +606,11 @@ public final class BackupRestoreManager {
         final SharedPreferences prefs,
         final Runnable onRestored
     ) throws Exception {
-        final boolean isEs = "es".equalsIgnoreCase(langCode);
         final float density = activity.getResources().getDisplayMetrics().density;
 
         JSONObject envelope = new JSONObject(rawJson);
         if (!envelope.has("payload") || !envelope.has("sha256")) {
-            Toast.makeText(activity, isEs ? "Error: archivo no es una copia TontOS válida" : "Invalid backup envelope", Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_ERR_INVALID, langCode), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -627,7 +619,7 @@ public final class BackupRestoreManager {
         String actualHash = sha256Hex(payload);
 
         if (!actualHash.equalsIgnoreCase(recordedHash)) {
-            Toast.makeText(activity, isEs ? "Error: Checksum SHA-256 no coincide (archivo corrupto o alterado)" : "Integrity check failed: corrupted backup", Toast.LENGTH_LONG).show();
+            Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_ERR_CHECKSUM, langCode), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -644,7 +636,7 @@ public final class BackupRestoreManager {
         root.setBackgroundColor(tokens.bg);
 
         TextView title = new TextView(activity);
-        title.setText(isEs ? "=== CONFIRMAR RESTAURACIÓN ===" : "=== CONFIRM RESTORE ===");
+        title.setText(I18n.get(I18n.KEY_RESTORE_CONFIRM_TITLE, langCode));
         title.setTextColor(tokens.accent);
         title.setTextSize(14);
         title.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -652,13 +644,11 @@ public final class BackupRestoreManager {
         root.addView(title);
 
         TextView msg = new TextView(activity);
-        String dateStr = envelope.optString("date_iso", "Desconocida");
+        String dateStr = envelope.optString("date_iso", "Unknown");
         String devStr = envelope.optString("device_model", "TontOS Device");
         int count = payloadObj.length();
 
-        msg.setText(isEs
-            ? ("Se restaurarán " + count + " ajustes creados el " + dateStr + " (" + devStr + ").\n\n¿Deseas aplicar la copia ahora?")
-            : ("Restore " + count + " preferences from " + dateStr + " (" + devStr + ")?\n\nApply snapshot now?"));
+        msg.setText(I18n.format(I18n.KEY_RESTORE_CONFIRM_MSG_FMT, langCode, count, dateStr, devStr));
         msg.setTextColor(tokens.textPrimary);
         msg.setTextSize(12);
         msg.setTypeface(Typeface.MONOSPACE);
@@ -672,7 +662,7 @@ public final class BackupRestoreManager {
         builder.setView(root);
         final AlertDialog confirmDialog = builder.create();
 
-        TextView cancelBtn = createDialogButton(activity, isEs ? "CANCELAR" : "CANCEL", false, tokens);
+        TextView cancelBtn = createDialogButton(activity, I18n.get(I18n.KEY_CANCEL, langCode), false, tokens);
         cancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { confirmDialog.dismiss(); }
         });
@@ -682,13 +672,13 @@ public final class BackupRestoreManager {
         sp.setLayoutParams(new LinearLayout.LayoutParams((int) (8 * density), 1));
         dock.addView(sp);
 
-        TextView applyBtn = createDialogButton(activity, isEs ? "RESTAURAR AHORA" : "RESTORE NOW", true, tokens);
+        TextView applyBtn = createDialogButton(activity, I18n.get(I18n.KEY_RESTORE_NOW_BTN, langCode), true, tokens);
         applyBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 confirmDialog.dismiss();
                 applyRestoredPreferences(prefs, payloadObj);
-                Toast.makeText(activity, isEs ? "Copia restaurada con éxito" : "Backup restored successfully", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_SUCCESS, langCode), Toast.LENGTH_SHORT).show();
                 if (onRestored != null) onRestored.run();
             }
         });

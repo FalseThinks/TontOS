@@ -50,51 +50,27 @@ public final class BatteryProtectionManager {
     }
 
     public static String getSettingsDisplay(String langCode) {
-        String lang = langCode == null ? "en" : langCode.toLowerCase();
-        if (lang.startsWith("de")) return "100% · Steuerung n. v.";
-        if (lang.startsWith("pl")) return "100% · sterowanie n/d";
-        if (lang.startsWith("es")) return "100% · control no disp.";
-        return "100% · controls N/A";
+        return I18n.get(I18n.KEY_BATTERY_CTRL_NA, langCode);
     }
 
     public static String getOptionDisplay(int mode, String langCode) {
-        if (mode == MODE_100) return getModeDisplay(mode, langCode);
-        String lang = langCode == null ? "en" : langCode.toLowerCase();
         if (mode == MODE_80) {
-            if (lang.startsWith("de")) return "80%-Limit — nicht verfügbar";
-            if (lang.startsWith("pl")) return "Limit 80% — niedostępny";
-            if (lang.startsWith("es")) return "Límite 80% — no disponible";
-            return "80% limit — unavailable";
+            return I18n.get(I18n.KEY_BATTERY_80_NA, langCode);
         }
         if (mode == MODE_BYPASS) {
-            if (lang.startsWith("de")) return "Bypass — nicht verfügbar";
-            if (lang.startsWith("pl")) return "Bypass — niedostępny";
-            if (lang.startsWith("es")) return "Bypass — no disponible";
-            return "Bypass — unavailable";
+            return I18n.get(I18n.KEY_BATTERY_BYPASS_NA, langCode);
         }
         return getModeDisplay(mode, langCode);
     }
 
     public static String getModeResultDisplay(ModeResult result, String langCode) {
         if (result == ModeResult.UNSUPPORTED) {
-            String lang = langCode == null ? "en" : langCode.toLowerCase();
-            if (lang.startsWith("de")) return "Ladelimits und Bypass-Steuerung sind dieser App auf diesem Gerät nicht verfügbar.";
-            if (lang.startsWith("pl")) return "Limity ładowania i sterowanie bypass są niedostępne dla tej aplikacji na tym urządzeniu.";
-            if (lang.startsWith("es")) return "Los límites de carga y el bypass no están disponibles para esta aplicación en este dispositivo.";
-            return "Charge limits and bypass control are unavailable to this app on this device.";
+            return I18n.get(I18n.KEY_BATTERY_UNSUPPORTED_MSG, langCode);
         }
         if (result == ModeResult.APPLIED) {
-            String lang = langCode == null ? "en" : langCode.toLowerCase();
-            if (lang.startsWith("de")) return "Standardladen ausgewählt; es wird kein Ladelimit angewendet.";
-            if (lang.startsWith("pl")) return "Wybrano standardowe ładowanie; limit ładowania nie jest stosowany.";
-            if (lang.startsWith("es")) return "Carga estándar seleccionada; no se aplica ningún límite.";
-            return "Standard charging selected; no charge limit is applied.";
+            return I18n.get(I18n.KEY_BATTERY_APPLIED_MSG, langCode);
         }
-        String lang = langCode == null ? "en" : langCode.toLowerCase();
-        if (lang.startsWith("de")) return "Ungültige Ladeoption.";
-        if (lang.startsWith("pl")) return "Nieprawidłowa opcja ładowania.";
-        if (lang.startsWith("es")) return "Opción de carga no válida.";
-        return "Invalid charging option.";
+        return I18n.get(I18n.KEY_BATTERY_INVALID_MSG, langCode);
     }
 
     /**
