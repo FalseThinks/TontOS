@@ -17,6 +17,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -556,70 +557,6 @@ public class SettingsActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("300", "5m"));
                 options.add(new SingleChoiceSelectorDialog.Option("600", "10m"));
 
-                // Embedded Screen Time Counter View inside Timeout dialog
-                float density = getResources().getDisplayMetrics().density;
-                LinearLayout timeoutHeaderBox = new LinearLayout(SettingsActivity.this);
-                timeoutHeaderBox.setOrientation(LinearLayout.VERTICAL);
-                timeoutHeaderBox.setPadding(0, 0, 0, (int) (14 * density));
-
-                final TextView counterText = new TextView(SettingsActivity.this);
-                long mins = MainActivity.getScreenTimeTodayMins();
-                String timeDisplay = (mins < 60) ? (mins + "m") : ((mins / 60) + "h " + (mins % 60) + "m");
-                counterText.setText(I18n.get(I18n.KEY_SCREEN_TIME_COUNTER, curLangCode) + ": " + timeDisplay);
-                counterText.setTextColor(tokens.textPrimary);
-                counterText.setTextSize(14);
-                counterText.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-                counterText.setPadding(0, 0, 0, (int) (6 * density));
-                timeoutHeaderBox.addView(counterText);
-
-                TextView resetBtn = new TextView(SettingsActivity.this);
-                resetBtn.setText(I18n.get(I18n.KEY_RESET_TODAY, curLangCode));
-                resetBtn.setTextColor(tokens.navAccent);
-                resetBtn.setTextSize(13);
-                resetBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-                resetBtn.setGravity(Gravity.CENTER);
-                resetBtn.setMinimumHeight((int) (44 * density));
-                resetBtn.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
-                resetBtn.setClickable(true);
-                resetBtn.setFocusable(true);
-
-                StateListDrawable rstSld = new StateListDrawable();
-                GradientDrawable rstPressed = new GradientDrawable();
-                rstPressed.setColor(tokens.controlBgPressed);
-                rstPressed.setCornerRadius((int) (4 * density));
-                rstSld.addState(new int[]{android.R.attr.state_pressed}, rstPressed);
-                rstSld.addState(new int[]{android.R.attr.state_focused}, rstPressed);
-                rstSld.addState(new int[]{}, new ColorDrawable(Color.TRANSPARENT));
-                resetBtn.setBackground(rstSld);
-
-                resetBtn.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        MainActivity.resetScreenTimeToday(SettingsActivity.this);
-                        counterText.setText(I18n.get(I18n.KEY_SCREEN_TIME_COUNTER, curLangCode) + ": 0m");
-                        AlertDialog.Builder okDialog = new AlertDialog.Builder(SettingsActivity.this, tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK);
-                        okDialog.setTitle(I18n.get(I18n.KEY_SCREEN_TIME_RESET_TITLE, curLangCode));
-                        okDialog.setMessage(I18n.get(I18n.KEY_SCREEN_TIME_RESET_OK, curLangCode));
-                        okDialog.setPositiveButton("OK", null);
-                        AlertDialog alert = okDialog.create();
-                        alert.show();
-                        if (alert.getWindow() != null) {
-                            alert.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-                        }
-                        Button pBtn = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                        if (pBtn != null) {
-                            pBtn.setTextColor(tokens.accent);
-                            pBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-                        }
-                    }
-                });
-                timeoutHeaderBox.addView(resetBtn);
-
-                View div = new View(SettingsActivity.this);
-                div.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (1 * density)));
-                div.setBackgroundColor(tokens.border);
-                timeoutHeaderBox.addView(div);
-
                 String curId = String.valueOf(Math.max(0, currentTimeout));
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -627,7 +564,6 @@ public class SettingsActivity extends Activity {
                     I18n.get(I18n.KEY_TIMEOUT, curLangCode),
                     options,
                     curId,
-                    timeoutHeaderBox,
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
@@ -656,16 +592,10 @@ public class SettingsActivity extends Activity {
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
                 options.add(new SingleChoiceSelectorDialog.Option("none", I18n.get(I18n.KEY_BUDGET_OFF, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("30m", "30m"));
                 options.add(new SingleChoiceSelectorDialog.Option("1h", "1h"));
                 options.add(new SingleChoiceSelectorDialog.Option("2h", "2h"));
                 options.add(new SingleChoiceSelectorDialog.Option("3h", "3h"));
                 options.add(new SingleChoiceSelectorDialog.Option("4h", "4h"));
-                options.add(new SingleChoiceSelectorDialog.Option("6h", "6h"));
-                options.add(new SingleChoiceSelectorDialog.Option("8h", "8h"));
-                options.add(new SingleChoiceSelectorDialog.Option("12h", "12h"));
-                options.add(new SingleChoiceSelectorDialog.Option("24h", "24h"));
-                options.add(new SingleChoiceSelectorDialog.Option("custom", I18n.get(I18n.KEY_BUDGET_CUSTOM, curLangCode)));
 
                 String curId = (currentBudgetMins <= 0) ? "none" : (currentBudgetMins % 60 == 0 ? (currentBudgetMins / 60) + "h" : currentBudgetMins + "m");
                 SingleChoiceSelectorDialog.show(
@@ -679,16 +609,10 @@ public class SettingsActivity extends Activity {
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
                             int mins = 0;
                             if ("none".equals(selected.id) || "disabled".equals(selected.id)) mins = 0;
-                            else if ("30m".equals(selected.id)) mins = 30;
                             else if ("1h".equals(selected.id)) mins = 60;
                             else if ("2h".equals(selected.id)) mins = 120;
                             else if ("3h".equals(selected.id)) mins = 180;
                             else if ("4h".equals(selected.id)) mins = 240;
-                            else if ("6h".equals(selected.id)) mins = 360;
-                            else if ("8h".equals(selected.id)) mins = 480;
-                            else if ("12h".equals(selected.id)) mins = 720;
-                            else if ("24h".equals(selected.id)) mins = 1440;
-                            else if ("custom".equals(selected.id)) { showCustomBudgetDialog(tokens, curLangCode); return; }
 
                             preferences.edit().putInt(KEY_BUDGET, mins).apply();
                             buildSettingsUI();
@@ -701,25 +625,19 @@ public class SettingsActivity extends Activity {
 
         final int curFontScale = preferences.getInt("pref_font_scale", 100);
         String curFontScaleDisplay;
-        if (curFontScale == 70) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XS, curLangCode);
-        else if (curFontScale == 85) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_SMALL, curLangCode);
+        if (curFontScale == 85) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_SMALL, curLangCode);
         else if (curFontScale == 115) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_LARGE, curLangCode);
         else if (curFontScale == 130) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XL, curLangCode);
-        else if (curFontScale == 150) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XXL, curLangCode);
-        else if (curFontScale == 175) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_MAX, curLangCode);
         else curFontScaleDisplay = I18n.get(I18n.KEY_FONT_NORMAL, curLangCode);
 
         addSelectorRow(I18n.get(I18n.KEY_FONT_SIZE, curLangCode), curFontScaleDisplay, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("70", I18n.get(I18n.KEY_FONT_XS, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("85", I18n.get(I18n.KEY_FONT_SMALL, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("100", I18n.get(I18n.KEY_FONT_NORMAL, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("115", I18n.get(I18n.KEY_FONT_LARGE, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("130", I18n.get(I18n.KEY_FONT_XL, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("150", I18n.get(I18n.KEY_FONT_XXL, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("175", I18n.get(I18n.KEY_FONT_MAX, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -788,35 +706,267 @@ public class SettingsActivity extends Activity {
         }, tokens);
 
         final boolean glyphSupported = NothingGlyphManager.isGlyphHardwarePresent();
-        final boolean glyphMaster = NothingGlyphManager.isMasterEnabled(this);
-        addToggleRow(I18n.get(I18n.KEY_GLYPH_INTERFACE, curLangCode) + (glyphSupported ? "" : " (AW210xx)"), glyphMaster ? "[ ON ]" : "[ OFF ]", glyphMaster, new View.OnClickListener() {
+        if (glyphSupported) {
+            final boolean glyphMaster = NothingGlyphManager.isMasterEnabled(this);
+            addToggleRow(I18n.get(I18n.KEY_GLYPH_INTERFACE, curLangCode), glyphMaster ? "[ ON ]" : "[ OFF ]", glyphMaster, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    boolean nextState = !glyphMaster;
+                    NothingGlyphManager.setMasterEnabled(SettingsActivity.this, nextState);
+                    buildSettingsUI();
+                }
+            }, tokens);
+
+            if (glyphMaster) {
+                final boolean flipActive = NothingGlyphManager.isFlipToGlyphEnabled(this);
+                addToggleRow("  " + I18n.get(I18n.KEY_FLIP_TO_GLYPH, curLangCode), flipActive ? "[ ON ]" : "[ OFF ]", flipActive, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        NothingGlyphManager.setFlipToGlyphEnabled(SettingsActivity.this, !flipActive);
+                        buildSettingsUI();
+                    }
+                }, tokens);
+
+                final boolean essentialActive = NothingGlyphManager.isEssentialGlyphEnabled(this);
+                addToggleRow("  " + I18n.get(I18n.KEY_ESSENTIAL_GLYPH, curLangCode), essentialActive ? "[ ON ]" : "[ OFF ]", essentialActive, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        NothingGlyphManager.setEssentialGlyphEnabled(SettingsActivity.this, !essentialActive);
+                        buildSettingsUI();
+                    }
+                }, tokens);
+            }
+        }
+
+        // ==========================================
+        // LOCK SCREEN CONFIGURATION
+        // ==========================================
+        TextView lockHeader = new TextView(this);
+        lockHeader.setText(I18n.get(I18n.KEY_LOCKSCREEN_HEADER, curLangCode));
+        lockHeader.setTextColor(tokens.accent);
+        lockHeader.setTextSize(14);
+        lockHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        lockHeader.setPadding(0, 18, 0, 8);
+        contentContainer.addView(lockHeader);
+
+        final boolean lockEnabled = LockScreenManager.isLockScreenEnabled(this);
+        addToggleRow(I18n.get(I18n.KEY_LOCKSCREEN_ENABLE, curLangCode), lockEnabled ? "[ ON ]" : "[ OFF ]", lockEnabled, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean nextState = !glyphMaster;
-                NothingGlyphManager.setMasterEnabled(SettingsActivity.this, nextState);
+                LockScreenManager.setLockScreenEnabled(SettingsActivity.this, !lockEnabled);
                 buildSettingsUI();
             }
         }, tokens);
 
-        if (glyphMaster) {
-            final boolean flipActive = NothingGlyphManager.isFlipToGlyphEnabled(this);
-            addToggleRow("  " + I18n.get(I18n.KEY_FLIP_TO_GLYPH, curLangCode), flipActive ? "[ ON ]" : "[ OFF ]", flipActive, new View.OnClickListener() {
+        if (lockEnabled) {
+            // 1. Clock style selector
+            final LockClockStyle curClockStyle = LockScreenManager.getClockStyle(this);
+            String clockStyleDisplay;
+            switch (curClockStyle) {
+                case BIG_MONOSPACE: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_BIG, curLangCode); break;
+                case VERTICAL_STACKED: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_STACKED, curLangCode); break;
+                case TERMINAL_RETRO: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_TERMINAL, curLangCode); break;
+                case COMPACT_SINGLE: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_COMPACT, curLangCode); break;
+                case THEME_DEFAULT:
+                default: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_DEFAULT, curLangCode); break;
+            }
+
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_CLOCK_STYLE, curLangCode), clockStyleDisplay, new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    NothingGlyphManager.setFlipToGlyphEnabled(SettingsActivity.this, !flipActive);
+                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.THEME_DEFAULT.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_DEFAULT, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.BIG_MONOSPACE.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_BIG, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.VERTICAL_STACKED.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_STACKED, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.TERMINAL_RETRO.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_TERMINAL, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.COMPACT_SINGLE.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_COMPACT, curLangCode)));
+
+                    SingleChoiceSelectorDialog.show(
+                        SettingsActivity.this,
+                        tokens,
+                        I18n.get(I18n.KEY_LOCK_CLOCK_STYLE, curLangCode),
+                        options,
+                        curClockStyle.getId(),
+                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                            @Override
+                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                                LockScreenManager.setClockStyle(SettingsActivity.this, LockClockStyle.fromId(selected.id));
+                                buildSettingsUI();
+                            }
+                        }
+                    );
+                }
+            }, tokens);
+
+            // 2. Lock screen theme override selector
+            final String curThemeOverride = LockScreenManager.getThemeOverride(this);
+            String themeOverrideDisplay;
+            if (LockScreenManager.THEME_MATCH_ACTIVE.equalsIgnoreCase(curThemeOverride)) {
+                themeOverrideDisplay = I18n.get(I18n.KEY_LOCK_THEME_MATCH, curLangCode);
+            } else {
+                ThemePreset p = ThemePreset.fromId(curThemeOverride);
+                themeOverrideDisplay = p != null ? p.getDisplayName() : curThemeOverride;
+            }
+
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_THEME_OVERRIDE, curLangCode), themeOverrideDisplay, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                    options.add(new SingleChoiceSelectorDialog.Option(LockScreenManager.THEME_MATCH_ACTIVE, I18n.get(I18n.KEY_LOCK_THEME_MATCH, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.AMOLED.getId(), "AMOLED Black"));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.AMBER.getId(), "Amber CRT"));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.E_INK.getId(), "E-Ink Paper"));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.SLATE.getId(), "Slate Midnight"));
+
+                    SingleChoiceSelectorDialog.show(
+                        SettingsActivity.this,
+                        tokens,
+                        I18n.get(I18n.KEY_LOCK_THEME_OVERRIDE, curLangCode),
+                        options,
+                        curThemeOverride,
+                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                            @Override
+                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                                LockScreenManager.setThemeOverride(SettingsActivity.this, selected.id);
+                                buildSettingsUI();
+                            }
+                        }
+                    );
+                }
+            }, tokens);
+
+            // 3. Toggle Detox progress bar
+            final boolean showDetox = LockScreenManager.isShowDetox(this);
+            addToggleRow(I18n.get(I18n.KEY_LOCK_SHOW_DETOX, curLangCode), showDetox ? "[ ON ]" : "[ OFF ]", showDetox, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    LockScreenManager.setShowDetox(SettingsActivity.this, !showDetox);
                     buildSettingsUI();
                 }
             }, tokens);
 
-            final boolean essentialActive = NothingGlyphManager.isEssentialGlyphEnabled(this);
-            addToggleRow("  " + I18n.get(I18n.KEY_ESSENTIAL_GLYPH, curLangCode), essentialActive ? "[ ON ]" : "[ OFF ]", essentialActive, new View.OnClickListener() {
+            // 4. Toggle Battery status
+            final boolean showBattery = LockScreenManager.isShowBattery(this);
+            addToggleRow(I18n.get(I18n.KEY_LOCK_SHOW_BATTERY, curLangCode), showBattery ? "[ ON ]" : "[ OFF ]", showBattery, new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    NothingGlyphManager.setEssentialGlyphEnabled(SettingsActivity.this, !essentialActive);
+                    LockScreenManager.setShowBattery(SettingsActivity.this, !showBattery);
                     buildSettingsUI();
                 }
             }, tokens);
+
+            // 5. Custom owner info row
+            String ownerInfo = LockScreenManager.getOwnerInfo(this);
+            String ownerDisplay = TextUtils.isEmpty(ownerInfo) ? "[ NONE ]" : (ownerInfo.length() > 20 ? ownerInfo.substring(0, 18) + "..." : ownerInfo);
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_OWNER_INFO, curLangCode), ownerDisplay, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLockOwnerDialog(tokens, curLangCode);
+                }
+            }, tokens);
+
+            // 6. Left shortcut
+            final LockShortcut curLeft = LockScreenManager.getLeftShortcut(this);
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_SHORTCUT_LEFT, curLangCode), getLockShortcutDisplay(curLeft, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLockShortcutPicker(true, curLeft, tokens, curLangCode);
+                }
+            }, tokens);
+
+            // 7. Right shortcut
+            final LockShortcut curRight = LockScreenManager.getRightShortcut(this);
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_SHORTCUT_RIGHT, curLangCode), getLockShortcutDisplay(curRight, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLockShortcutPicker(false, curRight, tokens, curLangCode);
+                }
+            }, tokens);
+
+            // 8. Test lockscreen button
+            addButtonRow(I18n.get(I18n.KEY_LOCK_TEST_BTN, curLangCode), "TEST", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent testIntent = new Intent(SettingsActivity.this, LockScreenActivity.class);
+                    testIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(testIntent);
+                }
+            }, tokens);
         }
+    }
+
+    private String getLockShortcutDisplay(LockShortcut shortcut, String curLangCode) {
+        if (shortcut == null) return I18n.get(I18n.KEY_LOCK_ACTION_NONE, curLangCode);
+        switch (shortcut) {
+            case TORCH: return I18n.get(I18n.KEY_LOCK_ACTION_TORCH, curLangCode);
+            case CAMERA: return I18n.get(I18n.KEY_LOCK_ACTION_CAMERA, curLangCode);
+            case PHONE: return I18n.get(I18n.KEY_LOCK_ACTION_PHONE, curLangCode);
+            case BROWSER: return I18n.get(I18n.KEY_LOCK_ACTION_BROWSER, curLangCode);
+            case NONE:
+            default: return I18n.get(I18n.KEY_LOCK_ACTION_NONE, curLangCode);
+        }
+    }
+
+    private void showLockShortcutPicker(final boolean isLeft, LockShortcut current, final ThemeTokens tokens, final String curLangCode) {
+        List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+        options.add(new SingleChoiceSelectorDialog.Option(LockShortcut.NONE.getId(), I18n.get(I18n.KEY_LOCK_ACTION_NONE, curLangCode)));
+        options.add(new SingleChoiceSelectorDialog.Option(LockShortcut.TORCH.getId(), I18n.get(I18n.KEY_LOCK_ACTION_TORCH, curLangCode)));
+        options.add(new SingleChoiceSelectorDialog.Option(LockShortcut.CAMERA.getId(), I18n.get(I18n.KEY_LOCK_ACTION_CAMERA, curLangCode)));
+        options.add(new SingleChoiceSelectorDialog.Option(LockShortcut.PHONE.getId(), I18n.get(I18n.KEY_LOCK_ACTION_PHONE, curLangCode)));
+        options.add(new SingleChoiceSelectorDialog.Option(LockShortcut.BROWSER.getId(), I18n.get(I18n.KEY_LOCK_ACTION_BROWSER, curLangCode)));
+
+        String title = isLeft ? I18n.get(I18n.KEY_LOCK_SHORTCUT_LEFT, curLangCode) : I18n.get(I18n.KEY_LOCK_SHORTCUT_RIGHT, curLangCode);
+        SingleChoiceSelectorDialog.show(
+            this,
+            tokens,
+            title,
+            options,
+            current.getId(),
+            new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                @Override
+                public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                    LockShortcut chosen = LockShortcut.fromId(selected.id);
+                    if (isLeft) {
+                        LockScreenManager.setLeftShortcut(SettingsActivity.this, chosen);
+                    } else {
+                        LockScreenManager.setRightShortcut(SettingsActivity.this, chosen);
+                    }
+                    buildSettingsUI();
+                }
+            }
+        );
+    }
+
+    private void showLockOwnerDialog(final ThemeTokens tokens, final String curLangCode) {
+        float density = getResources().getDisplayMetrics().density;
+        final android.widget.EditText input = new android.widget.EditText(this);
+        input.setTypeface(Typeface.MONOSPACE);
+        input.setTextSize(14);
+        input.setTextColor(tokens.textPrimary);
+        input.setBackgroundColor(tokens.controlBgNormal);
+        input.setPadding((int) (14 * density), (int) (12 * density), (int) (14 * density), (int) (12 * density));
+        input.setText(LockScreenManager.getOwnerInfo(this));
+        input.setHint(I18n.get(I18n.KEY_LOCK_OWNER_HINT, curLangCode));
+        input.setHintTextColor(tokens.textMuted);
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding((int) (20 * density), (int) (12 * density), (int) (20 * density), (int) (8 * density));
+        layout.addView(input);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK);
+        builder.setTitle(I18n.get(I18n.KEY_LOCK_OWNER_INFO, curLangCode));
+        builder.setView(layout);
+        builder.setPositiveButton(I18n.get(I18n.KEY_CONFIRM, curLangCode), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String text = input.getText().toString();
+                LockScreenManager.setOwnerInfo(SettingsActivity.this, text);
+                buildSettingsUI();
+            }
+        });
+        builder.setNegativeButton(I18n.get(I18n.KEY_CANCEL, curLangCode), null);
+        builder.show();
     }
 
     // ==========================================
@@ -848,6 +998,22 @@ public class SettingsActivity extends Activity {
                 int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING);
                 int target = (int) Math.round((progress / 100.0) * max);
                 audioManager.setStreamVolume(AudioManager.STREAM_RING, target, AudioManager.FLAG_SHOW_UI);
+            }
+            @Override public void onStop(int progress) {}
+        }, tokens);
+
+        int maxNotif = audioManager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
+        int curNotif = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+        int notifPercent = (int) Math.round(((double) curNotif / (double) Math.max(1, maxNotif)) * 100);
+        addSliderRow(I18n.get(I18n.KEY_NOTIFICATION_VOL, curLangCode), notifPercent, 0, 100, new OnSliderChangedListener() {
+            @Override
+            public void onProgress(int progress, boolean fromUser) {
+                int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
+                int target = (int) Math.round((progress / 100.0) * max);
+                audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, target, AudioManager.FLAG_SHOW_UI);
+                if (target > 0) {
+                    preferences.edit().putInt("pref_user_notif_vol", target).apply();
+                }
             }
             @Override public void onStop(int progress) {}
         }, tokens);
@@ -907,9 +1073,20 @@ public class SettingsActivity extends Activity {
                             }
                             if ("NORMAL".equals(selected.id)) {
                                 audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                                if (nm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && nm.isNotificationPolicyAccessGranted()) {
+                                    nm.setInterruptionFilter(android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
+                                }
+                                int maxN = audioManager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
+                                int savedN = preferences.getInt("pref_user_notif_vol", (int)(maxN * 0.7));
+                                if (savedN <= 0) savedN = (int)(maxN * 0.7);
+                                audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, savedN, 0);
                             } else if ("VIBRATE".equals(selected.id)) {
+                                int curN = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+                                if (curN > 0) preferences.edit().putInt("pref_user_notif_vol", curN).apply();
                                 audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
                             } else if ("SILENT".equals(selected.id)) {
+                                int curN = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+                                if (curN > 0) preferences.edit().putInt("pref_user_notif_vol", curN).apply();
                                 audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
                             }
                             buildSettingsUI();
@@ -920,18 +1097,17 @@ public class SettingsActivity extends Activity {
         }, tokens);
 
         final NotificationDigestManager.DeliveryMode curDeliveryMode = NotificationDigestManager.getDeliveryMode(this);
-        final boolean isEs = "es".equalsIgnoreCase(curLangCode);
         String curDeliveryLabel;
         switch (curDeliveryMode) {
             case SCHEDULED_DIGEST:
-                curDeliveryLabel = "Digest";
+                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode);
                 break;
             case STARRED_ONLY:
-                curDeliveryLabel = isEs ? "Favoritos" : "Starred";
+                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode);
                 break;
             case IMMEDIATE:
             default:
-                curDeliveryLabel = isEs ? "Inmediata" : "Immediate";
+                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode);
                 break;
         }
 
@@ -941,15 +1117,15 @@ public class SettingsActivity extends Activity {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
                 options.add(new SingleChoiceSelectorDialog.Option(
                     NotificationDigestManager.DeliveryMode.IMMEDIATE.name(),
-                    isEs ? "Inmediata" : "Immediate"
+                    I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode)
                 ));
                 options.add(new SingleChoiceSelectorDialog.Option(
                     NotificationDigestManager.DeliveryMode.SCHEDULED_DIGEST.name(),
-                    "Digest"
+                    I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode)
                 ));
                 options.add(new SingleChoiceSelectorDialog.Option(
                     NotificationDigestManager.DeliveryMode.STARRED_ONLY.name(),
-                    isEs ? "Favoritos" : "Starred"
+                    I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode)
                 ));
 
                 SingleChoiceSelectorDialog.show(
@@ -998,81 +1174,86 @@ public class SettingsActivity extends Activity {
         }, tokens);
 
         // Embed 5-Band Equalizer
-        TextView eqHeader = new TextView(this);
-        eqHeader.setText(I18n.get(I18n.KEY_EQUALIZER, curLangCode));
-        eqHeader.setTextColor(tokens.accent);
-        eqHeader.setTextSize(14);
-        eqHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        eqHeader.setPadding(0, 20, 0, 8);
-        contentContainer.addView(eqHeader);
-
-        final String curPreset = preferences.getString("pref_eq_preset", "flat");
-        String curPresetLabel;
-        if ("bass".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_BASS, curLangCode);
-        else if ("vocal".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_VOCAL, curLangCode);
-        else if ("treble".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_TREBLE, curLangCode);
-        else if ("rock".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_ROCK, curLangCode);
-        else if ("custom".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_CUSTOM, curLangCode);
-        else curPresetLabel = I18n.get(I18n.KEY_EQ_FLAT, curLangCode);
-
-        addSelectorRow(I18n.get(I18n.KEY_EQ_PRESET, curLangCode), curPresetLabel, new View.OnClickListener() {
+        final boolean eqEnabled = preferences.getBoolean("pref_eq_enabled", true);
+        addToggleRow("Equalizer", eqEnabled ? "[ ON ]" : "[ OFF ]", eqEnabled, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("flat", I18n.get(I18n.KEY_EQ_FLAT, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("bass", I18n.get(I18n.KEY_EQ_BASS, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("vocal", I18n.get(I18n.KEY_EQ_VOCAL, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("treble", I18n.get(I18n.KEY_EQ_TREBLE, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("rock", I18n.get(I18n.KEY_EQ_ROCK, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("custom", I18n.get(I18n.KEY_EQ_CUSTOM, curLangCode)));
-
-                SingleChoiceSelectorDialog.show(
-                    SettingsActivity.this,
-                    tokens,
-                    I18n.get(I18n.KEY_EQ_PRESET, curLangCode),
-                    options,
-                    curPreset,
-                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
-                        @Override
-                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                            String chosen = selected.id;
-                            preferences.edit().putString("pref_eq_preset", chosen).apply();
-                            if (!"custom".equals(chosen)) {
-                                int[] presetBands;
-                                if ("bass".equals(chosen)) {
-                                    presetBands = new int[]{6, 4, 1, 0, -1};
-                                } else if ("vocal".equals(chosen)) {
-                                    presetBands = new int[]{-2, 0, 5, 3, -1};
-                                } else if ("treble".equals(chosen)) {
-                                    presetBands = new int[]{-2, 0, 1, 4, 6};
-                                } else if ("rock".equals(chosen)) {
-                                    presetBands = new int[]{5, 2, -1, 2, 5};
-                                } else {
-                                    presetBands = new int[]{0, 0, 0, 0, 0};
-                                }
-                                SharedPreferences.Editor editor = preferences.edit();
-                                for (int i = 0; i < 5; i++) {
-                                    editor.putInt("pref_eq_band_" + i, presetBands[i]);
-                                    applyEqualizerBand(i, presetBands[i]);
-                                }
-                                editor.apply();
-                            }
-                            buildSettingsUI();
-                        }
-                    }
-                );
+                boolean nextState = !eqEnabled;
+                preferences.edit().putBoolean("pref_eq_enabled", nextState).apply();
+                setEqualizerEnabled(nextState);
+                buildSettingsUI();
             }
         }, tokens);
 
-        final String[] bandLabels = new String[]{"60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz"};
-        for (int i = 0; i < 5; i++) {
-            final int bandIndex = i;
-            final String bandLabel = bandLabels[i];
-            int currentDb = preferences.getInt("pref_eq_band_" + bandIndex, 0);
-            if (currentDb < -10) currentDb = -10;
-            if (currentDb > 10) currentDb = 10;
-            applyEqualizerBand(bandIndex, currentDb);
-            addEqBandSliderRow(bandLabel, bandIndex, currentDb, tokens);
+        if (eqEnabled) {
+            final String curPreset = preferences.getString("pref_eq_preset", "flat");
+            String curPresetLabel;
+            if ("bass".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_BASS, curLangCode);
+            else if ("vocal".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_VOCAL, curLangCode);
+            else if ("treble".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_TREBLE, curLangCode);
+            else if ("rock".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_ROCK, curLangCode);
+            else if ("custom".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_CUSTOM, curLangCode);
+            else curPresetLabel = I18n.get(I18n.KEY_EQ_FLAT, curLangCode);
+
+            addSelectorRow(I18n.get(I18n.KEY_EQ_PRESET, curLangCode), curPresetLabel, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                    options.add(new SingleChoiceSelectorDialog.Option("flat", I18n.get(I18n.KEY_EQ_FLAT, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option("bass", I18n.get(I18n.KEY_EQ_BASS, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option("vocal", I18n.get(I18n.KEY_EQ_VOCAL, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option("treble", I18n.get(I18n.KEY_EQ_TREBLE, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option("rock", I18n.get(I18n.KEY_EQ_ROCK, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option("custom", I18n.get(I18n.KEY_EQ_CUSTOM, curLangCode)));
+
+                    SingleChoiceSelectorDialog.show(
+                        SettingsActivity.this,
+                        tokens,
+                        I18n.get(I18n.KEY_EQ_PRESET, curLangCode),
+                        options,
+                        curPreset,
+                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                            @Override
+                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                                String chosen = selected.id;
+                                preferences.edit().putString("pref_eq_preset", chosen).apply();
+                                if (!"custom".equals(chosen)) {
+                                    int[] presetBands;
+                                    if ("bass".equals(chosen)) {
+                                        presetBands = new int[]{6, 4, 1, 0, -1};
+                                    } else if ("vocal".equals(chosen)) {
+                                        presetBands = new int[]{-2, 0, 5, 3, -1};
+                                    } else if ("treble".equals(chosen)) {
+                                        presetBands = new int[]{-2, 0, 1, 4, 6};
+                                    } else if ("rock".equals(chosen)) {
+                                        presetBands = new int[]{5, 2, -1, 2, 5};
+                                    } else {
+                                        presetBands = new int[]{0, 0, 0, 0, 0};
+                                    }
+                                    SharedPreferences.Editor editor = preferences.edit();
+                                    for (int i = 0; i < 5; i++) {
+                                        editor.putInt("pref_eq_band_" + i, presetBands[i]);
+                                        applyEqualizerBand(i, presetBands[i]);
+                                    }
+                                    editor.apply();
+                                }
+                                buildSettingsUI();
+                            }
+                        }
+                    );
+                }
+            }, tokens);
+
+            final String[] bandLabels = new String[]{"60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz"};
+            for (int i = 0; i < 5; i++) {
+                final int bandIndex = i;
+                final String bandLabel = bandLabels[i];
+                int currentDb = preferences.getInt("pref_eq_band_" + bandIndex, 0);
+                if (currentDb < -10) currentDb = -10;
+                if (currentDb > 10) currentDb = 10;
+                applyEqualizerBand(bandIndex, currentDb);
+                addEqBandSliderRow(bandLabel, bandIndex, currentDb, tokens);
+            }
         }
     }
 
@@ -1084,9 +1265,8 @@ public class SettingsActivity extends Activity {
         addBackHeader(SettingsSection.HOME_DRAWER.getTitle(curLangCode), tokens);
 
         final int currentLimit = preferences.getInt(KEY_APP_LIMIT, MainActivity.DEFAULT_HOME_APP_LIMIT);
-        final boolean isEs = "es".equalsIgnoreCase(curLangCode);
         final String limitDisplay = (currentLimit >= 999)
-            ? (isEs ? "Sin límite" : "Unlimited")
+            ? I18n.get(I18n.KEY_APP_LIMIT_UNLIMITED, curLangCode)
             : String.valueOf(currentLimit);
 
         addSelectorRow(I18n.get(I18n.KEY_APP_LIMIT_TITLE, curLangCode), limitDisplay, new View.OnClickListener() {
@@ -1099,7 +1279,7 @@ public class SettingsActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("6", "6"));
                 options.add(new SingleChoiceSelectorDialog.Option("8", "8"));
                 options.add(new SingleChoiceSelectorDialog.Option("10", "10"));
-                options.add(new SingleChoiceSelectorDialog.Option("999", isEs ? "Sin límite" : "Unlimited"));
+                options.add(new SingleChoiceSelectorDialog.Option("999", I18n.get(I18n.KEY_APP_LIMIT_UNLIMITED, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -1132,12 +1312,21 @@ public class SettingsActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("5", "5s"));
                 options.add(new SingleChoiceSelectorDialog.Option("10", "10s"));
 
+                float density = getResources().getDisplayMetrics().density;
+                TextView helpBox = new TextView(SettingsActivity.this);
+                helpBox.setText(I18n.get(I18n.KEY_FRICTION_HELP, curLangCode));
+                helpBox.setTextColor(tokens.textMuted);
+                helpBox.setTextSize(12);
+                helpBox.setTypeface(Typeface.MONOSPACE);
+                helpBox.setPadding(0, 0, 0, (int) (12 * density));
+
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
                     tokens,
                     I18n.get(I18n.KEY_FRICTION_TITLE, curLangCode),
                     options,
                     String.valueOf(frictionSecs),
+                    helpBox,
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
@@ -1423,19 +1612,18 @@ public class SettingsActivity extends Activity {
 
         // Background App Execution Policy
         final String curBgPolicy = preferences.getString("bg_policy", "whitelist");
-        final boolean isEs = "es".equalsIgnoreCase(curLangCode);
         String bgPolicyDisplay;
-        if ("strict".equals(curBgPolicy)) bgPolicyDisplay = isEs ? "Estricta" : "Strict";
-        else if ("allowed".equals(curBgPolicy)) bgPolicyDisplay = isEs ? "Permitir" : "Allow All";
-        else bgPolicyDisplay = "Whitelist";
+        if ("strict".equals(curBgPolicy)) bgPolicyDisplay = I18n.get(I18n.KEY_BG_STRICT, curLangCode);
+        else if ("allowed".equals(curBgPolicy)) bgPolicyDisplay = I18n.get(I18n.KEY_BG_ALLOWED_ALL, curLangCode);
+        else bgPolicyDisplay = I18n.get(I18n.KEY_BG_WHITELIST, curLangCode);
 
         addSelectorRow(I18n.get(I18n.KEY_BG_POLICY, curLangCode), bgPolicyDisplay, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("whitelist", "Whitelist"));
-                options.add(new SingleChoiceSelectorDialog.Option("strict", isEs ? "Estricta" : "Strict"));
-                options.add(new SingleChoiceSelectorDialog.Option("allowed", isEs ? "Permitir todas" : "Allow All"));
+                options.add(new SingleChoiceSelectorDialog.Option("whitelist", I18n.get(I18n.KEY_BG_WHITELIST, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("strict", I18n.get(I18n.KEY_BG_STRICT, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("allowed", I18n.get(I18n.KEY_BG_ALLOWED_ALL, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -1479,12 +1667,23 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        addSelectorRow(I18n.get(I18n.KEY_NFC_PAYMENTS, curLangCode), NfcPaymentSandboxManager.getSummaryStatus(this, curLangCode), new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                NfcPaymentSandboxManager.showDiagnosticsDialog(SettingsActivity.this, tokens, curLangCode);
-            }
-        }, tokens);
+        final boolean nfcSupported = getNfcHardwareState();
+        if (nfcSupported) {
+            addButtonRow(I18n.get(I18n.KEY_NFC_PAYMENTS, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS));
+                    } catch (Throwable e) {
+                        try {
+                            startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));
+                        } catch (Throwable t) {
+                            Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_NFC_NOT_AVAILABLE, curLangCode), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+            }, tokens);
+        }
     }
 
     private String getBlockedCountSummary(Context context, String curLangCode) {
@@ -1554,7 +1753,7 @@ public class SettingsActivity extends Activity {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
                 options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.RELEASE.getCode(), "Release"));
                 options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.BETA.getCode(), "Beta"));
-                options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.NIGHTLY.getCode(), "Nightly"));
+
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -1574,8 +1773,6 @@ public class SettingsActivity extends Activity {
                 );
             }
         }, tokens);
-
-        addInfoRow(I18n.get(I18n.KEY_ACTIVE_CHANNEL, curLangCode), curChannel.getCode(), tokens);
 
         addButtonRow("Keyboard", "Input method", new View.OnClickListener() {
             @Override
@@ -1637,15 +1834,7 @@ public class SettingsActivity extends Activity {
         addButtonRow("GitHub Releases", I18n.get(I18n.KEY_CHECK_UPDATES, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String targetUrl = curChannel.getReleaseUrl();
-                Toast.makeText(SettingsActivity.this, "Opening release page for " + curChannel.getCode() + "...", Toast.LENGTH_SHORT).show();
-                try {
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
-                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(browserIntent);
-                } catch (Exception e) {
-                    Toast.makeText(SettingsActivity.this, "Release URL: " + targetUrl, Toast.LENGTH_LONG).show();
-                }
+                OtaUpdateManager.checkForUpdates(SettingsActivity.this, tokens, curChannel, curLangCode);
             }
         }, tokens);
 
@@ -1660,25 +1849,19 @@ public class SettingsActivity extends Activity {
         addButtonRow(I18n.get(I18n.KEY_CREATE_SNAPSHOT, curLangCode), I18n.get(I18n.KEY_CREATE_BACKUP, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                triggerBackupSnapshot();
+                BackupRestoreManager.showCreateBackupDialog(SettingsActivity.this, tokens, curLangCode, preferences);
             }
         }, tokens);
 
         addButtonRow(I18n.get(I18n.KEY_RESTORE_SNAPSHOT, curLangCode), I18n.get(I18n.KEY_RESTORE_BACKUP, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showConfirmDialog(
-                    I18n.get(I18n.KEY_CONFIRM_RESTORE_TITLE, curLangCode),
-                    I18n.get(I18n.KEY_CONFIRM_RESTORE_MSG, curLangCode),
-                    I18n.get(I18n.KEY_ACTION_RESTORE, curLangCode),
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            triggerBackupRestore();
-                        }
-                    },
-                    tokens
-                );
+                BackupRestoreManager.showRestoreBackupDialog(SettingsActivity.this, tokens, curLangCode, preferences, new Runnable() {
+                    @Override
+                    public void run() {
+                        buildSettingsUI();
+                    }
+                });
             }
         }, tokens);
 
@@ -1708,10 +1891,25 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
+        addButtonRow(I18n.get(I18n.KEY_GUIDE_SETTINGS_ROW, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                QuickStartGuideDialog.show(SettingsActivity.this, tokens, curLangCode);
+            }
+        }, tokens);
+
+
         addButtonRow(I18n.get(I18n.KEY_DEV_SETTINGS, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
+                    try {
+                        Settings.Global.putInt(getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+                    } catch (Throwable ignored) {}
+                    try {
+                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "development_settings_enabled", "1");
+                    } catch (Throwable ignored) {}
+
                     Intent devIntent = new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
                     devIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(devIntent);
@@ -1724,15 +1922,52 @@ public class SettingsActivity extends Activity {
         addButtonRow(I18n.get(I18n.KEY_HARDWARE_TEST, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:*#*#4636#*#*"));
-                    dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(dialIntent);
-                } catch (Exception e) {
-                    Toast.makeText(SettingsActivity.this, "Could not open Testing Menu", Toast.LENGTH_SHORT).show();
-                }
+                openTestingSettingsMenu();
             }
         }, tokens);
+    }
+
+    private void openTestingSettingsMenu() {
+        // 1. Direct launch to AOSP TestingSettingsActivity
+        try {
+            Intent directIntent = new Intent(Intent.ACTION_MAIN);
+            directIntent.setClassName("com.android.settings", "com.android.settings.Settings$TestingSettingsActivity");
+            directIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(directIntent);
+            return;
+        } catch (Throwable ignored) {}
+
+        // 2. Broadcast secret code to TestingSettingsBroadcastReceiver
+        try {
+            Intent secretIntent = new Intent("android.telephony.action.SECRET_CODE", Uri.parse("android_secret_code://4636"));
+            secretIntent.setPackage("com.android.settings");
+            sendBroadcast(secretIntent);
+            return;
+        } catch (Throwable ignored) {}
+
+        // 3. Direct launch to RadioInfo
+        try {
+            Intent radioIntent = new Intent(Intent.ACTION_MAIN);
+            radioIntent.setClassName("com.android.settings", "com.android.settings.RadioInfo");
+            radioIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(radioIntent);
+            return;
+        } catch (Throwable ignored) {}
+
+        // 4. Privileged am start via shell/su
+        try {
+            SafeCommandExecutor.executePrivileged("am", "start", "-n", "com.android.settings/.Settings$TestingSettingsActivity");
+            return;
+        } catch (Throwable ignored) {}
+
+        // 5. Fallback: dialer
+        try {
+            Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:*#*#4636#*#*"));
+            dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(dialIntent);
+        } catch (Throwable e) {
+            Toast.makeText(this, "Could not open Testing Menu", Toast.LENGTH_SHORT).show();
+        }
     }
 
     // ==========================================
@@ -1895,7 +2130,7 @@ public class SettingsActivity extends Activity {
     private boolean getNfcHardwareState() {
         try {
             android.nfc.NfcAdapter nfcAdapter = android.nfc.NfcAdapter.getDefaultAdapter(this);
-            return nfcAdapter != null && nfcAdapter.isEnabled();
+            if (nfcAdapter != null) return nfcAdapter.isEnabled();
         } catch (Throwable ignored) {}
         return preferences.getBoolean("nfc_enabled", false);
     }
@@ -1903,17 +2138,27 @@ public class SettingsActivity extends Activity {
     private void setNfcState(boolean enable) {
         String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
         preferences.edit().putBoolean("nfc_enabled", enable).apply();
+        boolean toggled = false;
         try {
-            Process p = Runtime.getRuntime().exec(new String[]{"svc", "nfc", enable ? "enable" : "disable"});
-            if (p.waitFor() != 0) {
-                Toast.makeText(this, "NFC: " + I18n.get(I18n.KEY_DISABLED, curLangCode) + " (needs system privilege)", Toast.LENGTH_SHORT).show();
-                return;
+            android.nfc.NfcAdapter adapter = android.nfc.NfcAdapter.getDefaultAdapter(this);
+            if (adapter != null) {
+                try {
+                    java.lang.reflect.Method m = enable ? adapter.getClass().getMethod("enable") : adapter.getClass().getMethod("disable");
+                    Boolean res = (Boolean) m.invoke(adapter);
+                    if (res != null && res) toggled = true;
+                } catch (Throwable ignored) {}
             }
-            String statusStr = I18n.get(enable ? I18n.KEY_ENABLED : I18n.KEY_DISABLED, curLangCode);
-            Toast.makeText(this, "NFC: " + statusStr, Toast.LENGTH_SHORT).show();
-        } catch (Throwable e) {
-            Toast.makeText(this, "NFC Error (needs system privilege)", Toast.LENGTH_SHORT).show();
+        } catch (Throwable ignored) {}
+
+        if (!toggled) {
+            toggled = SafeCommandExecutor.execute("svc", "nfc", enable ? "enable" : "disable");
         }
+        if (!toggled) {
+            toggled = SafeCommandExecutor.execute("su", "-c", "svc nfc " + (enable ? "enable" : "disable"));
+        }
+
+        String statusStr = I18n.get(enable ? I18n.KEY_ENABLED : I18n.KEY_DISABLED, curLangCode);
+        Toast.makeText(this, "NFC: " + statusStr, Toast.LENGTH_SHORT).show();
     }
 
     private void showBackgroundAppsConfigDialog(final ThemeTokens tokens) {
@@ -2066,9 +2311,19 @@ public class SettingsActivity extends Activity {
         if (systemEqualizer == null) {
             try {
                 systemEqualizer = new Equalizer(0, 0);
-                systemEqualizer.setEnabled(true);
+                boolean enabled = preferences.getBoolean("pref_eq_enabled", true);
+                systemEqualizer.setEnabled(enabled);
             } catch (Throwable ignored) {}
         }
+    }
+
+    private void setEqualizerEnabled(boolean enabled) {
+        try {
+            ensureEqualizer();
+            if (systemEqualizer != null) {
+                systemEqualizer.setEnabled(enabled);
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void applyEqualizerBand(int bandIndex, int db) {
@@ -2089,137 +2344,35 @@ public class SettingsActivity extends Activity {
         } catch (Throwable ignored) {}
     }
 
-    private void triggerBackupSnapshot() {
-        try {
-            JSONObject json = new JSONObject();
-            Map<String, ?> all = preferences.getAll();
-            for (Map.Entry<String, ?> entry : all.entrySet()) {
-                json.put(entry.getKey(), entry.getValue());
-            }
-            String payload = json.toString();
-            String checksum = sha256Hex(payload);
 
-            JSONObject envelope = new JSONObject();
-            envelope.put("version", 1);
-            envelope.put("sha256", checksum);
-            envelope.put("payload", payload);
-
-            File baseDir = getExternalFilesDir(null);
-            if (baseDir == null) baseDir = getFilesDir();
-            File dir = new File(baseDir, "backup");
-            if (!dir.exists()) dir.mkdirs();
-
-            File jsonFile = new File(dir, "tontos_settings.json");
-            FileWriter writer = new FileWriter(jsonFile);
-            writer.write(envelope.toString(2));
-            writer.close();
-
-            File bakFile = new File(dir, "tontos_latest.tontbak");
-            FileWriter bakWriter = new FileWriter(bakFile);
-            bakWriter.write(envelope.toString());
-            bakWriter.close();
-
-            Toast.makeText(this, "Backup saved to: " + bakFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Backup error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private static String sha256Hex(String input) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(digest.length * 2);
-            for (byte b : digest) sb.append(String.format(Locale.ROOT, "%02x", b));
-            return sb.toString();
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
-    private void triggerBackupRestore() {
-        try {
-            File baseDir = getExternalFilesDir(null);
-            if (baseDir == null) baseDir = getFilesDir();
-            File dir = new File(baseDir, "backup");
-            File bakFile = new File(dir, "tontos_latest.tontbak");
-            if (!bakFile.exists()) {
-                bakFile = new File(dir, "tontos_settings.json");
-            }
-
-            if (bakFile.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(bakFile));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) sb.append(line);
-                reader.close();
-
-                JSONObject envelope = new JSONObject(sb.toString());
-                if (!envelope.has("payload") || !envelope.has("sha256")) {
-                    Toast.makeText(this, "Restore error: missing integrity envelope", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                String payload = envelope.getString("payload");
-                if (!sha256Hex(payload).equalsIgnoreCase(envelope.getString("sha256"))) {
-                    Toast.makeText(this, "Restore error: checksum mismatch (tampered or corrupt backup)", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                JSONObject obj = new JSONObject(payload);
-                restorePrefsFromJson(obj);
-            } else {
-                Toast.makeText(this, "No backup file found in " + dir.getAbsolutePath(), Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, "Restore error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void restorePrefsFromJson(JSONObject obj) {
-        SharedPreferences.Editor edit = preferences.edit();
-        try {
-            if (obj.has(KEY_THEME)) {
-                String themeId = obj.getString(KEY_THEME);
-                ThemePreset preset = ThemePreset.fromId(themeId);
-                if (preset != null) edit.putString(KEY_THEME, preset.getId());
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_OTA_CHANNEL)) {
-                UpdateChannel ch = UpdateChannel.fromCode(obj.getString(KEY_OTA_CHANNEL));
-                if (ch != null) edit.putString(KEY_OTA_CHANNEL, ch.getCode());
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_LANGUAGE)) {
-                String lang = obj.getString(KEY_LANGUAGE);
-                if (lang != null && lang.matches("[a-z]{2}(-[A-Z]{2})?")) edit.putString(KEY_LANGUAGE, lang);
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_BUDGET)) {
-                int budget = obj.getInt(KEY_BUDGET);
-                if (budget >= 0 && budget <= 1440) edit.putInt(KEY_BUDGET, budget);
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_PINNED_ORDER)) {
-                String order = obj.getString(KEY_PINNED_ORDER);
-                if (order != null && order.length() <= 4096 && order.matches("[A-Za-z0-9_.,\\-]*")) {
-                    edit.putString(KEY_PINNED_ORDER, order);
-                }
-            }
-        } catch (Exception ignored) {}
-        edit.apply();
-
-        buildSettingsUI();
-        Toast.makeText(this, "Backup restored successfully!", Toast.LENGTH_LONG).show();
-    }
 
     private Ringtone currentPlayingPreview = null;
 
-    private String getToneLabel(int type, String langCode) {
+    private Uri getEffectiveToneUri(int type) {
         try {
             Uri currentUri = RingtoneManager.getActualDefaultRingtoneUri(this, type);
+            if (currentUri != null) return currentUri;
+            // Fall back to first available ringtone in system database if not set to explicit silent
+            String explicitSilent = preferences.getString("pref_explicit_silent_" + type, null);
+            if ("true".equals(explicitSilent)) return null;
+
+            RingtoneManager rm = new RingtoneManager(this);
+            rm.setType(type);
+            Cursor cursor = rm.getCursor();
+            if (cursor != null && cursor.moveToFirst()) {
+                Uri fallbackUri = rm.getRingtoneUri(0);
+                if (fallbackUri != null) {
+                    RingtoneManager.setActualDefaultRingtoneUri(this, type, fallbackUri);
+                    return fallbackUri;
+                }
+            }
+        } catch (Throwable ignored) {}
+        return null;
+    }
+
+    private String getToneLabel(int type, String langCode) {
+        try {
+            Uri currentUri = getEffectiveToneUri(type);
             if (currentUri == null) {
                 return I18n.get(I18n.KEY_SILENT_TONE, langCode);
             }
@@ -2264,7 +2417,7 @@ public class SettingsActivity extends Activity {
             }
         } catch (Throwable ignored) {}
 
-        Uri curUri = RingtoneManager.getActualDefaultRingtoneUri(this, type);
+        Uri curUri = getEffectiveToneUri(type);
         String curId = (curUri == null) ? "silent" : curUri.toString();
 
         SingleChoiceSelectorDialog.show(
@@ -2285,10 +2438,21 @@ public class SettingsActivity extends Activity {
 
                     try {
                         if ("silent".equals(selected.id)) {
+                            preferences.edit().putString("pref_explicit_silent_" + type, "true").apply();
                             RingtoneManager.setActualDefaultRingtoneUri(SettingsActivity.this, type, null);
                         } else {
+                            preferences.edit().remove("pref_explicit_silent_" + type).apply();
                             Uri chosenUri = Uri.parse(selected.id);
                             RingtoneManager.setActualDefaultRingtoneUri(SettingsActivity.this, type, chosenUri);
+                            if (type == RingtoneManager.TYPE_NOTIFICATION) {
+                                int curN = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+                                if (curN == 0 && audioManager.getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {
+                                    int maxN = audioManager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
+                                    int targetN = (int)(maxN * 0.7);
+                                    audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, targetN, 0);
+                                    preferences.edit().putInt("pref_user_notif_vol", targetN).apply();
+                                }
+                            }
                             try {
                                 currentPlayingPreview = RingtoneManager.getRingtone(SettingsActivity.this, chosenUri);
                                 if (currentPlayingPreview != null) {
@@ -2326,6 +2490,23 @@ public class SettingsActivity extends Activity {
         } else {
             preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
+        ThemeTokens tokens = currentTokens();
+        if (requestCode == BackupRestoreManager.REQUEST_CODE_SAF_CREATE && resultCode == RESULT_OK && data != null) {
+            BackupRestoreManager.handleSafCreateResult(this, data.getData(), tokens, curLangCode);
+        } else if (requestCode == BackupRestoreManager.REQUEST_CODE_SAF_RESTORE && resultCode == RESULT_OK && data != null) {
+            BackupRestoreManager.handleSafRestoreResult(this, data.getData(), tokens, curLangCode, preferences, new Runnable() {
+                @Override
+                public void run() {
+                    buildSettingsUI();
+                }
+            });
         }
     }
 

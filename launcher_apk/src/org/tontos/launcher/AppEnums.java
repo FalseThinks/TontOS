@@ -246,8 +246,7 @@ enum WizardStep {
  */
 enum UpdateChannel {
     RELEASE("RELEASE", "Release", "https://github.com/FalseThinks/TontOS/releases/latest"),
-    BETA("BETA", "Beta", "https://github.com/FalseThinks/TontOS/releases"),
-    NIGHTLY("NIGHTLY", "Nightly", "https://github.com/FalseThinks/TontOS/releases/tag/nightly");
+    BETA("BETA", "Beta", "https://github.com/FalseThinks/TontOS/releases");
 
     private final String code;
     private final String label;
@@ -353,5 +352,69 @@ enum LanguageLocale {
      */
     public static LocaleItem getLocale(String code) {
         return LocaleManager.getLocale(code);
+    }
+}
+
+/**
+ * Lock Screen Clock presentation styles.
+ */
+enum LockClockStyle {
+    THEME_DEFAULT("THEME_DEFAULT", "Theme Default"),
+    BIG_MONOSPACE("BIG_MONOSPACE", "Big Monospace 24h"),
+    VERTICAL_STACKED("VERTICAL_STACKED", "Vertical Stacked (HH/MM)"),
+    TERMINAL_RETRO("TERMINAL_RETRO", "Terminal Retro [HH:mm:ss]"),
+    COMPACT_SINGLE("COMPACT_SINGLE", "Compact Single Line");
+
+    private final String id;
+    private final String label;
+
+    LockClockStyle(String id, String label) {
+        this.id = id;
+        this.label = label;
+    }
+
+    public String getId() { return id; }
+    public String getLabel() { return label; }
+
+    public static LockClockStyle fromId(String id) {
+        if (id == null) return THEME_DEFAULT;
+        for (LockClockStyle style : values()) {
+            if (style.id.equalsIgnoreCase(id) || style.name().equalsIgnoreCase(id)) {
+                return style;
+            }
+        }
+        return THEME_DEFAULT;
+    }
+}
+
+/**
+ * Lock screen quick access action shortcuts.
+ */
+enum LockShortcut {
+    NONE("NONE", "None"),
+    TORCH("TORCH", "Flashlight"),
+    CAMERA("CAMERA", "Camera"),
+    PHONE("PHONE", "Phone"),
+    BROWSER("BROWSER", "FOSS Browser");
+
+    private final String id;
+    private final String label;
+
+    LockShortcut(String id, String label) {
+        this.id = id;
+        this.label = label;
+    }
+
+    public String getId() { return id; }
+    public String getLabel() { return label; }
+
+    public static LockShortcut fromId(String id) {
+        if (id == null) return NONE;
+        for (LockShortcut s : values()) {
+            if (s.id.equalsIgnoreCase(id) || s.name().equalsIgnoreCase(id)) {
+                return s;
+            }
+        }
+        return NONE;
     }
 }

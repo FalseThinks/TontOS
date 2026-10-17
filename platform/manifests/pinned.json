@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "upstream": "https://android.googlesource.com/platform/manifest",
-  "branch": "android-16.0.0_r4",
+  "branch": "android-17.0.0_r1",
   "branch_fallback": "android-latest-release",
   "product": "aosp_cf_x86_64_only_phone",
-  "lunch_target": "aosp_cf_x86_64_only_phone-bp4a-userdebug",
+  "lunch_target": "aosp_cf_x86_64_only_phone-cp2a-userdebug",
   "variant": "userdebug",
   "checkout_dir": "~/aosp/tontos",
-  "manifest_rev": "15128c9e27cfa599c48d294babd39286ee8f1426",
+  "manifest_rev": "5bc9a7ce1cd78dd53613bbfd0ebf506e1e4adb0f",
   "maintainer": "FalseThinks <paproken@protonmail.com>",
-  "recorded_at": "2026-10-11"
+  "recorded_at": "2026-10-12"
 }

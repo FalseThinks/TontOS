@@ -137,4 +137,40 @@ mod tests {
         assert_eq!(tokens.nav_accent, "#1D4ED8");
         assert_eq!(tokens.nav_bg, "#EFF6FF");
     }
+
+    #[test]
+    fn test_all_themes_have_valid_hex_colors() {
+        let presets = [
+            ThemePreset::AmoledBlack,
+            ThemePreset::AmberCrt,
+            ThemePreset::EinkMonochrome,
+            ThemePreset::SlateMidnight,
+        ];
+
+        for preset in presets {
+            let tokens = preset.tokens();
+            for color in [
+                &tokens.bg,
+                &tokens.surface,
+                &tokens.accent,
+                &tokens.accent_muted,
+                &tokens.text_primary,
+                &tokens.text_muted,
+                &tokens.border,
+                &tokens.nav_accent,
+                &tokens.nav_bg,
+            ] {
+                assert!(color.starts_with('#'), "Color {color} must start with #");
+                assert_eq!(
+                    color.len(),
+                    7,
+                    "Color {color} must be 7 characters (#RRGGBB)"
+                );
+                assert!(
+                    color[1..].chars().all(|c| c.is_ascii_hexdigit()),
+                    "Color {color} must contain valid hex digits"
+                );
+            }
+        }
+    }
 }

@@ -66,6 +66,7 @@ public final class I18n {
     public static final String KEY_MEDIA_VOL = "media_vol";
     public static final String KEY_RING_VOL = "ring_vol";
     public static final String KEY_ALARM_VOL = "alarm_vol";
+    public static final String KEY_NOTIFICATION_VOL = "notification_vol";
     public static final String KEY_RINGER_PROFILE = "ringer_profile";
     public static final String KEY_RINGER_NORMAL = "ringer_normal";
     public static final String KEY_RINGER_VIBRATE = "ringer_vibrate";
@@ -255,6 +256,162 @@ public final class I18n {
     public static final String KEY_NFC_PAYMENTS = "nfc_payments";
 
 
+    public static final String KEY_LOCKSCREEN_HEADER = "lockscreen_header";
+    public static final String KEY_LOCKSCREEN_ENABLE = "lockscreen_enable";
+    public static final String KEY_LOCK_CLOCK_STYLE = "lock_clock_style";
+    public static final String KEY_LOCK_CLOCK_DEFAULT = "lock_clock_default";
+    public static final String KEY_LOCK_CLOCK_BIG = "lock_clock_big";
+    public static final String KEY_LOCK_CLOCK_STACKED = "lock_clock_stacked";
+    public static final String KEY_LOCK_CLOCK_TERMINAL = "lock_clock_terminal";
+    public static final String KEY_LOCK_CLOCK_COMPACT = "lock_clock_compact";
+    public static final String KEY_LOCK_THEME_OVERRIDE = "lock_theme_override";
+    public static final String KEY_LOCK_THEME_MATCH = "lock_theme_match";
+    public static final String KEY_LOCK_SHOW_DETOX = "lock_show_detox";
+    public static final String KEY_LOCK_SHOW_BATTERY = "lock_show_battery";
+    public static final String KEY_LOCK_OWNER_INFO = "lock_owner_info";
+    public static final String KEY_LOCK_OWNER_HINT = "lock_owner_hint";
+    public static final String KEY_LOCK_SHORTCUT_LEFT = "lock_shortcut_left";
+    public static final String KEY_LOCK_SHORTCUT_RIGHT = "lock_shortcut_right";
+    public static final String KEY_LOCK_ACTION_TORCH = "lock_action_torch";
+    public static final String KEY_LOCK_ACTION_CAMERA = "lock_action_camera";
+    public static final String KEY_LOCK_ACTION_PHONE = "lock_action_phone";
+    public static final String KEY_LOCK_ACTION_BROWSER = "lock_action_browser";
+    public static final String KEY_LOCK_ACTION_NONE = "lock_action_none";
+    public static final String KEY_LOCK_UNLOCK_HINT = "lock_unlock_hint";
+    public static final String KEY_LOCK_TEST_BTN = "lock_test_btn";
+
+    // Quick Guide
+    public static final String KEY_GUIDE_HEADER = "guide_header";
+    public static final String KEY_GUIDE_SUBTITLE = "guide_subtitle";
+    public static final String KEY_GUIDE_CARD1_TITLE = "guide_card1_title";
+    public static final String KEY_GUIDE_CARD1_DESC = "guide_card1_desc";
+    public static final String KEY_GUIDE_CARD2_TITLE = "guide_card2_title";
+    public static final String KEY_GUIDE_CARD2_DESC = "guide_card2_desc";
+    public static final String KEY_GUIDE_CARD3_TITLE = "guide_card3_title";
+    public static final String KEY_GUIDE_CARD3_DESC = "guide_card3_desc";
+    public static final String KEY_GUIDE_CARD4_TITLE = "guide_card4_title";
+    public static final String KEY_GUIDE_CARD4_DESC = "guide_card4_desc";
+    public static final String KEY_GUIDE_CARD5_TITLE = "guide_card5_title";
+    public static final String KEY_GUIDE_CARD5_DESC = "guide_card5_desc";
+    public static final String KEY_GUIDE_SKIP = "guide_skip";
+    public static final String KEY_GUIDE_START = "guide_start";
+    public static final String KEY_GUIDE_SETTINGS_ROW = "guide_settings_row";
+
+    // Backup & Restore
+    public static final String KEY_BACKUP_CREATE_TITLE = "backup_create_title";
+    public static final String KEY_BACKUP_CREATE_SUMMARY_FMT = "backup_create_summary_fmt";
+    public static final String KEY_BACKUP_FILE_NAME_LABEL = "backup_file_name_label";
+    public static final String KEY_BACKUP_DEST_LABEL = "backup_dest_label";
+    public static final String KEY_BACKUP_DEST_DOWNLOADS = "backup_dest_downloads";
+    public static final String KEY_BACKUP_DEST_APP = "backup_dest_app";
+    public static final String KEY_BACKUP_DEST_SAF = "backup_dest_saf";
+    public static final String KEY_BACKUP_SAVE_BTN = "backup_save_btn";
+    public static final String KEY_BACKUP_ERR_EMPTY_NAME = "backup_err_empty_name";
+    public static final String KEY_BACKUP_ERR_INVALID_NAME = "backup_err_invalid_name";
+    public static final String KEY_BACKUP_SAF_SUCCESS = "backup_saf_success";
+    public static final String KEY_BACKUP_SUCCESS_TITLE = "backup_success_title";
+    public static final String KEY_BACKUP_DETAILS_FILE = "backup_details_file";
+    public static final String KEY_BACKUP_DETAILS_PATH = "backup_details_path";
+    public static final String KEY_BACKUP_DETAILS_SIZE = "backup_details_size";
+    public static final String KEY_BACKUP_DETAILS_STATUS = "backup_details_status";
+    public static final String KEY_BACKUP_STATUS_VERIFIED = "backup_status_verified";
+    public static final String KEY_RESTORE_TITLE = "restore_title";
+    public static final String KEY_RESTORE_NO_BACKUPS = "restore_no_backups";
+    public static final String KEY_RESTORE_SAF_BTN = "restore_saf_btn";
+    public static final String KEY_RESTORE_CLOSE_BTN = "restore_close_btn";
+    public static final String KEY_RESTORE_ERR_INVALID = "restore_err_invalid";
+    public static final String KEY_RESTORE_ERR_CHECKSUM = "restore_err_checksum";
+    public static final String KEY_RESTORE_CONFIRM_TITLE = "restore_confirm_title";
+    public static final String KEY_RESTORE_CONFIRM_MSG_FMT = "restore_confirm_msg_fmt";
+    public static final String KEY_RESTORE_NOW_BTN = "restore_now_btn";
+    public static final String KEY_RESTORE_SUCCESS = "restore_success";
+
+    // OTA Updates
+    public static final String KEY_OTA_CHECKING_FMT = "ota_checking_fmt";
+    public static final String KEY_OTA_NEW_VERSION_TITLE = "ota_new_version_title";
+    public static final String KEY_OTA_VERSION_LABEL = "ota_version_label";
+    public static final String KEY_OTA_CURRENT_LABEL = "ota_current_label";
+    public static final String KEY_OTA_NO_NOTES = "ota_no_notes";
+    public static final String KEY_OTA_DOWNLOAD_APK = "ota_download_apk";
+    public static final String KEY_OTA_VIEW_GITHUB = "ota_view_github";
+    public static final String KEY_OTA_DISMISS = "ota_dismiss";
+    public static final String KEY_OTA_UP_TO_DATE_TITLE = "ota_up_to_date_title";
+    public static final String KEY_OTA_UP_TO_DATE_MSG_FMT = "ota_up_to_date_msg_fmt";
+    public static final String KEY_OTA_ERROR_TITLE = "ota_error_title";
+    public static final String KEY_OTA_ERROR_MSG_FMT = "ota_error_msg_fmt";
+
+    // Settings & Privacy
+    public static final String KEY_FRICTION_HELP = "friction_help";
+    public static final String KEY_NFC_NOT_AVAILABLE = "nfc_not_available";
+    public static final String KEY_STATUS_BLOCKED = "status_blocked";
+    public static final String KEY_STATUS_ALLOWED = "status_allowed";
+    public static final String KEY_STATUS_RESTRICTED = "status_restricted";
+    public static final String KEY_PERMS_HEADER = "perms_header";
+    public static final String KEY_ACTIONS_HEADER = "actions_header";
+    public static final String KEY_PERM_NET_TITLE = "perm_net_title";
+    public static final String KEY_PERM_NET_DESC = "perm_net_desc";
+    public static final String KEY_PERM_SENSORS_TITLE = "perm_sensors_title";
+    public static final String KEY_PERM_SENSORS_DESC = "perm_sensors_desc";
+    public static final String KEY_PERM_CAM_MIC_TITLE = "perm_cam_mic_title";
+    public static final String KEY_PERM_CAM_MIC_DESC = "perm_cam_mic_desc";
+    public static final String KEY_PERM_LOC_TITLE = "perm_loc_title";
+    public static final String KEY_PERM_LOC_DESC = "perm_loc_desc";
+    public static final String KEY_PERM_STORAGE_TITLE = "perm_storage_title";
+    public static final String KEY_PERM_STORAGE_DESC = "perm_storage_desc";
+    public static final String KEY_PERM_CONTACTS_TITLE = "perm_contacts_title";
+    public static final String KEY_PERM_CONTACTS_DESC = "perm_contacts_desc";
+    public static final String KEY_PERM_BG_TITLE = "perm_bg_title";
+    public static final String KEY_PERM_BG_DESC = "perm_bg_desc";
+    public static final String KEY_ACTION_FORCE_STOP = "action_force_stop";
+    public static final String KEY_ACTION_ANDROID_SETTINGS = "action_android_settings";
+    public static final String KEY_ACTION_UNINSTALL = "action_uninstall";
+    public static final String KEY_PRIVACY_TAG_NET = "privacy_tag_net";
+    public static final String KEY_PRIVACY_TAG_SENSORS = "privacy_tag_sensors";
+    public static final String KEY_PRIVACY_TAG_CAM_MIC = "privacy_tag_cam_mic";
+    public static final String KEY_PRIVACY_TAG_GPS = "privacy_tag_gps";
+    public static final String KEY_PRIVACY_TAG_STORAGE = "privacy_tag_storage";
+    public static final String KEY_PRIVACY_TAG_CONTACTS = "privacy_tag_contacts";
+    public static final String KEY_PRIVACY_TAG_BG = "privacy_tag_bg";
+    public static final String KEY_PRIVACY_STANDARD = "privacy_standard";
+    public static final String KEY_PRIVACY_CONFIGURE = "privacy_configure";
+    public static final String KEY_PRIVACY_SUMMARY_FMT = "privacy_summary_fmt";
+
+    // NFC & Attestation
+    public static final String KEY_NFC_NO_HARDWARE = "nfc_no_hardware";
+    public static final String KEY_NFC_OFF = "nfc_off";
+    public static final String KEY_NFC_ON_NO_ATTESTATION = "nfc_on_no_attestation";
+    public static final String KEY_NFC_ATTESTATION_TITLE = "nfc_attestation_title";
+    public static final String KEY_NFC_SEC_HW = "nfc_sec_hw";
+    public static final String KEY_NFC_SEC_GMS = "nfc_sec_gms";
+    public static final String KEY_NFC_SEC_ATTESTATION = "nfc_sec_attestation";
+    public static final String KEY_NFC_SEC_ACTIONS = "nfc_sec_actions";
+    public static final String KEY_NFC_PAYMENT_APP = "nfc_payment_app";
+    public static final String KEY_NFC_GMS_INSTALL = "nfc_gms_install";
+    public static final String KEY_GMS_UNKNOWN = "gms_unknown";
+    public static final String KEY_GMS_NOT_INSTALLED = "gms_not_installed";
+    public static final String KEY_GMS_USER_INSTALLED = "gms_user_installed";
+    public static final String KEY_GMS_SYSTEM_INSTALLED = "gms_system_installed";
+    public static final String KEY_NFC_NOT_EVALUATED = "nfc_not_evaluated";
+    public static final String KEY_NFC_NOT_VERIFIED = "nfc_not_verified";
+    public static final String KEY_NFC_ACTIONS_PAYMENTS = "nfc_actions_payments";
+
+    // Battery Protection
+    public static final String KEY_BATTERY_CTRL_NA = "battery_ctrl_na";
+    public static final String KEY_BATTERY_80_NA = "battery_80_na";
+    public static final String KEY_BATTERY_BYPASS_NA = "battery_bypass_na";
+    public static final String KEY_BATTERY_UNSUPPORTED_MSG = "battery_unsupported_msg";
+    public static final String KEY_BATTERY_APPLIED_MSG = "battery_applied_msg";
+    public static final String KEY_BATTERY_INVALID_MSG = "battery_invalid_msg";
+
+    // Ultra Battery Saver
+    public static final String KEY_ACTION_SETTINGS_REQ = "action_settings_req";
+    public static final String KEY_ACTION_PERM_REQ = "action_perm_req";
+    public static final String KEY_ACTION_UNSUPPORTED = "action_unsupported";
+    public static final String KEY_ACTION_FAILED = "action_failed";
+    public static final String KEY_ACTION_APPLIED = "action_applied";
+    public static final String KEY_ACTION_WAITING = "action_waiting";
+    public static final String KEY_STATE_UNKNOWN = "state_unknown";
+
     // Compatibility Aliases
     public static final String KEY_EQ_BAND_3600HZ = KEY_EQ_BAND_3_6KHZ;
     public static final String KEY_EQ_BAND_1 = KEY_EQ_BAND_60HZ;
@@ -335,6 +492,7 @@ public final class I18n {
         en.put(KEY_MEDIA_VOL, "Media Volume");
         en.put(KEY_RING_VOL, "Ring Volume");
         en.put(KEY_ALARM_VOL, "Alarm Volume");
+        en.put(KEY_NOTIFICATION_VOL, "Notification Volume");
         en.put(KEY_RINGER_PROFILE, "Ringer Profile");
         en.put(KEY_RINGER_NORMAL, "Normal");
         en.put(KEY_RINGER_VIBRATE, "Vibrate");
@@ -507,6 +665,162 @@ public final class I18n {
         en.put(KEY_BUDGET_CUSTOM_HINT, "Minutes (1-1440)");
         en.put(KEY_STATE_ON, "ON");
         en.put(KEY_STATE_OFF, "OFF");
+                en.put(KEY_LOCKSCREEN_HEADER, "=== LOCK SCREEN ===");
+        en.put(KEY_LOCKSCREEN_ENABLE, "TontOS Minimalist Lock Screen");
+        en.put(KEY_LOCK_CLOCK_STYLE, "Lock Clock Style");
+        en.put(KEY_LOCK_CLOCK_DEFAULT, "Theme Default Style");
+        en.put(KEY_LOCK_CLOCK_BIG, "Big Monospace 24h");
+        en.put(KEY_LOCK_CLOCK_STACKED, "Vertical Stacked (HH / MM)");
+        en.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal Retro [HH:mm:ss]");
+        en.put(KEY_LOCK_CLOCK_COMPACT, "Compact Single Line");
+        en.put(KEY_LOCK_THEME_OVERRIDE, "Lock Screen Theme Style");
+        en.put(KEY_LOCK_THEME_MATCH, "Match Active Theme");
+        en.put(KEY_LOCK_SHOW_DETOX, "Show Detox Screen Time Bar");
+        en.put(KEY_LOCK_SHOW_BATTERY, "Show Battery Percentage");
+        en.put(KEY_LOCK_OWNER_INFO, "Custom Message / Owner Info");
+        en.put(KEY_LOCK_OWNER_HINT, "Enter lock screen message or emergency contact");
+        en.put(KEY_LOCK_SHORTCUT_LEFT, "Left Bottom Shortcut");
+        en.put(KEY_LOCK_SHORTCUT_RIGHT, "Right Bottom Shortcut");
+        en.put(KEY_LOCK_ACTION_TORCH, "[ TORCH ]");
+        en.put(KEY_LOCK_ACTION_CAMERA, "[ CAMERA ]");
+        en.put(KEY_LOCK_ACTION_PHONE, "[ PHONE ]");
+        en.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        en.put(KEY_LOCK_ACTION_NONE, "None / Disabled");
+        en.put(KEY_LOCK_UNLOCK_HINT, "[ ^ SWIPE OR TAP TO UNLOCK ]");
+        en.put(KEY_LOCK_TEST_BTN, "Test Lock Screen Now");
+
+        // Quick Guide
+        en.put(KEY_GUIDE_HEADER, "=== TontOS · QUICK GUIDE ===");
+        en.put(KEY_GUIDE_SUBTITLE, "Essential features for digital minimalism");
+        en.put(KEY_GUIDE_CARD1_TITLE, "1. HOME SCREEN & APP DRAWER");
+        en.put(KEY_GUIDE_CARD1_DESC, "Only essential apps on home. Swipe or tap [ ALL APPS ] for alphabetical drawer. Long press any app to inspect and restrict its permissions.");
+        en.put(KEY_GUIDE_CARD2_TITLE, "2. BACKGROUND APP TERMINATION");
+        en.put(KEY_GUIDE_CARD2_DESC, "Returning home halts app processes immediately to reclaim RAM and preserve privacy, unless explicitly whitelisted in Settings > Connectivity.");
+        en.put(KEY_GUIDE_CARD3_TITLE, "3. MINDFUL LAUNCH PAUSE");
+        en.put(KEY_GUIDE_CARD3_DESC, "Intentional countdown delay before opening distracting applications with a mindful pause to break dopamine-seeking loops.");
+        en.put(KEY_GUIDE_CARD4_TITLE, "4. DETOX BUDGET & GRAYSCALE");
+        en.put(KEY_GUIDE_CARD4_DESC, "Track daily screen time budget in top bar. Activate system-wide grayscale in Settings to remove dopamine-inducing colors.");
+        en.put(KEY_GUIDE_CARD5_TITLE, "5. ULTRA SHADE ACCESS");
+        en.put(KEY_GUIDE_CARD5_DESC, "Tap the clock or battery percentage on top bar to open the minimalist Ultra Shade for quick Wi-Fi, Bluetooth, Torch and DND toggles.");
+        en.put(KEY_GUIDE_SKIP, "[ SKIP GUIDE ]");
+        en.put(KEY_GUIDE_START, "[ GET STARTED ]");
+        en.put(KEY_GUIDE_SETTINGS_ROW, "Essential Features Guide");
+
+        // Backup & Restore
+        en.put(KEY_BACKUP_CREATE_TITLE, "=== CREATE BACKUP SNAPSHOT ===");
+        en.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Cryptographic snapshot of %d preferences (theme, apps, sound, radios).");
+        en.put(KEY_BACKUP_FILE_NAME_LABEL, "Backup File Name:");
+        en.put(KEY_BACKUP_DEST_LABEL, "Storage Destination:");
+        en.put(KEY_BACKUP_DEST_DOWNLOADS, "Downloads (/sdcard/Download)");
+        en.put(KEY_BACKUP_DEST_APP, "TontOS App Folder (/backup)");
+        en.put(KEY_BACKUP_DEST_SAF, "System File Picker (Choose...)");
+        en.put(KEY_BACKUP_SAVE_BTN, "SAVE BACKUP");
+        en.put(KEY_BACKUP_ERR_EMPTY_NAME, "Enter a valid filename");
+        en.put(KEY_BACKUP_ERR_INVALID_NAME, "Invalid filename");
+        en.put(KEY_BACKUP_SAF_SUCCESS, "Backup saved via SAF");
+        en.put(KEY_BACKUP_SUCCESS_TITLE, "=== BACKUP CREATED SUCCESSFULLY ===");
+        en.put(KEY_BACKUP_DETAILS_FILE, "File:     ");
+        en.put(KEY_BACKUP_DETAILS_PATH, "Path:     ");
+        en.put(KEY_BACKUP_DETAILS_SIZE, "Size:     ");
+        en.put(KEY_BACKUP_DETAILS_STATUS, "Status:   ");
+        en.put(KEY_BACKUP_STATUS_VERIFIED, "[ INTEGRAL & VERIFIED ]");
+        en.put(KEY_RESTORE_TITLE, "=== RESTORE BACKUP SNAPSHOT ===");
+        en.put(KEY_RESTORE_NO_BACKUPS, "No backup files found in Downloads or App folder.");
+        en.put(KEY_RESTORE_SAF_BTN, "OPEN FILE (SAF)");
+        en.put(KEY_RESTORE_CLOSE_BTN, "CLOSE");
+        en.put(KEY_RESTORE_ERR_INVALID, "Invalid backup envelope");
+        en.put(KEY_RESTORE_ERR_CHECKSUM, "Integrity check failed: corrupted backup");
+        en.put(KEY_RESTORE_CONFIRM_TITLE, "=== CONFIRM RESTORE ===");
+        en.put(KEY_RESTORE_CONFIRM_MSG_FMT, "Restore %d preferences from %s (%s)?\\n\\nApply snapshot now?");
+        en.put(KEY_RESTORE_NOW_BTN, "RESTORE NOW");
+        en.put(KEY_RESTORE_SUCCESS, "Backup restored successfully");
+
+        // OTA
+        en.put(KEY_OTA_CHECKING_FMT, "Checking for OTA updates on GitHub (%s)...");
+        en.put(KEY_OTA_NEW_VERSION_TITLE, "=== NEW VERSION AVAILABLE ===");
+        en.put(KEY_OTA_VERSION_LABEL, "Version: ");
+        en.put(KEY_OTA_CURRENT_LABEL, "Current: v");
+        en.put(KEY_OTA_NO_NOTES, "(No release notes)");
+        en.put(KEY_OTA_DOWNLOAD_APK, "[ DOWNLOAD APK ]");
+        en.put(KEY_OTA_VIEW_GITHUB, "[ VIEW ON GITHUB ]");
+        en.put(KEY_OTA_DISMISS, "DISMISS");
+        en.put(KEY_OTA_UP_TO_DATE_TITLE, "SYSTEM UP TO DATE");
+        en.put(KEY_OTA_UP_TO_DATE_MSG_FMT, "TontOS is up to date.\\n\\n• Channel: %s\\n• Installed: v%s\\n• GitHub tag: %s\\n\\nNo newer releases found.");
+        en.put(KEY_OTA_ERROR_TITLE, "OTA UPDATE ERROR");
+        en.put(KEY_OTA_ERROR_MSG_FMT, "Could not query GitHub release repository:\\n\\n%s\\n\\nPlease verify network connection or try again later.");
+
+        // Settings & Privacy
+        en.put(KEY_FRICTION_HELP, "Mindful countdown delay before opening applications to avoid impulsive or habitual distractions.");
+        en.put(KEY_NFC_NOT_AVAILABLE, "NFC settings not available");
+        en.put(KEY_STATUS_BLOCKED, "BLOCKED");
+        en.put(KEY_STATUS_ALLOWED, "ALLOWED");
+        en.put(KEY_STATUS_RESTRICTED, "RESTRICTED");
+        en.put(KEY_PERMS_HEADER, "=== PERMISSIONS ===");
+        en.put(KEY_ACTIONS_HEADER, "=== ACTIONS ===");
+        en.put(KEY_PERM_NET_TITLE, "Network Access (Internet)");
+        en.put(KEY_PERM_NET_DESC, "Revoke INTERNET socket permission (blocks outbound traffic & telemetry)");
+        en.put(KEY_PERM_SENSORS_TITLE, "Sensors & Motion");
+        en.put(KEY_PERM_SENSORS_DESC, "Revoke accelerometer, gyroscope, step counter & biometric sensors");
+        en.put(KEY_PERM_CAM_MIC_TITLE, "Camera & Microphone");
+        en.put(KEY_PERM_CAM_MIC_DESC, "Revoke photo/video capture and background microphone recording");
+        en.put(KEY_PERM_LOC_TITLE, "Location & GPS");
+        en.put(KEY_PERM_LOC_DESC, "Revoke precise GPS satellite and network positioning");
+        en.put(KEY_PERM_STORAGE_TITLE, "Storage & Files");
+        en.put(KEY_PERM_STORAGE_DESC, "Revoke access to photos, media, downloads and shared files");
+        en.put(KEY_PERM_CONTACTS_TITLE, "Contacts & Calls");
+        en.put(KEY_PERM_CONTACTS_DESC, "Revoke address book, phone dialer and call history access");
+        en.put(KEY_PERM_BG_TITLE, "Background Execution");
+        en.put(KEY_PERM_BG_DESC, "Freeze process when idle and deny background wake services");
+        en.put(KEY_ACTION_FORCE_STOP, "[ FORCE STOP APP ]");
+        en.put(KEY_ACTION_ANDROID_SETTINGS, "[ ANDROID SETTINGS ]");
+        en.put(KEY_ACTION_UNINSTALL, "[ UNINSTALL APPLICATION ]");
+        en.put(KEY_PRIVACY_TAG_NET, "[NET] ");
+        en.put(KEY_PRIVACY_TAG_SENSORS, "[SENSORS] ");
+        en.put(KEY_PRIVACY_TAG_CAM_MIC, "[CAM/MIC] ");
+        en.put(KEY_PRIVACY_TAG_GPS, "[GPS] ");
+        en.put(KEY_PRIVACY_TAG_STORAGE, "[STORAGE] ");
+        en.put(KEY_PRIVACY_TAG_CONTACTS, "[CONTACTS] ");
+        en.put(KEY_PRIVACY_TAG_BG, "[BG] ");
+        en.put(KEY_PRIVACY_STANDARD, "Standard Permissions");
+        en.put(KEY_PRIVACY_CONFIGURE, "[ CONFIGURE ]");
+        en.put(KEY_PRIVACY_SUMMARY_FMT, "%d apps · %d with privacy restrictions");
+
+        // NFC & Attestation
+        en.put(KEY_NFC_NO_HARDWARE, "No Hardware");
+        en.put(KEY_NFC_OFF, "NFC Off");
+        en.put(KEY_NFC_ON_NO_ATTESTATION, "NFC on; attestation unavailable");
+        en.put(KEY_NFC_ATTESTATION_TITLE, "NFC & ATTESTATION STATUS");
+        en.put(KEY_NFC_SEC_HW, "=== HARDWARE & HCE ===");
+        en.put(KEY_NFC_SEC_GMS, "=== GOOGLE PLAY SERVICES ===");
+        en.put(KEY_NFC_SEC_ATTESTATION, "=== PLATFORM ATTESTATION ===");
+        en.put(KEY_NFC_SEC_ACTIONS, "=== ACTIONS ===");
+        en.put(KEY_NFC_PAYMENT_APP, "Payment app");
+        en.put(KEY_NFC_GMS_INSTALL, "GMS installation");
+        en.put(KEY_GMS_UNKNOWN, "Unavailable");
+        en.put(KEY_GMS_NOT_INSTALLED, "Not installed");
+        en.put(KEY_GMS_USER_INSTALLED, "User-installed (isolation not verified)");
+        en.put(KEY_GMS_SYSTEM_INSTALLED, "System app (isolation not verified)");
+        en.put(KEY_NFC_NOT_EVALUATED, "Not evaluated");
+        en.put(KEY_NFC_NOT_VERIFIED, "Not verified by this app");
+        en.put(KEY_NFC_ACTIONS_PAYMENTS, "NFC Payment Settings (HCE)");
+
+        // Battery Protection
+        en.put(KEY_BATTERY_CTRL_NA, "100% · controls N/A");
+        en.put(KEY_BATTERY_80_NA, "80% limit — unavailable");
+        en.put(KEY_BATTERY_BYPASS_NA, "Bypass — unavailable");
+        en.put(KEY_BATTERY_UNSUPPORTED_MSG, "Charge limits and bypass control are unavailable to this app on this device.");
+        en.put(KEY_BATTERY_APPLIED_MSG, "Standard charging selected; no charge limit is applied.");
+        en.put(KEY_BATTERY_INVALID_MSG, "Invalid charging option.");
+
+        // Ultra Battery Saver
+        en.put(KEY_ACTION_SETTINGS_REQ, "Change this in system settings.");
+        en.put(KEY_ACTION_PERM_REQ, "Grant the permission, then tap again.");
+        en.put(KEY_ACTION_UNSUPPORTED, "Not supported on this device.");
+        en.put(KEY_ACTION_FAILED, "Action failed; the displayed state was not changed.");
+        en.put(KEY_ACTION_APPLIED, "System state updated.");
+        en.put(KEY_ACTION_WAITING, "Waiting for the system state to update.");
+        en.put(KEY_STATE_UNKNOWN, "UNKNOWN");
+
         TRANSLATIONS.put("en", en);
 
         // ==========================================
@@ -578,6 +892,7 @@ public final class I18n {
         de.put(KEY_MEDIA_VOL, "Medienlautstärke");
         de.put(KEY_RING_VOL, "Klingeltonlautstärke");
         de.put(KEY_ALARM_VOL, "Weckerlautstärke");
+        de.put(KEY_NOTIFICATION_VOL, "Benachrichtigungslautstärke");
         de.put(KEY_RINGER_PROFILE, "Klingelprofil");
         de.put(KEY_RINGER_NORMAL, "Normal");
         de.put(KEY_RINGER_VIBRATE, "Vibrieren");
@@ -750,6 +1065,83 @@ public final class I18n {
         de.put(KEY_BUDGET_CUSTOM_HINT, "Minuten (1-1440)");
         de.put(KEY_STATE_ON, "AN");
         de.put(KEY_STATE_OFF, "AUS");
+                de.put(KEY_LOCKSCREEN_HEADER, "=== SPERRBILDSCHIRM ===");
+        de.put(KEY_LOCKSCREEN_ENABLE, "TontOS Minimalistischer Sperrbildschirm");
+        de.put(KEY_LOCK_CLOCK_STYLE, "Uhr-Stil bei Sperre");
+        de.put(KEY_LOCK_CLOCK_DEFAULT, "Design-Standard");
+        de.put(KEY_LOCK_CLOCK_BIG, "Große Monospace 24h");
+        de.put(KEY_LOCK_CLOCK_STACKED, "Vertikal gestapelt (HH / MM)");
+        de.put(KEY_LOCK_CLOCK_TERMINAL, "Retro-Terminal [HH:mm:ss]");
+        de.put(KEY_LOCK_CLOCK_COMPACT, "Kompakt einzeilig");
+        de.put(KEY_LOCK_THEME_OVERRIDE, "Sperrbildschirm-Design");
+        de.put(KEY_LOCK_THEME_MATCH, "Wie aktives Design");
+        de.put(KEY_LOCK_SHOW_DETOX, "Detox-Balken anzeigen");
+        de.put(KEY_LOCK_SHOW_BATTERY, "Akkustand anzeigen");
+        de.put(KEY_LOCK_OWNER_INFO, "Benutzerdefinierte Nachricht / Besitzer");
+        de.put(KEY_LOCK_OWNER_HINT, "Nachricht oder Notfallkontakt eingeben");
+        de.put(KEY_LOCK_SHORTCUT_LEFT, "Verknüpfung unten links");
+        de.put(KEY_LOCK_SHORTCUT_RIGHT, "Verknüpfung unten rechts");
+        de.put(KEY_LOCK_ACTION_TORCH, "[ TASCHENLAMPE ]");
+        de.put(KEY_LOCK_ACTION_CAMERA, "[ KAMERA ]");
+        de.put(KEY_LOCK_ACTION_PHONE, "[ TELEFON ]");
+        de.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        de.put(KEY_LOCK_ACTION_NONE, "Keine / Deaktiviert");
+        de.put(KEY_LOCK_UNLOCK_HINT, "[ ^ WISCHEN ODER TIPPEN ZUM ENTSPERREN ]");
+        de.put(KEY_LOCK_TEST_BTN, "Sperrbildschirm jetzt testen");
+
+        // Settings & Privacy
+        de.put(KEY_FRICTION_HELP, "Achtsamkeits-Countdown vor dem Öffnen von Apps, um impulsive Ablenkung zu vermeiden.");
+        de.put(KEY_NFC_NOT_AVAILABLE, "NFC-Einstellungen nicht verfügbar");
+        de.put(KEY_STATUS_BLOCKED, "GESPERRT");
+        de.put(KEY_STATUS_ALLOWED, "ERLAUBT");
+        de.put(KEY_STATUS_RESTRICTED, "EINGESCHRÄNKT");
+        de.put(KEY_PERMS_HEADER, "=== BERECHTIGUNGEN ===");
+        de.put(KEY_ACTIONS_HEADER, "=== AKTIONEN ===");
+        de.put(KEY_PERM_NET_TITLE, "Netzwerk & Internet");
+        de.put(KEY_PERM_NET_DESC, "Internetzugriff, Telemetrie und ausgehenden Datenverkehr sperren");
+        de.put(KEY_PERM_SENSORS_TITLE, "Sensoren & Bewegung");
+        de.put(KEY_PERM_SENSORS_DESC, "Beschleunigungssensor, Gyroskop, Schrittzähler und biometrische Sensoren sperren");
+        de.put(KEY_PERM_CAM_MIC_TITLE, "Kamera & Mikrofon");
+        de.put(KEY_PERM_CAM_MIC_DESC, "Foto-/Videoaufnahme und Hintergrund-Mikrofonaufzeichnung sperren");
+        de.put(KEY_PERM_LOC_TITLE, "Standort & GPS");
+        de.put(KEY_PERM_LOC_DESC, "Präzise GPS- und Netzwerk-Standortbestimmung sperren");
+        de.put(KEY_PERM_STORAGE_TITLE, "Speicher & Dateien");
+        de.put(KEY_PERM_STORAGE_DESC, "Zugriff auf Fotos, Medien, Downloads und freigegebene Dateien sperren");
+        de.put(KEY_PERM_CONTACTS_TITLE, "Kontakte & Anrufe");
+        de.put(KEY_PERM_CONTACTS_DESC, "Zugriff auf Adressbuch, Telefon und Anrufliste sperren");
+        de.put(KEY_PERM_BG_TITLE, "Hintergrundausführung");
+        de.put(KEY_PERM_BG_DESC, "Prozesse im Ruhezustand einfrieren und Hintergrunddienste verhindern");
+        de.put(KEY_ACTION_FORCE_STOP, "[ BEENDEN ERZWINGEN ]");
+        de.put(KEY_ACTION_ANDROID_SETTINGS, "[ ANDROID-EINSTELLUNGEN ]");
+        de.put(KEY_ACTION_UNINSTALL, "[ APP DEINSTALLIEREN ]");
+        de.put(KEY_PRIVACY_TAG_NET, "[NETZ] ");
+        de.put(KEY_PRIVACY_TAG_SENSORS, "[SENSOREN] ");
+        de.put(KEY_PRIVACY_TAG_CAM_MIC, "[KAM/MIK] ");
+        de.put(KEY_PRIVACY_TAG_GPS, "[GPS] ");
+        de.put(KEY_PRIVACY_TAG_STORAGE, "[SPEICHER] ");
+        de.put(KEY_PRIVACY_TAG_CONTACTS, "[KONTAKTE] ");
+        de.put(KEY_PRIVACY_TAG_BG, "[HG] ");
+        de.put(KEY_PRIVACY_STANDARD, "Standard-Berechtigungen");
+        de.put(KEY_PRIVACY_CONFIGURE, "[ KONFIGURIEREN ]");
+        de.put(KEY_PRIVACY_SUMMARY_FMT, "%d Apps · %d mit Datenschutzeinschränkungen");
+
+        // Battery Protection
+        de.put(KEY_BATTERY_CTRL_NA, "100% · Steuerung n. v.");
+        de.put(KEY_BATTERY_80_NA, "80%-Limit — nicht verfügbar");
+        de.put(KEY_BATTERY_BYPASS_NA, "Bypass — nicht verfügbar");
+        de.put(KEY_BATTERY_UNSUPPORTED_MSG, "Ladelimits und Bypass-Steuerung sind dieser App auf diesem Gerät nicht verfügbar.");
+        de.put(KEY_BATTERY_APPLIED_MSG, "Standardladen ausgewählt; es wird kein Ladelimit angewendet.");
+        de.put(KEY_BATTERY_INVALID_MSG, "Ungültige Ladeoption.");
+
+        // Ultra Battery Saver
+        de.put(KEY_ACTION_SETTINGS_REQ, "In den Systemeinstellungen ändern.");
+        de.put(KEY_ACTION_PERM_REQ, "Berechtigung erteilen und danach erneut tippen.");
+        de.put(KEY_ACTION_UNSUPPORTED, "Auf diesem Gerät nicht unterstützt.");
+        de.put(KEY_ACTION_FAILED, "Aktion fehlgeschlagen; der angezeigte Zustand ist unverändert.");
+        de.put(KEY_ACTION_APPLIED, "Systemzustand aktualisiert.");
+        de.put(KEY_ACTION_WAITING, "Warten auf die Systemaktualisierung.");
+        de.put(KEY_STATE_UNKNOWN, "UNBEKANNT");
+
         TRANSLATIONS.put("de", de);
 
         // ==========================================
@@ -821,6 +1213,7 @@ public final class I18n {
         pl.put(KEY_MEDIA_VOL, "Głośność multimediów");
         pl.put(KEY_RING_VOL, "Głośność dzwonka");
         pl.put(KEY_ALARM_VOL, "Głośność budzika");
+        pl.put(KEY_NOTIFICATION_VOL, "Głośność powiadomień");
         pl.put(KEY_RINGER_PROFILE, "Profil dzwonka");
         pl.put(KEY_RINGER_NORMAL, "Normalny");
         pl.put(KEY_RINGER_VIBRATE, "Wibracje");
@@ -993,6 +1386,83 @@ public final class I18n {
         pl.put(KEY_BUDGET_CUSTOM_HINT, "Minuty (1-1440)");
         pl.put(KEY_STATE_ON, "WŁ");
         pl.put(KEY_STATE_OFF, "WYŁ");
+                pl.put(KEY_LOCKSCREEN_HEADER, "=== EKRAN BLOKADY ===");
+        pl.put(KEY_LOCKSCREEN_ENABLE, "Minimalistyczny ekran blokady TontOS");
+        pl.put(KEY_LOCK_CLOCK_STYLE, "Styl zegara na blokadzie");
+        pl.put(KEY_LOCK_CLOCK_DEFAULT, "Domyślny dla motywu");
+        pl.put(KEY_LOCK_CLOCK_BIG, "Duży monospace 24h");
+        pl.put(KEY_LOCK_CLOCK_STACKED, "Pionowy stos (HH / MM)");
+        pl.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal retro [HH:mm:ss]");
+        pl.put(KEY_LOCK_CLOCK_COMPACT, "Kompaktowy pojedynczy wiersz");
+        pl.put(KEY_LOCK_THEME_OVERRIDE, "Motyw ekranu blokady");
+        pl.put(KEY_LOCK_THEME_MATCH, "Zgodny z aktywnym motywem");
+        pl.put(KEY_LOCK_SHOW_DETOX, "Pokaż pasek detoxu na blokadzie");
+        pl.put(KEY_LOCK_SHOW_BATTERY, "Pokaż procent baterii");
+        pl.put(KEY_LOCK_OWNER_INFO, "Własna wiadomość / Właściciel");
+        pl.put(KEY_LOCK_OWNER_HINT, "Wpisz wiadomość lub kontakt alarmowy");
+        pl.put(KEY_LOCK_SHORTCUT_LEFT, "Skrót w lewym dolnym rogu");
+        pl.put(KEY_LOCK_SHORTCUT_RIGHT, "Skrót w prawym dolnym rogu");
+        pl.put(KEY_LOCK_ACTION_TORCH, "[ LATARKA ]");
+        pl.put(KEY_LOCK_ACTION_CAMERA, "[ APARAT ]");
+        pl.put(KEY_LOCK_ACTION_PHONE, "[ TELEFON ]");
+        pl.put(KEY_LOCK_ACTION_BROWSER, "[ PRZEGLĄDARKA ]");
+        pl.put(KEY_LOCK_ACTION_NONE, "Brak / Wyłączony");
+        pl.put(KEY_LOCK_UNLOCK_HINT, "[ ^ PRZESUŃ LUB DOTKNIJ BY ODBLOKOWAĆ ]");
+        pl.put(KEY_LOCK_TEST_BTN, "Przetestuj ekran blokady teraz");
+
+        // Settings & Privacy
+        pl.put(KEY_FRICTION_HELP, "Świadome opóźnienie przed otwarciem aplikacji, aby zapobiec impulsywnemu rozpraszaniu uwagi.");
+        pl.put(KEY_NFC_NOT_AVAILABLE, "Ustawienia NFC niedostępne");
+        pl.put(KEY_STATUS_BLOCKED, "ZABLOKOWANE");
+        pl.put(KEY_STATUS_ALLOWED, "DOZWOLONE");
+        pl.put(KEY_STATUS_RESTRICTED, "OGRANICZONE");
+        pl.put(KEY_PERMS_HEADER, "=== UPRAWNIENIA ===");
+        pl.put(KEY_ACTIONS_HEADER, "=== DZIAŁANIA ===");
+        pl.put(KEY_PERM_NET_TITLE, "Sieć & Internet");
+        pl.put(KEY_PERM_NET_DESC, "Blokuj gniazda internetowe, telemetrię i ruch wychodzący");
+        pl.put(KEY_PERM_SENSORS_TITLE, "Czujniki & Ruch");
+        pl.put(KEY_PERM_SENSORS_DESC, "Blokuj akcelerometr, żyroskop, krokomierz i biometrię");
+        pl.put(KEY_PERM_CAM_MIC_TITLE, "Aparat & Mikrofon");
+        pl.put(KEY_PERM_CAM_MIC_DESC, "Blokuj aparat fotograficzny oraz nagrywanie mikrofonem w tle");
+        pl.put(KEY_PERM_LOC_TITLE, "Lokalizacja & GPS");
+        pl.put(KEY_PERM_LOC_DESC, "Blokuj precyzyjną lokalizację satelitarną GPS i sieciową");
+        pl.put(KEY_PERM_STORAGE_TITLE, "Pamięć & Pliki");
+        pl.put(KEY_PERM_STORAGE_DESC, "Blokuj dostęp do zdjęć, multimediów, pobranych plików i pamięci");
+        pl.put(KEY_PERM_CONTACTS_TITLE, "Kontakty & Połączenia");
+        pl.put(KEY_PERM_CONTACTS_DESC, "Blokuj dostęp do kontaktów, dialera i historii połączeń");
+        pl.put(KEY_PERM_BG_TITLE, "Praca w tle");
+        pl.put(KEY_PERM_BG_DESC, "Zamrażaj procesy w uśpieniu i blokuj usługi działające w tle");
+        pl.put(KEY_ACTION_FORCE_STOP, "[ WYMUŚ ZATRZYMANIE ]");
+        pl.put(KEY_ACTION_ANDROID_SETTINGS, "[ USTAWIENIA SYSTEMOWE ]");
+        pl.put(KEY_ACTION_UNINSTALL, "[ ODINSTALUJ APLIKACJĘ ]");
+        pl.put(KEY_PRIVACY_TAG_NET, "[SIEĆ] ");
+        pl.put(KEY_PRIVACY_TAG_SENSORS, "[CZUJNIKI] ");
+        pl.put(KEY_PRIVACY_TAG_CAM_MIC, "[APARAT/MIK] ");
+        pl.put(KEY_PRIVACY_TAG_GPS, "[GPS] ");
+        pl.put(KEY_PRIVACY_TAG_STORAGE, "[PAMIĘĆ] ");
+        pl.put(KEY_PRIVACY_TAG_CONTACTS, "[KONTAKTY] ");
+        pl.put(KEY_PRIVACY_TAG_BG, "[W TLE] ");
+        pl.put(KEY_PRIVACY_STANDARD, "Standardowe uprawnienia");
+        pl.put(KEY_PRIVACY_CONFIGURE, "[ KONFIGURUJ ]");
+        pl.put(KEY_PRIVACY_SUMMARY_FMT, "%d aplikacji · %d z ograniczeniami prywatności");
+
+        // Battery Protection
+        pl.put(KEY_BATTERY_CTRL_NA, "100% · sterowanie n/d");
+        pl.put(KEY_BATTERY_80_NA, "Limit 80% — niedostępny");
+        pl.put(KEY_BATTERY_BYPASS_NA, "Bypass — niedostępny");
+        pl.put(KEY_BATTERY_UNSUPPORTED_MSG, "Limity ładowania i sterowanie bypass są niedostępne dla tej aplikacji na tym urządzeniu.");
+        pl.put(KEY_BATTERY_APPLIED_MSG, "Wybrano standardowe ładowanie; limit ładowania nie jest stosowany.");
+        pl.put(KEY_BATTERY_INVALID_MSG, "Nieprawidłowa opcja ładowania.");
+
+        // Ultra Battery Saver
+        pl.put(KEY_ACTION_SETTINGS_REQ, "Zmień w ustawieniach systemowych.");
+        pl.put(KEY_ACTION_PERM_REQ, "Nadaj uprawnienie i dotknij ponownie.");
+        pl.put(KEY_ACTION_UNSUPPORTED, "Nieobsługiwane na tym urządzeniu.");
+        pl.put(KEY_ACTION_FAILED, "Niepowodzenie; wyświetlany stan nie został zmieniony.");
+        pl.put(KEY_ACTION_APPLIED, "Stan systemu zaktualizowany.");
+        pl.put(KEY_ACTION_WAITING, "Oczekiwanie na aktualizację stanu systemu.");
+        pl.put(KEY_STATE_UNKNOWN, "NIEZNANY");
+
         TRANSLATIONS.put("pl", pl);
 
         // ==========================================
@@ -1064,6 +1534,7 @@ public final class I18n {
         es.put(KEY_MEDIA_VOL, "Volumen de medios");
         es.put(KEY_RING_VOL, "Volumen de llamada");
         es.put(KEY_ALARM_VOL, "Volumen de alarma");
+        es.put(KEY_NOTIFICATION_VOL, "Volumen de notificación");
         es.put(KEY_RINGER_PROFILE, "Perfil de sonido");
         es.put(KEY_RINGER_NORMAL, "Normal");
         es.put(KEY_RINGER_VIBRATE, "Vibración");
@@ -1236,6 +1707,162 @@ public final class I18n {
         es.put(KEY_BUDGET_CUSTOM_HINT, "Minutos (1-1440)");
         es.put(KEY_STATE_ON, "ACTIVADO");
         es.put(KEY_STATE_OFF, "DESACTIVADO");
+                es.put(KEY_LOCKSCREEN_HEADER, "=== PANTALLA DE BLOQUEO ===");
+        es.put(KEY_LOCKSCREEN_ENABLE, "Pantalla de bloqueo minimalista TontOS");
+        es.put(KEY_LOCK_CLOCK_STYLE, "Estilo de reloj en bloqueo");
+        es.put(KEY_LOCK_CLOCK_DEFAULT, "Predeterminado del tema");
+        es.put(KEY_LOCK_CLOCK_BIG, "Monospace grande 24h");
+        es.put(KEY_LOCK_CLOCK_STACKED, "Apilado vertical (HH / MM)");
+        es.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal retro [HH:mm:ss]");
+        es.put(KEY_LOCK_CLOCK_COMPACT, "Compacto una línea");
+        es.put(KEY_LOCK_THEME_OVERRIDE, "Tema de pantalla de bloqueo");
+        es.put(KEY_LOCK_THEME_MATCH, "Sincronizado con tema activo");
+        es.put(KEY_LOCK_SHOW_DETOX, "Mostrar barra de detox en bloqueo");
+        es.put(KEY_LOCK_SHOW_BATTERY, "Mostrar porcentaje de batería");
+        es.put(KEY_LOCK_OWNER_INFO, "Mensaje personalizado / Propietario");
+        es.put(KEY_LOCK_OWNER_HINT, "Introduce mensaje de bloqueo o contacto de emergencia");
+        es.put(KEY_LOCK_SHORTCUT_LEFT, "Acceso directo inferior izquierdo");
+        es.put(KEY_LOCK_SHORTCUT_RIGHT, "Acceso directo inferior derecho");
+        es.put(KEY_LOCK_ACTION_TORCH, "[ LINTERNA ]");
+        es.put(KEY_LOCK_ACTION_CAMERA, "[ CÁMARA ]");
+        es.put(KEY_LOCK_ACTION_PHONE, "[ TELÉFONO ]");
+        es.put(KEY_LOCK_ACTION_BROWSER, "[ NAVEGADOR ]");
+        es.put(KEY_LOCK_ACTION_NONE, "Ninguno / Desactivado");
+        es.put(KEY_LOCK_UNLOCK_HINT, "[ ^ DESLIZA O TOCA PARA DESBLOQUEAR ]");
+        es.put(KEY_LOCK_TEST_BTN, "Probar pantalla de bloqueo ahora");
+
+        // Quick Guide
+        es.put(KEY_GUIDE_HEADER, "=== TontOS · GUÍA RÁPIDA ===");
+        es.put(KEY_GUIDE_SUBTITLE, "Funciones esenciales para desintoxicación digital");
+        es.put(KEY_GUIDE_CARD1_TITLE, "1. PANTALLA Y CAJÓN DE APPS");
+        es.put(KEY_GUIDE_CARD1_DESC, "Solo apps indispensables en pantalla. Desliza o toca [ TODAS LAS APPS ] para el cajón completo alfabético. Mantén pulsada cualquier app para ver y restringir sus permisos.");
+        es.put(KEY_GUIDE_CARD2_TITLE, "2. CIERRE AGRESIVO EN SEGUNDO PLANO");
+        es.put(KEY_GUIDE_CARD2_DESC, "Al volver al inicio, TontOS cierra automáticamente los procesos de la app para ahorrar batería y proteger tu privacidad, a menos que esté en la lista blanca de Ajustes > Conectividad.");
+        es.put(KEY_GUIDE_CARD3_TITLE, "3. PAUSA CONSCIENTE (FRICCIÓN)");
+        es.put(KEY_GUIDE_CARD3_DESC, "Retardo voluntario antes de abrir aplicaciones distractoras con temporizador de respiración para frenar el impulso compulsivo.");
+        es.put(KEY_GUIDE_CARD4_TITLE, "4. PRESUPUESTO DETOX & ESCALA DE GRISES");
+        es.put(KEY_GUIDE_CARD4_DESC, "Controla el tiempo total de pantalla diario en la cabecera. Activa el modo monocromo en Ajustes para eliminar los colores hiperestimulantes.");
+        es.put(KEY_GUIDE_CARD5_TITLE, "5. CORTINA ULTRA SHADE");
+        es.put(KEY_GUIDE_CARD5_DESC, "Toca la hora o el porcentaje de batería en la barra superior para abrir la cortina minimalista con controles de Wi-Fi, Bluetooth, Linterna y No Molestar.");
+        es.put(KEY_GUIDE_SKIP, "[ SALTAR GUÍA ]");
+        es.put(KEY_GUIDE_START, "[ COMENZAR ]");
+        es.put(KEY_GUIDE_SETTINGS_ROW, "Guía de funciones esenciales");
+
+        // Backup & Restore
+        es.put(KEY_BACKUP_CREATE_TITLE, "=== CREAR COPIA DE SEGURIDAD ===");
+        es.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Respaldo criptográfico de %d ajustes (tema, launcher, audio, redes).");
+        es.put(KEY_BACKUP_FILE_NAME_LABEL, "Nombre del archivo:");
+        es.put(KEY_BACKUP_DEST_LABEL, "Ruta / Destino de guardado:");
+        es.put(KEY_BACKUP_DEST_DOWNLOADS, "Carpeta Descargas (/sdcard/Download)");
+        es.put(KEY_BACKUP_DEST_APP, "Carpeta TontOS (/Android/data/backup)");
+        es.put(KEY_BACKUP_DEST_SAF, "Explorador del sistema (Elegir carpeta...)");
+        es.put(KEY_BACKUP_SAVE_BTN, "GUARDAR COPIA");
+        es.put(KEY_BACKUP_ERR_EMPTY_NAME, "Introduce un nombre válido");
+        es.put(KEY_BACKUP_ERR_INVALID_NAME, "Nombre de archivo no válido");
+        es.put(KEY_BACKUP_SAF_SUCCESS, "Copia guardada con éxito en SAF");
+        es.put(KEY_BACKUP_SUCCESS_TITLE, "=== COPIA GUARDADA CON ÉXITO ===");
+        es.put(KEY_BACKUP_DETAILS_FILE, "Archivo:  ");
+        es.put(KEY_BACKUP_DETAILS_PATH, "Ruta:     ");
+        es.put(KEY_BACKUP_DETAILS_SIZE, "Tamaño:   ");
+        es.put(KEY_BACKUP_DETAILS_STATUS, "Estado:   ");
+        es.put(KEY_BACKUP_STATUS_VERIFIED, "[ ÍNTEGRO & VERIFICADO ]");
+        es.put(KEY_RESTORE_TITLE, "=== RESTAURAR COPIA DE SEGURIDAD ===");
+        es.put(KEY_RESTORE_NO_BACKUPS, "No se encontraron copias en Descargas o carpeta TontOS.");
+        es.put(KEY_RESTORE_SAF_BTN, "ELEGIR ARCHIVO (SAF)");
+        es.put(KEY_RESTORE_CLOSE_BTN, "CERRAR");
+        es.put(KEY_RESTORE_ERR_INVALID, "Error: archivo no es una copia TontOS válida");
+        es.put(KEY_RESTORE_ERR_CHECKSUM, "Error: Checksum SHA-256 no coincide (archivo corrupto o alterado)");
+        es.put(KEY_RESTORE_CONFIRM_TITLE, "=== CONFIRMAR RESTAURACIÓN ===");
+        es.put(KEY_RESTORE_CONFIRM_MSG_FMT, "Se restaurarán %d ajustes creados el %s (%s).\\n\\n¿Deseas aplicar la copia ahora?");
+        es.put(KEY_RESTORE_NOW_BTN, "RESTAURAR AHORA");
+        es.put(KEY_RESTORE_SUCCESS, "Copia restaurada con éxito");
+
+        // OTA
+        es.put(KEY_OTA_CHECKING_FMT, "Comprobando actualizaciones OTA en GitHub (%s)...");
+        es.put(KEY_OTA_NEW_VERSION_TITLE, "=== NUEVA VERSIÓN DISPONIBLE ===");
+        es.put(KEY_OTA_VERSION_LABEL, "Versión: ");
+        es.put(KEY_OTA_CURRENT_LABEL, "Instalada: v");
+        es.put(KEY_OTA_NO_NOTES, "(Sin notas de cambios)");
+        es.put(KEY_OTA_DOWNLOAD_APK, "[ DESCARGAR APK ]");
+        es.put(KEY_OTA_VIEW_GITHUB, "[ VER EN GITHUB ]");
+        es.put(KEY_OTA_DISMISS, "CERRAR");
+        es.put(KEY_OTA_UP_TO_DATE_TITLE, "SISTEMA ACTUALIZADO");
+        es.put(KEY_OTA_UP_TO_DATE_MSG_FMT, "TontOS está actualizado.\\n\\n• Canal: %s\\n• Versión instalada: v%s\\n• Versión en GitHub: %s\\n\\nNo hay nuevas actualizaciones disponibles.");
+        es.put(KEY_OTA_ERROR_TITLE, "ERROR OTA GITHUB");
+        es.put(KEY_OTA_ERROR_MSG_FMT, "No se pudo consultar el repositorio de actualizaciones:\\n\\n%s\\n\\nVerifique su conexión a Internet o inténtelo de nuevo más tarde.");
+
+        // Settings & Privacy
+        es.put(KEY_FRICTION_HELP, "Temporizador consciente que retrasa la apertura de aplicaciones para evitar impulsos compulsivos o distracciones.");
+        es.put(KEY_NFC_NOT_AVAILABLE, "Ajustes NFC no disponibles");
+        es.put(KEY_STATUS_BLOCKED, "BLOQUEADO");
+        es.put(KEY_STATUS_ALLOWED, "PERMITIDO");
+        es.put(KEY_STATUS_RESTRICTED, "RESTRINGIDO");
+        es.put(KEY_PERMS_HEADER, "=== PERMISOS ===");
+        es.put(KEY_ACTIONS_HEADER, "=== ACCIONES ===");
+        es.put(KEY_PERM_NET_TITLE, "Red & Conectividad");
+        es.put(KEY_PERM_NET_DESC, "Denegar sockets de internet, telemetría y tráfico saliente");
+        es.put(KEY_PERM_SENSORS_TITLE, "Sensores & Movimiento");
+        es.put(KEY_PERM_SENSORS_DESC, "Acelerómetro, giroscopio, podómetro y biometría física");
+        es.put(KEY_PERM_CAM_MIC_TITLE, "Cámara & Micrófono");
+        es.put(KEY_PERM_CAM_MIC_DESC, "Captura de fotografías, vídeo y grabación de audio ambiental");
+        es.put(KEY_PERM_LOC_TITLE, "Ubicación & GPS");
+        es.put(KEY_PERM_LOC_DESC, "Posicionamiento satelital GPS, antenas móviles y Wi-Fi");
+        es.put(KEY_PERM_STORAGE_TITLE, "Almacenamiento & Archivos");
+        es.put(KEY_PERM_STORAGE_DESC, "Acceso a fotos, medios compartidos y documentos del dispositivo");
+        es.put(KEY_PERM_CONTACTS_TITLE, "Contactos & Llamadas");
+        es.put(KEY_PERM_CONTACTS_DESC, "Agenda de contactos telefónicos, llamadas y marcación");
+        es.put(KEY_PERM_BG_TITLE, "Segundo plano");
+        es.put(KEY_PERM_BG_DESC, "Congelar procesos en reposo y evitar servicios persistentes");
+        es.put(KEY_ACTION_FORCE_STOP, "[ FORZAR DETENCIÓN ]");
+        es.put(KEY_ACTION_ANDROID_SETTINGS, "[ AJUSTES DEL SISTEMA ]");
+        es.put(KEY_ACTION_UNINSTALL, "[ DESINSTALAR APLICACIÓN ]");
+        es.put(KEY_PRIVACY_TAG_NET, "[RED] ");
+        es.put(KEY_PRIVACY_TAG_SENSORS, "[SENSORES] ");
+        es.put(KEY_PRIVACY_TAG_CAM_MIC, "[CÁMARA/MIC] ");
+        es.put(KEY_PRIVACY_TAG_GPS, "[GPS] ");
+        es.put(KEY_PRIVACY_TAG_STORAGE, "[ALMACÉN] ");
+        es.put(KEY_PRIVACY_TAG_CONTACTS, "[CONTACTOS] ");
+        es.put(KEY_PRIVACY_TAG_BG, "[2° PLANO] ");
+        es.put(KEY_PRIVACY_STANDARD, "Permisos estándar");
+        es.put(KEY_PRIVACY_CONFIGURE, "[ CONFIGURAR ]");
+        es.put(KEY_PRIVACY_SUMMARY_FMT, "%d apps · %d con restricciones de privacidad");
+
+        // NFC & Attestation
+        es.put(KEY_NFC_NO_HARDWARE, "Sin Hardware");
+        es.put(KEY_NFC_OFF, "NFC Desactivado");
+        es.put(KEY_NFC_ON_NO_ATTESTATION, "NFC activo; attestation no disponible");
+        es.put(KEY_NFC_ATTESTATION_TITLE, "NFC Y ESTADO DE ATTESTATION");
+        es.put(KEY_NFC_SEC_HW, "=== HARDWARE & HCE ===");
+        es.put(KEY_NFC_SEC_GMS, "=== GOOGLE PLAY SERVICES ===");
+        es.put(KEY_NFC_SEC_ATTESTATION, "=== ATTESTATION DE PLATAFORMA ===");
+        es.put(KEY_NFC_SEC_ACTIONS, "=== ACCIONES ===");
+        es.put(KEY_NFC_PAYMENT_APP, "App de pago");
+        es.put(KEY_NFC_GMS_INSTALL, "Instalación de GMS");
+        es.put(KEY_GMS_UNKNOWN, "Desconocido");
+        es.put(KEY_GMS_NOT_INSTALLED, "No instalado");
+        es.put(KEY_GMS_USER_INSTALLED, "Instalado por el usuario (aislamiento no verificado)");
+        es.put(KEY_GMS_SYSTEM_INSTALLED, "App del sistema (aislamiento no verificado)");
+        es.put(KEY_NFC_NOT_EVALUATED, "No evaluado");
+        es.put(KEY_NFC_NOT_VERIFIED, "No verificado por esta app");
+        es.put(KEY_NFC_ACTIONS_PAYMENTS, "Ajustes de pagos NFC (HCE)");
+
+        // Battery Protection
+        es.put(KEY_BATTERY_CTRL_NA, "100% · control no disp.");
+        es.put(KEY_BATTERY_80_NA, "Límite 80% — no disponible");
+        es.put(KEY_BATTERY_BYPASS_NA, "Bypass — no disponible");
+        es.put(KEY_BATTERY_UNSUPPORTED_MSG, "Los límites de carga y el bypass no están disponibles para esta aplicación en este dispositivo.");
+        es.put(KEY_BATTERY_APPLIED_MSG, "Carga estándar seleccionada; no se aplica ningún límite.");
+        es.put(KEY_BATTERY_INVALID_MSG, "Opción de carga no válida.");
+
+        // Ultra Battery Saver
+        es.put(KEY_ACTION_SETTINGS_REQ, "Cámbialo en los ajustes del sistema.");
+        es.put(KEY_ACTION_PERM_REQ, "Concede el permiso y vuelve a tocar.");
+        es.put(KEY_ACTION_UNSUPPORTED, "No compatible con este dispositivo.");
+        es.put(KEY_ACTION_FAILED, "Acción fallida; el estado mostrado no se ha cambiado.");
+        es.put(KEY_ACTION_APPLIED, "Estado del sistema actualizado.");
+        es.put(KEY_ACTION_WAITING, "Esperando a que se actualice el estado del sistema.");
+        es.put(KEY_STATE_UNKNOWN, "DESCONOCIDO");
+
         TRANSLATIONS.put("es", es);
 
         // ==========================================
@@ -1307,6 +1934,7 @@ public final class I18n {
         fr.put(KEY_MEDIA_VOL, "Volume multimédia");
         fr.put(KEY_RING_VOL, "Volume de sonnerie");
         fr.put(KEY_ALARM_VOL, "Volume d'alarme");
+        fr.put(KEY_NOTIFICATION_VOL, "Volume des notifications");
         fr.put(KEY_RINGER_PROFILE, "Profil de sonnerie");
         fr.put(KEY_RINGER_NORMAL, "Normal");
         fr.put(KEY_RINGER_VIBRATE, "Vibreur");
@@ -1442,6 +2070,66 @@ public final class I18n {
         fr.put(KEY_NET_ALLOWED, "[ AUTORISÉ ]");
         fr.put(KEY_NET_BLOCKED, "[ BLOQUÉ ]");
         fr.put(KEY_NET_BLOCKED_COUNT_FMT, "%d applications bloquées");
+        fr.put(KEY_BATTERY_PROTECTION, "Protection de la batterie et charge");
+        fr.put(KEY_BATTERY_100, "100% (Standard / Sans limite)");
+        fr.put(KEY_BATTERY_80, "Limite de charge 80% (non disponible)");
+        fr.put(KEY_BATTERY_BYPASS, "Charge bypass (non disponible)");
+        fr.put(KEY_BATTERY_80_DESC, "Cette application ne peut pas appliquer de limite sur cet appareil.");
+        fr.put(KEY_BATTERY_BYPASS_DESC, "Cette application ne peut pas contrôler la charge bypass.");
+        fr.put(KEY_GLYPH_INTERFACE, "Interface Glyph (Nothing)");
+        fr.put(KEY_FLIP_TO_GLYPH, "Flip to Glyph (Silence face cachée)");
+        fr.put(KEY_ESSENTIAL_GLYPH, "Notifications Essential Glyph");
+        fr.put(KEY_CHIPSET_PLATFORM, "Plateforme SoC / Matériel");
+        fr.put(KEY_BOOTLOADER_HEADER, "=== ÉTAT DU BOOTLOADER (LECTURE SEULE) ===");
+        fr.put(KEY_BOOTLOADER_LOCK_STATUS, "État du bootloader signalé par Android");
+        fr.put(KEY_BOOTLOADER_LOCKED, "Signalé verrouillé (non attesté par cette application)");
+        fr.put(KEY_BOOTLOADER_UNLOCKED, "Signalé déverrouillé (non attesté par cette application)");
+        fr.put(KEY_BOOTLOADER_UNKNOWN, "Inconnu (Android n'a pas fourni d'information)");
+        fr.put(KEY_BOOTLOADER_ACTION_LOCK, "Indisponible dans cette application");
+        fr.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Indisponible dans cette application");
+        fr.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Cette application ne peut pas déverrouiller le bootloader.");
+        fr.put(KEY_BOOTLOADER_WARNING_LOCK, "Cette application ne peut pas verrouiller le bootloader.");
+        fr.put(KEY_SHADE_HEADER, "=== ULTRA ÉCONOMIE D'ÉNERGIE ===");
+        fr.put(KEY_SHADE_ESTIMATE_FMT, "Batterie: %d%% · ~%dh restants (Ultra Économie)");
+        fr.put(KEY_TOGGLE_AIRPLANE, "MODE AVION");
+        fr.put(KEY_TOGGLE_DND, "NE PAS DÉRANGER");
+        fr.put(KEY_TOGGLE_WIFI, "WI-FI");
+        fr.put(KEY_TOGGLE_DATA, "DONNÉES MOBILES");
+        fr.put(KEY_TOGGLE_BLUETOOTH, "BLUETOOTH");
+        fr.put(KEY_TOGGLE_TORCH, "LAMPE TORCHE");
+        fr.put(KEY_TOGGLE_NFC, "NFC");
+        fr.put(KEY_SHADE_CLOSE, "<-- FERMER");
+        fr.put(KEY_SHADE_SETTINGS, "PLUS DE PARAMÈTRES");
+        fr.put(KEY_SHADE_TILES_TITLE, "Disposition du volet rapide");
+        fr.put(KEY_BUDGET_CUSTOM, "Personnalisé...");
+        fr.put(KEY_BUDGET_CUSTOM_HINT, "Minutes (1-1440)");
+        fr.put(KEY_STATE_ON, "ACTIVÉ");
+        fr.put(KEY_STATE_OFF, "DÉSACTIVÉ");
+        fr.put(KEY_NFC_PAYMENTS, "NFC et paiements isolés");
+        fr.put(KEY_APP_PRIVACY_GUARD, "Contrôle de confidentialité des apps (GrapheneOS)");
+                fr.put(KEY_LOCKSCREEN_HEADER, "=== ÉCRAN DE VERROUILLAGE ===");
+        fr.put(KEY_LOCKSCREEN_ENABLE, "Écran de verrouillage minimaliste TontOS");
+        fr.put(KEY_LOCK_CLOCK_STYLE, "Style d'horloge de verrouillage");
+        fr.put(KEY_LOCK_CLOCK_DEFAULT, "Style par défaut du thème");
+        fr.put(KEY_LOCK_CLOCK_BIG, "Grand monospace 24h");
+        fr.put(KEY_LOCK_CLOCK_STACKED, "Empilé verticalement (HH / MM)");
+        fr.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal rétro [HH:mm:ss]");
+        fr.put(KEY_LOCK_CLOCK_COMPACT, "Compacte une ligne");
+        fr.put(KEY_LOCK_THEME_OVERRIDE, "Thème de verrouillage");
+        fr.put(KEY_LOCK_THEME_MATCH, "Synchronisé avec le thème actif");
+        fr.put(KEY_LOCK_SHOW_DETOX, "Afficher la barre détox sur l'écran");
+        fr.put(KEY_LOCK_SHOW_BATTERY, "Afficher le niveau de batterie");
+        fr.put(KEY_LOCK_OWNER_INFO, "Message personnalisé / Propriétaire");
+        fr.put(KEY_LOCK_OWNER_HINT, "Entrez un message ou un contact d'urgence");
+        fr.put(KEY_LOCK_SHORTCUT_LEFT, "Raccourci inférieur gauche");
+        fr.put(KEY_LOCK_SHORTCUT_RIGHT, "Raccourci inférieur droit");
+        fr.put(KEY_LOCK_ACTION_TORCH, "[ LAMPE ]");
+        fr.put(KEY_LOCK_ACTION_CAMERA, "[ APPAREIL PHOTO ]");
+        fr.put(KEY_LOCK_ACTION_PHONE, "[ TÉLÉPHONE ]");
+        fr.put(KEY_LOCK_ACTION_BROWSER, "[ NAVIGATEUR ]");
+        fr.put(KEY_LOCK_ACTION_NONE, "Aucun / Désactivé");
+        fr.put(KEY_LOCK_UNLOCK_HINT, "[ ^ GLISSER OU TOUCHER POUR DÉVERROUILLER ]");
+        fr.put(KEY_LOCK_TEST_BTN, "Tester l'écran de verrouillage");
         TRANSLATIONS.put("fr", fr);
 
         // ==========================================
@@ -1513,6 +2201,7 @@ public final class I18n {
         it.put(KEY_MEDIA_VOL, "Volume multimediale");
         it.put(KEY_RING_VOL, "Volume suoneria");
         it.put(KEY_ALARM_VOL, "Volume sveglia");
+        it.put(KEY_NOTIFICATION_VOL, "Volume notifiche");
         it.put(KEY_RINGER_PROFILE, "Profilo suoneria");
         it.put(KEY_RINGER_NORMAL, "Normale");
         it.put(KEY_RINGER_VIBRATE, "Vibrazione");
@@ -1648,6 +2337,66 @@ public final class I18n {
         it.put(KEY_NET_ALLOWED, "[ CONSENTITO ]");
         it.put(KEY_NET_BLOCKED, "[ BLOCCATO ]");
         it.put(KEY_NET_BLOCKED_COUNT_FMT, "%d app bloccate");
+        it.put(KEY_BATTERY_PROTECTION, "Protezione batteria e ricarica");
+        it.put(KEY_BATTERY_100, "100% (Standard / Senza limite)");
+        it.put(KEY_BATTERY_80, "Limite ricarica 80% (non disponibile)");
+        it.put(KEY_BATTERY_BYPASS, "Ricarica bypass (non disponibile)");
+        it.put(KEY_BATTERY_80_DESC, "Questa app non può applicare limiti su questo dispositivo.");
+        it.put(KEY_BATTERY_BYPASS_DESC, "Questa app non può controllare la ricarica bypass.");
+        it.put(KEY_GLYPH_INTERFACE, "Interfaccia Glyph (Nothing)");
+        it.put(KEY_FLIP_TO_GLYPH, "Flip to Glyph (Silenzioso capovolto)");
+        it.put(KEY_ESSENTIAL_GLYPH, "Notifiche Essential Glyph");
+        it.put(KEY_CHIPSET_PLATFORM, "Piattaforma SoC / Hardware");
+        it.put(KEY_BOOTLOADER_HEADER, "=== STATO BOOTLOADER (SOLO LETTURA) ===");
+        it.put(KEY_BOOTLOADER_LOCK_STATUS, "Stato bootloader segnalato da Android");
+        it.put(KEY_BOOTLOADER_LOCKED, "Segnalato bloccato (non attestato da questa app)");
+        it.put(KEY_BOOTLOADER_UNLOCKED, "Segnalato sbloccato (non attestato da questa app)");
+        it.put(KEY_BOOTLOADER_UNKNOWN, "Sconosciuto (Android non ha fornito informazioni)");
+        it.put(KEY_BOOTLOADER_ACTION_LOCK, "Non disponibile in questa app");
+        it.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Non disponibile in questa app");
+        it.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Questa app non può sbloccare il bootloader.");
+        it.put(KEY_BOOTLOADER_WARNING_LOCK, "Questa app non può bloccare il bootloader.");
+        it.put(KEY_SHADE_HEADER, "=== ULTRA RISPARMIO BATTERIA ===");
+        it.put(KEY_SHADE_ESTIMATE_FMT, "Batteria: %d%% · ~%dh rimanenti (Ultra Risparmio)");
+        it.put(KEY_TOGGLE_AIRPLANE, "MODALITÀ AEREO");
+        it.put(KEY_TOGGLE_DND, "NON DISTURBARE");
+        it.put(KEY_TOGGLE_WIFI, "WI-FI");
+        it.put(KEY_TOGGLE_DATA, "DATI MOBILI");
+        it.put(KEY_TOGGLE_BLUETOOTH, "BLUETOOTH");
+        it.put(KEY_TOGGLE_TORCH, "TORCIA");
+        it.put(KEY_TOGGLE_NFC, "NFC");
+        it.put(KEY_SHADE_CLOSE, "<-- CHIUDI");
+        it.put(KEY_SHADE_SETTINGS, "ALTRE IMPOSTAZIONI");
+        it.put(KEY_SHADE_TILES_TITLE, "Disposizione tendina rapida");
+        it.put(KEY_BUDGET_CUSTOM, "Personalizzato...");
+        it.put(KEY_BUDGET_CUSTOM_HINT, "Minuti (1-1440)");
+        it.put(KEY_STATE_ON, "ATTIVO");
+        it.put(KEY_STATE_OFF, "DISATTIVO");
+        it.put(KEY_NFC_PAYMENTS, "NFC e pagamenti isolati");
+        it.put(KEY_APP_PRIVACY_GUARD, "Controllo privacy app (GrapheneOS)");
+                it.put(KEY_LOCKSCREEN_HEADER, "=== SCHERMATA DI BLOCCO ===");
+        it.put(KEY_LOCKSCREEN_ENABLE, "Schermata di blocco minimalista TontOS");
+        it.put(KEY_LOCK_CLOCK_STYLE, "Stile orologio di blocco");
+        it.put(KEY_LOCK_CLOCK_DEFAULT, "Predefinito del tema");
+        it.put(KEY_LOCK_CLOCK_BIG, "Monospace grande 24h");
+        it.put(KEY_LOCK_CLOCK_STACKED, "Impilato verticale (HH / MM)");
+        it.put(KEY_LOCK_CLOCK_TERMINAL, "Terminale retrò [HH:mm:ss]");
+        it.put(KEY_LOCK_CLOCK_COMPACT, "Compatto a riga singola");
+        it.put(KEY_LOCK_THEME_OVERRIDE, "Tema schermata di blocco");
+        it.put(KEY_LOCK_THEME_MATCH, "Sincronizzato col tema attivo");
+        it.put(KEY_LOCK_SHOW_DETOX, "Mostra barra detox sul blocco");
+        it.put(KEY_LOCK_SHOW_BATTERY, "Mostra percentuale batteria");
+        it.put(KEY_LOCK_OWNER_INFO, "Messaggio personalizzato / Proprietario");
+        it.put(KEY_LOCK_OWNER_HINT, "Inserisci messaggio o contatto di emergenza");
+        it.put(KEY_LOCK_SHORTCUT_LEFT, "Scorciatoia inferiore sinistra");
+        it.put(KEY_LOCK_SHORTCUT_RIGHT, "Scorciatoia inferiore destra");
+        it.put(KEY_LOCK_ACTION_TORCH, "[ TORCIA ]");
+        it.put(KEY_LOCK_ACTION_CAMERA, "[ FOTOCAMERA ]");
+        it.put(KEY_LOCK_ACTION_PHONE, "[ TELEFONO ]");
+        it.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        it.put(KEY_LOCK_ACTION_NONE, "Nessuno / Disattivato");
+        it.put(KEY_LOCK_UNLOCK_HINT, "[ ^ SCORRI O TOCCA PER SBLOCCARE ]");
+        it.put(KEY_LOCK_TEST_BTN, "Prova schermata di blocco adesso");
         TRANSLATIONS.put("it", it);
 
         // ==========================================
@@ -1719,6 +2468,7 @@ public final class I18n {
         pt.put(KEY_MEDIA_VOL, "Volume multimédia");
         pt.put(KEY_RING_VOL, "Volume de toque");
         pt.put(KEY_ALARM_VOL, "Volume do alarme");
+        pt.put(KEY_NOTIFICATION_VOL, "Volume de notificação");
         pt.put(KEY_RINGER_PROFILE, "Perfil de toque");
         pt.put(KEY_RINGER_NORMAL, "Normal");
         pt.put(KEY_RINGER_VIBRATE, "Vibração");
@@ -1854,6 +2604,66 @@ public final class I18n {
         pt.put(KEY_NET_ALLOWED, "[ PERMITIDO ]");
         pt.put(KEY_NET_BLOCKED, "[ BLOQUEADO ]");
         pt.put(KEY_NET_BLOCKED_COUNT_FMT, "%d apps bloqueadas");
+        pt.put(KEY_BATTERY_PROTECTION, "Proteção de bateria e carregamento");
+        pt.put(KEY_BATTERY_100, "100% (Padrão / Sem limite)");
+        pt.put(KEY_BATTERY_80, "Limite de carga 80% (indisponível)");
+        pt.put(KEY_BATTERY_BYPASS, "Carregamento bypass (indisponível)");
+        pt.put(KEY_BATTERY_80_DESC, "Esta aplicação não pode aplicar limites neste dispositivo.");
+        pt.put(KEY_BATTERY_BYPASS_DESC, "Esta aplicação não pode controlar o carregamento bypass.");
+        pt.put(KEY_GLYPH_INTERFACE, "Interface Glyph (Nothing)");
+        pt.put(KEY_FLIP_TO_GLYPH, "Flip to Glyph (Silêncio virado para baixo)");
+        pt.put(KEY_ESSENTIAL_GLYPH, "Notificações Essential Glyph");
+        pt.put(KEY_CHIPSET_PLATFORM, "Plataforma SoC / Hardware");
+        pt.put(KEY_BOOTLOADER_HEADER, "=== ESTADO DO BOOTLOADER (APENAS LEITURA) ===");
+        pt.put(KEY_BOOTLOADER_LOCK_STATUS, "Estado do bootloader informado pelo Android");
+        pt.put(KEY_BOOTLOADER_LOCKED, "Reportado bloqueado (não atestado por esta app)");
+        pt.put(KEY_BOOTLOADER_UNLOCKED, "Reportado desbloqueado (não atestado por esta app)");
+        pt.put(KEY_BOOTLOADER_UNKNOWN, "Desconhecido (Android não informou o estado)");
+        pt.put(KEY_BOOTLOADER_ACTION_LOCK, "Indisponível nesta aplicação");
+        pt.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Indisponível nesta aplicação");
+        pt.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Esta aplicação não pode desbloquear o bootloader.");
+        pt.put(KEY_BOOTLOADER_WARNING_LOCK, "Esta aplicação não pode bloquear o bootloader.");
+        pt.put(KEY_SHADE_HEADER, "=== ULTRA ECONOMIA DE BATERIA ===");
+        pt.put(KEY_SHADE_ESTIMATE_FMT, "Bateria: %d%% · ~%dh restantes (Ultra Economia)");
+        pt.put(KEY_TOGGLE_AIRPLANE, "MODO DE VOO");
+        pt.put(KEY_TOGGLE_DND, "NÃO INCOMODAR");
+        pt.put(KEY_TOGGLE_WIFI, "WI-FI");
+        pt.put(KEY_TOGGLE_DATA, "DADOS MÓVEIS");
+        pt.put(KEY_TOGGLE_BLUETOOTH, "BLUETOOTH");
+        pt.put(KEY_TOGGLE_TORCH, "LANTERNA");
+        pt.put(KEY_TOGGLE_NFC, "NFC");
+        pt.put(KEY_SHADE_CLOSE, "<-- FECHAR");
+        pt.put(KEY_SHADE_SETTINGS, "MAIS DEFINIÇÕES");
+        pt.put(KEY_SHADE_TILES_TITLE, "Disposição do painel rápido");
+        pt.put(KEY_BUDGET_CUSTOM, "Personalizado...");
+        pt.put(KEY_BUDGET_CUSTOM_HINT, "Minutos (1-1440)");
+        pt.put(KEY_STATE_ON, "ATIVADO");
+        pt.put(KEY_STATE_OFF, "DESATIVADO");
+        pt.put(KEY_NFC_PAYMENTS, "NFC e pagamentos isolados");
+        pt.put(KEY_APP_PRIVACY_GUARD, "Controlo de privacidade de apps (GrapheneOS)");
+                pt.put(KEY_LOCKSCREEN_HEADER, "=== ECRÃ DE BLOQUEIO ===");
+        pt.put(KEY_LOCKSCREEN_ENABLE, "Ecrã de bloqueio minimalista TontOS");
+        pt.put(KEY_LOCK_CLOCK_STYLE, "Estilo de relógio no bloqueio");
+        pt.put(KEY_LOCK_CLOCK_DEFAULT, "Padrão do tema");
+        pt.put(KEY_LOCK_CLOCK_BIG, "Monospace grande 24h");
+        pt.put(KEY_LOCK_CLOCK_STACKED, "Empilhado vertical (HH / MM)");
+        pt.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal retrô [HH:mm:ss]");
+        pt.put(KEY_LOCK_CLOCK_COMPACT, "Compacto linha única");
+        pt.put(KEY_LOCK_THEME_OVERRIDE, "Tema do ecrã de bloqueio");
+        pt.put(KEY_LOCK_THEME_MATCH, "Sincronizado com o tema ativo");
+        pt.put(KEY_LOCK_SHOW_DETOX, "Mostrar barra de detox no bloqueio");
+        pt.put(KEY_LOCK_SHOW_BATTERY, "Mostrar percentagem de bateria");
+        pt.put(KEY_LOCK_OWNER_INFO, "Mensagem personalizada / Proprietário");
+        pt.put(KEY_LOCK_OWNER_HINT, "Insira mensagem ou contacto de emergência");
+        pt.put(KEY_LOCK_SHORTCUT_LEFT, "Atalho inferior esquerdo");
+        pt.put(KEY_LOCK_SHORTCUT_RIGHT, "Atalho inferior direito");
+        pt.put(KEY_LOCK_ACTION_TORCH, "[ LANTERNA ]");
+        pt.put(KEY_LOCK_ACTION_CAMERA, "[ CÂMARA ]");
+        pt.put(KEY_LOCK_ACTION_PHONE, "[ TELEFONE ]");
+        pt.put(KEY_LOCK_ACTION_BROWSER, "[ NAVEGADOR ]");
+        pt.put(KEY_LOCK_ACTION_NONE, "Nenhum / Desativado");
+        pt.put(KEY_LOCK_UNLOCK_HINT, "[ ^ DESLIZE OU TOQUE PARA DESBLOQUEAR ]");
+        pt.put(KEY_LOCK_TEST_BTN, "Testar ecrã de bloqueio agora");
         TRANSLATIONS.put("pt", pt);
 
         // ==========================================
@@ -1925,6 +2735,7 @@ public final class I18n {
         ru.put(KEY_MEDIA_VOL, "Громкость мультимедиа");
         ru.put(KEY_RING_VOL, "Громкость звонка");
         ru.put(KEY_ALARM_VOL, "Громкость будильника");
+        ru.put(KEY_NOTIFICATION_VOL, "Громкость уведомлений");
         ru.put(KEY_RINGER_PROFILE, "Профиль звонка");
         ru.put(KEY_RINGER_NORMAL, "Обычный");
         ru.put(KEY_RINGER_VIBRATE, "Вибрация");
@@ -2060,6 +2871,29 @@ public final class I18n {
         ru.put(KEY_NET_ALLOWED, "[ РАЗРЕШЕНО ]");
         ru.put(KEY_NET_BLOCKED, "[ ЗАБЛОКИРОВАНО ]");
         ru.put(KEY_NET_BLOCKED_COUNT_FMT, "%d приложений заблокировано");
+                ru.put(KEY_LOCKSCREEN_HEADER, "=== ЭКРАН БЛОКИРОВКИ ===");
+        ru.put(KEY_LOCKSCREEN_ENABLE, "Минималистичный экран блокировки TontOS");
+        ru.put(KEY_LOCK_CLOCK_STYLE, "Стиль часов на блокировке");
+        ru.put(KEY_LOCK_CLOCK_DEFAULT, "По умолчанию темы");
+        ru.put(KEY_LOCK_CLOCK_BIG, "Большой моноширинный 24ч");
+        ru.put(KEY_LOCK_CLOCK_STACKED, "Вертикальный стек (ЧЧ / ММ)");
+        ru.put(KEY_LOCK_CLOCK_TERMINAL, "Ретро-терминал [ЧЧ:мм:сс]");
+        ru.put(KEY_LOCK_CLOCK_COMPACT, "Компактный однострочный");
+        ru.put(KEY_LOCK_THEME_OVERRIDE, "Тема экрана блокировки");
+        ru.put(KEY_LOCK_THEME_MATCH, "Как в активной теме");
+        ru.put(KEY_LOCK_SHOW_DETOX, "Показывать шкалу детокса");
+        ru.put(KEY_LOCK_SHOW_BATTERY, "Показывать уровень батареи");
+        ru.put(KEY_LOCK_OWNER_INFO, "Сообщение владельца / Контакт");
+        ru.put(KEY_LOCK_OWNER_HINT, "Введите сообщение или экстренный контакт");
+        ru.put(KEY_LOCK_SHORTCUT_LEFT, "Нижний левый ярлык");
+        ru.put(KEY_LOCK_SHORTCUT_RIGHT, "Нижний правый ярлык");
+        ru.put(KEY_LOCK_ACTION_TORCH, "[ ФОНАРИК ]");
+        ru.put(KEY_LOCK_ACTION_CAMERA, "[ КАМЕРА ]");
+        ru.put(KEY_LOCK_ACTION_PHONE, "[ ТЕЛЕФОН ]");
+        ru.put(KEY_LOCK_ACTION_BROWSER, "[ БРАУЗЕР ]");
+        ru.put(KEY_LOCK_ACTION_NONE, "Нет / Отключено");
+        ru.put(KEY_LOCK_UNLOCK_HINT, "[ ^ СМАХНИТЕ ИЛИ НАЖМИТЕ ДЛЯ РАЗБЛОКИРОВКИ ]");
+        ru.put(KEY_LOCK_TEST_BTN, "Проверить экран блокировки");
         TRANSLATIONS.put("ru", ru);
 
         // ==========================================
@@ -2131,6 +2965,7 @@ public final class I18n {
         uk.put(KEY_MEDIA_VOL, "Гучність мультимедіа");
         uk.put(KEY_RING_VOL, "Гучність дзвінка");
         uk.put(KEY_ALARM_VOL, "Гучність будильника");
+        uk.put(KEY_NOTIFICATION_VOL, "Гучність сповіщень");
         uk.put(KEY_RINGER_PROFILE, "Профіль дзвінка");
         uk.put(KEY_RINGER_NORMAL, "Звичайний");
         uk.put(KEY_RINGER_VIBRATE, "Вібрація");
@@ -2266,6 +3101,29 @@ public final class I18n {
         uk.put(KEY_NET_ALLOWED, "[ ДОЗВОЛЕНО ]");
         uk.put(KEY_NET_BLOCKED, "[ ЗАБЛОКОВАНО ]");
         uk.put(KEY_NET_BLOCKED_COUNT_FMT, "%d додатків заблоковано");
+                uk.put(KEY_LOCKSCREEN_HEADER, "=== ЕКРАН БЛОКУВАННЯ ===");
+        uk.put(KEY_LOCKSCREEN_ENABLE, "Мінімалістичний екран блокування TontOS");
+        uk.put(KEY_LOCK_CLOCK_STYLE, "Стиль годинника на блокуванні");
+        uk.put(KEY_LOCK_CLOCK_DEFAULT, "За замовчуванням теми");
+        uk.put(KEY_LOCK_CLOCK_BIG, "Великий моноширинний 24г");
+        uk.put(KEY_LOCK_CLOCK_STACKED, "Вертикальний стек (ГГ / ХХ)");
+        uk.put(KEY_LOCK_CLOCK_TERMINAL, "Ретро-термінал [ГГ:хх:сс]");
+        uk.put(KEY_LOCK_CLOCK_COMPACT, "Компактний однорядковий");
+        uk.put(KEY_LOCK_THEME_OVERRIDE, "Тема екрана блокування");
+        uk.put(KEY_LOCK_THEME_MATCH, "Як у активній темі");
+        uk.put(KEY_LOCK_SHOW_DETOX, "Показувати шкалу детоксу");
+        uk.put(KEY_LOCK_SHOW_BATTERY, "Показувати рівень батареї");
+        uk.put(KEY_LOCK_OWNER_INFO, "Повідомлення власника / Контакт");
+        uk.put(KEY_LOCK_OWNER_HINT, "Введіть повідомлення або екстрений контакт");
+        uk.put(KEY_LOCK_SHORTCUT_LEFT, "Нижній лівий ярлык");
+        uk.put(KEY_LOCK_SHORTCUT_RIGHT, "Нижній правий ярлык");
+        uk.put(KEY_LOCK_ACTION_TORCH, "[ ЛІХТАРИК ]");
+        uk.put(KEY_LOCK_ACTION_CAMERA, "[ КАМЕРА ]");
+        uk.put(KEY_LOCK_ACTION_PHONE, "[ ТЕЛЕФОН ]");
+        uk.put(KEY_LOCK_ACTION_BROWSER, "[ БРАУЗЕР ]");
+        uk.put(KEY_LOCK_ACTION_NONE, "Немає / Вимкнено");
+        uk.put(KEY_LOCK_UNLOCK_HINT, "[ ^ ПРОВЕДІТЬ АБО НАТИСНІТЬ ДЛЯ РОЗБЛОКУВАННЯ ]");
+        uk.put(KEY_LOCK_TEST_BTN, "Перевірити екран блокування");
         TRANSLATIONS.put("uk", uk);
 
         // ==========================================
@@ -2337,6 +3195,7 @@ public final class I18n {
         zh.put(KEY_MEDIA_VOL, "媒体音量");
         zh.put(KEY_RING_VOL, "铃声音量");
         zh.put(KEY_ALARM_VOL, "闹钟音量");
+        zh.put(KEY_NOTIFICATION_VOL, "通知音量");
         zh.put(KEY_RINGER_PROFILE, "响铃模式");
         zh.put(KEY_RINGER_NORMAL, "正常响铃");
         zh.put(KEY_RINGER_VIBRATE, "振动模式");
@@ -2472,6 +3331,29 @@ public final class I18n {
         zh.put(KEY_NET_ALLOWED, "[ 允许 ]");
         zh.put(KEY_NET_BLOCKED, "[ 已阻止 ]");
         zh.put(KEY_NET_BLOCKED_COUNT_FMT, "已阻止 %d 个应用");
+                zh.put(KEY_LOCKSCREEN_HEADER, "=== 锁屏设置 ===");
+        zh.put(KEY_LOCKSCREEN_ENABLE, "TontOS 极简锁屏");
+        zh.put(KEY_LOCK_CLOCK_STYLE, "锁屏时钟样式");
+        zh.put(KEY_LOCK_CLOCK_DEFAULT, "跟随主题默认");
+        zh.put(KEY_LOCK_CLOCK_BIG, "大等宽字体 24小时制");
+        zh.put(KEY_LOCK_CLOCK_STACKED, "垂直堆叠 (时 / 分)");
+        zh.put(KEY_LOCK_CLOCK_TERMINAL, "复古终端 [时:分:秒]");
+        zh.put(KEY_LOCK_CLOCK_COMPACT, "紧凑单行");
+        zh.put(KEY_LOCK_THEME_OVERRIDE, "锁屏主题风格");
+        zh.put(KEY_LOCK_THEME_MATCH, "跟随当前活动主题");
+        zh.put(KEY_LOCK_SHOW_DETOX, "在锁屏显示专注进度条");
+        zh.put(KEY_LOCK_SHOW_BATTERY, "在锁屏显示电量百分比");
+        zh.put(KEY_LOCK_OWNER_INFO, "锁屏信息 / 紧急联系人");
+        zh.put(KEY_LOCK_OWNER_HINT, "输入自定义锁屏留言或紧急联系信息");
+        zh.put(KEY_LOCK_SHORTCUT_LEFT, "左下角快捷键");
+        zh.put(KEY_LOCK_SHORTCUT_RIGHT, "右下角快捷键");
+        zh.put(KEY_LOCK_ACTION_TORCH, "[ 手电筒 ]");
+        zh.put(KEY_LOCK_ACTION_CAMERA, "[ 相机 ]");
+        zh.put(KEY_LOCK_ACTION_PHONE, "[ 电话 ]");
+        zh.put(KEY_LOCK_ACTION_BROWSER, "[ 浏览器 ]");
+        zh.put(KEY_LOCK_ACTION_NONE, "无 / 已禁用");
+        zh.put(KEY_LOCK_UNLOCK_HINT, "[ ^ 上滑或点击解锁 ]");
+        zh.put(KEY_LOCK_TEST_BTN, "立即测试锁屏");
         TRANSLATIONS.put("zh", zh);
 
         // ==========================================
@@ -2543,6 +3425,7 @@ public final class I18n {
         ja.put(KEY_MEDIA_VOL, "メディア音量");
         ja.put(KEY_RING_VOL, "着信音量");
         ja.put(KEY_ALARM_VOL, "アラーム音量");
+        ja.put(KEY_NOTIFICATION_VOL, "通知音量");
         ja.put(KEY_RINGER_PROFILE, "着信モード");
         ja.put(KEY_RINGER_NORMAL, "通常");
         ja.put(KEY_RINGER_VIBRATE, "バイブレーション");
@@ -2678,6 +3561,29 @@ public final class I18n {
         ja.put(KEY_NET_ALLOWED, "[ 許可 ]");
         ja.put(KEY_NET_BLOCKED, "[ ブロック ]");
         ja.put(KEY_NET_BLOCKED_COUNT_FMT, "%d 個のアプリをブロック");
+                ja.put(KEY_LOCKSCREEN_HEADER, "=== ロック画面 ===");
+        ja.put(KEY_LOCKSCREEN_ENABLE, "TontOS ミニマリストロック画面");
+        ja.put(KEY_LOCK_CLOCK_STYLE, "ロック時計スタイル");
+        ja.put(KEY_LOCK_CLOCK_DEFAULT, "テーマデフォルト");
+        ja.put(KEY_LOCK_CLOCK_BIG, "大サイズ等幅 24時間");
+        ja.put(KEY_LOCK_CLOCK_STACKED, "縦積み配置 (時 / 分)");
+        ja.put(KEY_LOCK_CLOCK_TERMINAL, "レトロ端末 [時:分:秒]");
+        ja.put(KEY_LOCK_CLOCK_COMPACT, "コンパクト1行");
+        ja.put(KEY_LOCK_THEME_OVERRIDE, "ロック画面テーマ");
+        ja.put(KEY_LOCK_THEME_MATCH, "現在のテーマに合わせる");
+        ja.put(KEY_LOCK_SHOW_DETOX, "デトックス進捗バーを表示");
+        ja.put(KEY_LOCK_SHOW_BATTERY, "バッテリー残量を表示");
+        ja.put(KEY_LOCK_OWNER_INFO, "カスタムメッセージ / 所有者情報");
+        ja.put(KEY_LOCK_OWNER_HINT, "ロック画面のメッセージまたは緊急連絡先を入力");
+        ja.put(KEY_LOCK_SHORTCUT_LEFT, "左下ショートカット");
+        ja.put(KEY_LOCK_SHORTCUT_RIGHT, "右下ショートカット");
+        ja.put(KEY_LOCK_ACTION_TORCH, "[ 懐中電灯 ]");
+        ja.put(KEY_LOCK_ACTION_CAMERA, "[ カメラ ]");
+        ja.put(KEY_LOCK_ACTION_PHONE, "[ 電話 ]");
+        ja.put(KEY_LOCK_ACTION_BROWSER, "[ ブラウザ ]");
+        ja.put(KEY_LOCK_ACTION_NONE, "なし / 無効");
+        ja.put(KEY_LOCK_UNLOCK_HINT, "[ ^ 上スワイプまたはタップで解除 ]");
+        ja.put(KEY_LOCK_TEST_BTN, "ロック画面をテスト");
         TRANSLATIONS.put("ja", ja);
 
         // ==========================================
@@ -2749,6 +3655,7 @@ public final class I18n {
         nl.put(KEY_MEDIA_VOL, "Mediavolume");
         nl.put(KEY_RING_VOL, "Beltoonvolume");
         nl.put(KEY_ALARM_VOL, "Wekkervolume");
+        nl.put(KEY_NOTIFICATION_VOL, "Meldingsvolume");
         nl.put(KEY_RINGER_PROFILE, "Beltoonprofiel");
         nl.put(KEY_RINGER_NORMAL, "Normaal");
         nl.put(KEY_RINGER_VIBRATE, "Trillen");
@@ -2884,6 +3791,29 @@ public final class I18n {
         nl.put(KEY_NET_ALLOWED, "[ TOEGESTAAN ]");
         nl.put(KEY_NET_BLOCKED, "[ GEBLOKKEERD ]");
         nl.put(KEY_NET_BLOCKED_COUNT_FMT, "%d apps geblokkeerd");
+                nl.put(KEY_LOCKSCREEN_HEADER, "=== VERGRENDELSCHERM ===");
+        nl.put(KEY_LOCKSCREEN_ENABLE, "TontOS Minimalistisch Vergrendelscherm");
+        nl.put(KEY_LOCK_CLOCK_STYLE, "Klokstijl op vergrendelscherm");
+        nl.put(KEY_LOCK_CLOCK_DEFAULT, "Themastandaard");
+        nl.put(KEY_LOCK_CLOCK_BIG, "Grote Monospace 24u");
+        nl.put(KEY_LOCK_CLOCK_STACKED, "Verticaal gestapeld (UU / MM)");
+        nl.put(KEY_LOCK_CLOCK_TERMINAL, "Retro Terminal [UU:mm:ss]");
+        nl.put(KEY_LOCK_CLOCK_COMPACT, "Compacte enkele regel");
+        nl.put(KEY_LOCK_THEME_OVERRIDE, "Vergrendelscherm-thema");
+        nl.put(KEY_LOCK_THEME_MATCH, "Gelijk aan actief thema");
+        nl.put(KEY_LOCK_SHOW_DETOX, "Detox-voortgangsbalk weergeven");
+        nl.put(KEY_LOCK_SHOW_BATTERY, "Batterijpercentage weergeven");
+        nl.put(KEY_LOCK_OWNER_INFO, "Aangepast bericht / Eigenaar");
+        nl.put(KEY_LOCK_OWNER_HINT, "Voer een bericht of noodcontact in");
+        nl.put(KEY_LOCK_SHORTCUT_LEFT, "Snelkoppeling linksonder");
+        nl.put(KEY_LOCK_SHORTCUT_RIGHT, "Snelkoppeling rechtsonder");
+        nl.put(KEY_LOCK_ACTION_TORCH, "[ ZAKLAMP ]");
+        nl.put(KEY_LOCK_ACTION_CAMERA, "[ CAMERA ]");
+        nl.put(KEY_LOCK_ACTION_PHONE, "[ TELEFOON ]");
+        nl.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        nl.put(KEY_LOCK_ACTION_NONE, "Geen / Uitgeschakeld");
+        nl.put(KEY_LOCK_UNLOCK_HINT, "[ ^ VEEG OMHOOG OF TIK OM TE ONTGRENDELEN ]");
+        nl.put(KEY_LOCK_TEST_BTN, "Vergrendelscherm nu testen");
         TRANSLATIONS.put("nl", nl);
 
     }

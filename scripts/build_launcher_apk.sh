@@ -54,16 +54,25 @@ javac --release 17 -cp "$PLATFORM_JAR" -d "$BUILD_DIR/classes" \
 (cd "$BUILD_DIR" && jar -uf unaligned.apk classes.dex)
 "$BUILD_TOOLS/zipalign" -f -p 4 "$BUILD_DIR/unaligned.apk" "$BUILD_DIR/aligned.apk"
 
-if [[ ! -f "$DEBUG_KEYSTORE" ]]; then
-    keytool -genkeypair -noprompt -keystore "$DEBUG_KEYSTORE" \
-        -storepass android -alias androiddebugkey -keypass android \
-        -keyalg RSA -keysize 2048 -validity 10000 \
-        -dname "CN=Android Debug,O=Android,C=US"
-fi
+PLATFORM_PK8="${PLATFORM_PK8:-/home/paproka/aosp/tontos/build/make/target/product/security/platform.pk8}"
+PLATFORM_CERT="${PLATFORM_CERT:-/home/paproka/aosp/tontos/build/make/target/product/security/platform.x509.pem}"
 
-"$BUILD_TOOLS/apksigner" sign --ks "$DEBUG_KEYSTORE" \
-    --ks-pass pass:android --key-pass pass:android \
-    --out "$OUTPUT_APK" "$BUILD_DIR/aligned.apk"
+if [[ -f "$PLATFORM_PK8" && -f "$PLATFORM_CERT" ]]; then
+    echo "Signing with AOSP platform certificate: $PLATFORM_CERT"
+    "$BUILD_TOOLS/apksigner" sign --key "$PLATFORM_PK8" --cert "$PLATFORM_CERT" \
+        --out "$OUTPUT_APK" "$BUILD_DIR/aligned.apk"
+else
+    if [[ ! -f "$DEBUG_KEYSTORE" ]]; then
+        keytool -genkeypair -noprompt -keystore "$DEBUG_KEYSTORE" \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
+    fi
+    echo "Signing with debug keystore: $DEBUG_KEYSTORE"
+    "$BUILD_TOOLS/apksigner" sign --ks "$DEBUG_KEYSTORE" \
+        --ks-pass pass:android --key-pass pass:android \
+        --out "$OUTPUT_APK" "$BUILD_DIR/aligned.apk"
+fi
 "$BUILD_TOOLS/apksigner" verify --verbose "$OUTPUT_APK"
 
 echo "Launcher APK built successfully: $OUTPUT_APK ($(du -h "$OUTPUT_APK" | cut -f1))"

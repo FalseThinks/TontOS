@@ -111,12 +111,22 @@ public final class SettingsRowFactory {
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(0, dpToPx(context, 12), 0, dpToPx(context, 12));
 
+        LinearLayout labelContainer = new LinearLayout(context);
+        labelContainer.setOrientation(LinearLayout.HORIZONTAL);
+        labelContainer.setGravity(Gravity.CENTER_VERTICAL);
+
         final TextView labelView = new TextView(context);
         labelView.setText(label + ": " + currentVal + "%");
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14);
         labelView.setTypeface(Typeface.MONOSPACE);
-        row.addView(labelView);
+        labelContainer.addView(labelView);
+
+        View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
+        if (helpBadge != null) {
+            labelContainer.addView(helpBadge);
+        }
+        row.addView(labelContainer);
 
         SeekBar seekBar = new SeekBar(context);
         styleMinimalSeekBar(context, seekBar, tokens);
@@ -162,14 +172,24 @@ public final class SettingsRowFactory {
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(0, dpToPx(context, 10), 0, dpToPx(context, 10));
 
+        LinearLayout labelContainer = new LinearLayout(context);
+        labelContainer.setOrientation(LinearLayout.HORIZONTAL);
+        labelContainer.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        labelContainer.setLayoutParams(lp);
+
         TextView labelView = new TextView(context);
         labelView.setText(label);
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14);
         labelView.setTypeface(Typeface.MONOSPACE);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        labelView.setLayoutParams(lp);
-        row.addView(labelView);
+        labelContainer.addView(labelView);
+
+        View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
+        if (helpBadge != null) {
+            labelContainer.addView(helpBadge);
+        }
+        row.addView(labelContainer);
 
         TextView actionBtn = new TextView(context);
         String btnText = (actionText != null && actionText.startsWith("[") && actionText.endsWith("]"))
@@ -221,14 +241,24 @@ public final class SettingsRowFactory {
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(0, dpToPx(context, 10), 0, dpToPx(context, 10));
 
+        LinearLayout labelContainer = new LinearLayout(context);
+        labelContainer.setOrientation(LinearLayout.HORIZONTAL);
+        labelContainer.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        labelContainer.setLayoutParams(lp);
+
         TextView labelView = new TextView(context);
         labelView.setText(label);
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14);
         labelView.setTypeface(Typeface.MONOSPACE);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        labelView.setLayoutParams(lp);
-        row.addView(labelView);
+        labelContainer.addView(labelView);
+
+        View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
+        if (helpBadge != null) {
+            labelContainer.addView(helpBadge);
+        }
+        row.addView(labelContainer);
 
         TextView actionBtn = new TextView(context);
         actionBtn.setText("[ " + buttonText + " ]");
@@ -257,6 +287,10 @@ public final class SettingsRowFactory {
         actionBtn.setOnClickListener(listener);
         row.addView(actionBtn);
 
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(listener);
+
         container.addView(row);
     }
 
@@ -278,6 +312,11 @@ public final class SettingsRowFactory {
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(0, (int) (6 * density), 0, (int) (6 * density));
 
+        LinearLayout labelContainer = new LinearLayout(context);
+        labelContainer.setOrientation(LinearLayout.HORIZONTAL);
+        labelContainer.setGravity(Gravity.CENTER_VERTICAL);
+        labelContainer.setPadding(0, 0, 0, (int) (4 * density));
+
         TextView labelView = new TextView(context);
         labelView.setText(label);
         labelView.setTextColor(tokens.textMuted);
@@ -285,8 +324,13 @@ public final class SettingsRowFactory {
         labelView.setTypeface(Typeface.MONOSPACE);
         labelView.setSingleLine(true);
         labelView.setEllipsize(TextUtils.TruncateAt.END);
-        labelView.setPadding(0, 0, 0, (int) (4 * density));
-        row.addView(labelView);
+        labelContainer.addView(labelView);
+
+        View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
+        if (helpBadge != null) {
+            labelContainer.addView(helpBadge);
+        }
+        row.addView(labelContainer);
 
         String cleanVal = (valueText != null ? valueText.trim() : "");
         while (cleanVal.startsWith("[") && cleanVal.endsWith("]")) {
@@ -336,12 +380,22 @@ public final class SettingsRowFactory {
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(0, dpToPx(context, 6), 0, dpToPx(context, 8));
 
+        LinearLayout labelContainer = new LinearLayout(context);
+        labelContainer.setOrientation(LinearLayout.HORIZONTAL);
+        labelContainer.setGravity(Gravity.CENTER_VERTICAL);
+
         TextView k = new TextView(context);
         k.setText(key);
         k.setTextColor(tokens.textMuted);
         k.setTextSize(11);
         k.setTypeface(Typeface.MONOSPACE);
-        row.addView(k);
+        labelContainer.addView(k);
+
+        View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, key, key);
+        if (helpBadge != null) {
+            labelContainer.addView(helpBadge);
+        }
+        row.addView(labelContainer);
 
         TextView v = new TextView(context);
         v.setText(value != null ? value : "Unknown");

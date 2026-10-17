@@ -88,6 +88,9 @@ public class SetupWizardActivity extends Activity {
 
         ThemeTokens initTokens = ThemeTokens.get(selectedTheme);
 
+        // Ensure system debloat, launcher lock, and shade hardening execute on setup start
+        SystemProvisioningManager.executeInitialProvisioning(this);
+
         rootLayout = new LinearLayout(this);
         rootLayout.setOrientation(LinearLayout.VERTICAL);
         rootLayout.setBackgroundColor(initTokens.bg);

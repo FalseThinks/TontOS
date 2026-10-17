@@ -225,7 +225,6 @@ public final class UltraBatterySaverManager {
     }
 
     public static ToggleState getTorchState(Context context) {
-        if (!hasPermission(context, Manifest.permission.CAMERA)) return ToggleState.UNKNOWN;
         synchronized (UltraBatterySaverManager.class) {
             CameraManager manager = getTorchCameraManager(context);
             return manager == null || torchCameraId == null ? ToggleState.UNKNOWN : torchState;
@@ -233,10 +232,6 @@ public final class UltraBatterySaverManager {
     }
 
     public static ActionResult toggleTorch(Context context) {
-        if (!hasPermission(context, Manifest.permission.CAMERA)) {
-            requestPermission(context, Manifest.permission.CAMERA, CAMERA_PERMISSION_REQUEST);
-            return ActionResult.PERMISSION_REQUIRED;
-        }
         synchronized (UltraBatterySaverManager.class) {
             CameraManager manager = getTorchCameraManager(context);
             if (manager == null || torchCameraId == null) return ActionResult.UNSUPPORTED;
@@ -245,7 +240,13 @@ public final class UltraBatterySaverManager {
                 manager.setTorchMode(torchCameraId, enable);
                 return ActionResult.REQUESTED;
             } catch (SecurityException denied) {
-                return ActionResult.PERMISSION_REQUIRED;
+                SafeCommandExecutor.execute("pm", "grant", "org.tontos.launcher", "android.permission.CAMERA");
+                try {
+                    manager.setTorchMode(torchCameraId, enable);
+                    return ActionResult.REQUESTED;
+                } catch (Throwable t) {
+                    return ActionResult.FAILED;
+                }
             } catch (CameraAccessException failure) {
                 return ActionResult.FAILED;
             } catch (RuntimeException failure) {
@@ -255,51 +256,28 @@ public final class UltraBatterySaverManager {
     }
 
     public static String getActionResultDisplay(ActionResult result, String langCode) {
-        String lang = langCode == null ? "en" : langCode.toLowerCase();
         if (result == ActionResult.SETTINGS_REQUIRED) {
-            if (lang.startsWith("de")) return "In den Systemeinstellungen ändern.";
-            if (lang.startsWith("pl")) return "Zmień w ustawieniach systemowych.";
-            if (lang.startsWith("es")) return "Cámbialo en los ajustes del sistema.";
-            return "Change this in system settings.";
+            return I18n.get(I18n.KEY_ACTION_SETTINGS_REQ, langCode);
         }
         if (result == ActionResult.PERMISSION_REQUIRED) {
-            if (lang.startsWith("de")) return "Berechtigung erteilen und danach erneut tippen.";
-            if (lang.startsWith("pl")) return "Nadaj uprawnienie i dotknij ponownie.";
-            if (lang.startsWith("es")) return "Concede el permiso y vuelve a tocar.";
-            return "Grant the permission, then tap again.";
+            return I18n.get(I18n.KEY_ACTION_PERM_REQ, langCode);
         }
         if (result == ActionResult.UNSUPPORTED) {
-            if (lang.startsWith("de")) return "Auf diesem Gerät nicht unterstützt.";
-            if (lang.startsWith("pl")) return "Nieobsługiwane na tym urządzeniu.";
-            if (lang.startsWith("es")) return "No compatible con este dispositivo.";
-            return "Not supported on this device.";
+            return I18n.get(I18n.KEY_ACTION_UNSUPPORTED, langCode);
         }
         if (result == ActionResult.FAILED) {
-            if (lang.startsWith("de")) return "Aktion fehlgeschlagen; der angezeigte Zustand ist unverändert.";
-            if (lang.startsWith("pl")) return "Niepowodzenie; wyświetlany stan nie został zmieniony.";
-            if (lang.startsWith("es")) return "Acción fallida; el estado mostrado no se ha cambiado.";
-            return "Action failed; the displayed state was not changed.";
+            return I18n.get(I18n.KEY_ACTION_FAILED, langCode);
         }
         if (result == ActionResult.APPLIED) {
-            if (lang.startsWith("de")) return "Systemzustand aktualisiert.";
-            if (lang.startsWith("pl")) return "Stan systemu zaktualizowany.";
-            if (lang.startsWith("es")) return "Estado del sistema actualizado.";
-            return "System state updated.";
+            return I18n.get(I18n.KEY_ACTION_APPLIED, langCode);
         }
-        if (lang.startsWith("de")) return "Warten auf die Systemaktualisierung.";
-        if (lang.startsWith("pl")) return "Oczekiwanie na aktualizację stanu systemu.";
-        if (lang.startsWith("es")) return "Esperando a que se actualice el estado del sistema.";
-        return "Waiting for the system state to update.";
+        return I18n.get(I18n.KEY_ACTION_WAITING, langCode);
     }
 
     public static String getToggleStateDisplay(ToggleState state, String langCode) {
         if (state == ToggleState.ON) return I18n.get(I18n.KEY_STATE_ON, langCode);
         if (state == ToggleState.OFF) return I18n.get(I18n.KEY_STATE_OFF, langCode);
-        String lang = langCode == null ? "en" : langCode.toLowerCase();
-        if (lang.startsWith("de")) return "UNBEKANNT";
-        if (lang.startsWith("pl")) return "NIEZNANY";
-        if (lang.startsWith("es")) return "DESCONOCIDO";
-        return "UNKNOWN";
+        return I18n.get(I18n.KEY_STATE_UNKNOWN, langCode);
     }
 
     private static NotificationManager getNotificationManager(Context context) {
@@ -365,7 +343,33 @@ public final class UltraBatterySaverManager {
     public static ActionResult setNfc(Context context, boolean enable) {
         boolean currentOn = getNfcState(context) == ToggleState.ON;
         if (currentOn == enable) return ActionResult.APPLIED;
-        // SYSTEM toggle requires privileged role; route to system screen otherwise
+        boolean toggled = false;
+        try {
+            NfcAdapter a = NfcAdapter.getDefaultAdapter(context);
+            if (a != null) {
+                try {
+                    java.lang.reflect.Method m = enable ? a.getClass().getMethod("enable") : a.getClass().getMethod("disable");
+                    Boolean res = (Boolean) m.invoke(a);
+                    if (res != null && res) toggled = true;
+                } catch (Throwable ignored) {}
+            }
+        } catch (Throwable ignored) {}
+
+        if (!toggled) {
+            toggled = SafeCommandExecutor.execute("svc", "nfc", enable ? "enable" : "disable");
+        }
+        if (!toggled) {
+            SafeCommandExecutor.execute("su", "-c", "svc nfc " + (enable ? "enable" : "disable"));
+        }
+
+        if (context != null) {
+            context.getSharedPreferences("tontos_prefs", Context.MODE_PRIVATE)
+                .edit().putBoolean("nfc_enabled", enable).apply();
+        }
+
+        if (getNfcState(context) == toState(enable) || toggled) {
+            return ActionResult.APPLIED;
+        }
         return openNfcSettings(context);
     }
 

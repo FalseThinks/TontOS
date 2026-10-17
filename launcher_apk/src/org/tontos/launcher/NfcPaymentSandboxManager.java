@@ -49,7 +49,17 @@ public final class NfcPaymentSandboxManager {
         }
 
         public String getDisplay(String langCode) {
-            return "es".equalsIgnoreCase(langCode) ? labelEs : labelEn;
+            switch (this) {
+                case NOT_INSTALLED:
+                    return I18n.get(I18n.KEY_GMS_NOT_INSTALLED, langCode);
+                case USER_INSTALLED:
+                    return I18n.get(I18n.KEY_GMS_USER_INSTALLED, langCode);
+                case SYSTEM_INSTALLED:
+                    return I18n.get(I18n.KEY_GMS_SYSTEM_INSTALLED, langCode);
+                case UNKNOWN:
+                default:
+                    return I18n.get(I18n.KEY_GMS_UNKNOWN, langCode);
+            }
         }
     }
 
@@ -142,14 +152,12 @@ public final class NfcPaymentSandboxManager {
 
     public static String getSummaryStatus(Context context, String langCode) {
         if (!isNfcSupported(context)) {
-            return "es".equalsIgnoreCase(langCode) ? "Sin Hardware" : "No Hardware";
+            return I18n.get(I18n.KEY_NFC_NO_HARDWARE, langCode);
         }
         if (!isNfcEnabled(context)) {
-            return "es".equalsIgnoreCase(langCode) ? "NFC Desactivado" : "NFC Off";
+            return I18n.get(I18n.KEY_NFC_OFF, langCode);
         }
-        return "es".equalsIgnoreCase(langCode)
-            ? "NFC activo; attestation no disponible"
-            : "NFC on; attestation unavailable";
+        return I18n.get(I18n.KEY_NFC_ON_NO_ATTESTATION, langCode);
     }
 
     public static void showDiagnosticsDialog(final Activity activity, final ThemeTokens tokens, final String langCode) {
@@ -198,8 +206,7 @@ public final class NfcPaymentSandboxManager {
 
         // Header Title
         TextView header = new TextView(activity);
-        boolean isEs = "es".equalsIgnoreCase(langCode);
-        header.setText(isEs ? "NFC Y ESTADO DE ATTESTATION" : "NFC & ATTESTATION STATUS");
+        header.setText(I18n.get(I18n.KEY_NFC_ATTESTATION_TITLE, langCode));
         header.setTextColor(tokens.accent);
         header.setTextSize(screenWidthDp < 360 ? 15 : 17);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -231,22 +238,22 @@ public final class NfcPaymentSandboxManager {
         AttestationStatus attestation = getAttestationStatus();
 
         // Section 1: NFC Hardware & HCE
-        addCategoryHeader(list, "=== HARDWARE & HCE ===", tokens);
-        addStatusRow(list, "NFC", nfcSupported ? (nfcEnabled ? "[ ACTIVO ]" : "[ APAGADO ]") : "[ NO DISPONIBLE ]", nfcEnabled, tokens);
-        addStatusRow(list, "HCE (Host Emulation)", hceSupported ? "[ DISPONIBLE ]" : "[ NO SOPORTADO ]", hceSupported, tokens);
-        addStatusRow(list, isEs ? "App de pago" : "Payment app", defaultApp, !"None".equals(defaultApp), tokens);
+        addCategoryHeader(list, I18n.get(I18n.KEY_NFC_SEC_HW, langCode), tokens);
+        addStatusRow(list, "NFC", nfcSupported ? (nfcEnabled ? "[ " + I18n.get(I18n.KEY_STATE_ON, langCode) + " ]" : "[ " + I18n.get(I18n.KEY_STATE_OFF, langCode) + " ]") : "[ " + I18n.get(I18n.KEY_NOT_SUPPORTED, langCode) + " ]", nfcEnabled, tokens);
+        addStatusRow(list, "HCE (Host Emulation)", hceSupported ? "[ OK ]" : "[ " + I18n.get(I18n.KEY_NOT_SUPPORTED, langCode) + " ]", hceSupported, tokens);
+        addStatusRow(list, I18n.get(I18n.KEY_NFC_PAYMENT_APP, langCode), defaultApp, !"None".equals(defaultApp), tokens);
 
-        addCategoryHeader(list, isEs ? "=== GOOGLE PLAY SERVICES ===" : "=== GOOGLE PLAY SERVICES ===", tokens);
-        addStatusRow(list, isEs ? "Instalación de GMS" : "GMS installation", gmsInstallStatus.getDisplay(langCode), false, tokens);
+        addCategoryHeader(list, I18n.get(I18n.KEY_NFC_SEC_GMS, langCode), tokens);
+        addStatusRow(list, I18n.get(I18n.KEY_NFC_GMS_INSTALL, langCode), gmsInstallStatus.getDisplay(langCode), false, tokens);
 
-        addCategoryHeader(list, isEs ? "=== ATTESTATION DE PLATAFORMA ===" : "=== PLATFORM ATTESTATION ===", tokens);
+        addCategoryHeader(list, I18n.get(I18n.KEY_NFC_SEC_ATTESTATION, langCode), tokens);
         addStatusRow(list, "Play Integrity API", attestation.platformStatus, false, tokens);
-        addStatusRow(list, "Basic / Device / Strong", isEs ? "No evaluado" : "Not evaluated", false, tokens);
-        addStatusRow(list, "Verified Boot / CTS", isEs ? "No verificado por esta app" : "Not verified by this app", false, tokens);
+        addStatusRow(list, "Basic / Device / Strong", I18n.get(I18n.KEY_NFC_NOT_EVALUATED, langCode), false, tokens);
+        addStatusRow(list, "Verified Boot / CTS", I18n.get(I18n.KEY_NFC_NOT_VERIFIED, langCode), false, tokens);
 
         // Actions
-        addCategoryHeader(list, isEs ? "=== ACCIONES ===" : "=== ACTIONS ===", tokens);
-        addActionRow(list, isEs ? "Ajustes de pagos NFC (HCE)" : "NFC Payment Settings (HCE)", new View.OnClickListener() {
+        addCategoryHeader(list, I18n.get(I18n.KEY_NFC_SEC_ACTIONS, langCode), tokens);
+        addActionRow(list, I18n.get(I18n.KEY_NFC_ACTIONS_PAYMENTS, langCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {

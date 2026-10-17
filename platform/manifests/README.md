@@ -4,7 +4,7 @@ Prototipo no-flasheable: `aosp_cf_x86_64_only_phone-userdebug`.
 Checkout SIEMPRE fuera del repo (`~/aosp/tontos`), aquí solo metadata pineada.
 
 - Upstream: `https://android.googlesource.com/platform/manifest`
-- Branch pin: `android-16.0.0_r4` (Baklava, estable dic-2025, target CF probado en docs oficiales)
+- Branch pin: `android-17.0.0_r1` (Android 17, target CF probado en docs oficiales)
 - Alternativa rodante: `android-latest-release` (solo si el pin deja de sincronizar)
 - Manifest commit: se registra tras `repo init` en `pinned.json` (`manifest_rev`)
 - Sync MÍNIMO: `repo init --groups=default,-darwin,-mips` (NO excluir

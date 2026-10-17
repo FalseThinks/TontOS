@@ -108,12 +108,41 @@ impl Default for DisplayConfig {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LockScreenConfig {
+    pub enabled: bool,
+    pub clock_style: String,
+    pub theme_override: String,
+    pub show_detox: bool,
+    pub show_battery: bool,
+    pub owner_info: String,
+    pub shortcut_left: String,
+    pub shortcut_right: String,
+}
+
+impl Default for LockScreenConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            clock_style: "THEME_DEFAULT".to_string(),
+            theme_override: "MATCH_ACTIVE".to_string(),
+            show_detox: true,
+            show_battery: true,
+            owner_info: String::new(),
+            shortcut_left: "TORCH".to_string(),
+            shortcut_right: "CAMERA".to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TontSettings {
     pub connectivity: ConnectivityConfig,
     pub default_apps: DefaultAppsConfig,
     pub sound: SoundConfig,
     pub display: DisplayConfig,
+    #[serde(default)]
+    pub lock_screen: LockScreenConfig,
 }
 
 const EMBEDDED_DEFAULT_JSON: &str = include_str!("default_settings.json");
@@ -211,5 +240,69 @@ mod tests {
                 .set_custom_ringtone("malicious.sh".to_string())
                 .is_err()
         );
+    }
+
+    #[test]
+    fn test_lock_screen_config_default_and_embedded() {
+        let default_lock = LockScreenConfig::default();
+        assert!(default_lock.enabled);
+        assert_eq!(default_lock.clock_style, "THEME_DEFAULT");
+        assert_eq!(default_lock.shortcut_left, "TORCH");
+        assert_eq!(default_lock.shortcut_right, "CAMERA");
+
+        let embedded = TontSettings::embedded_default();
+        assert!(embedded.lock_screen.enabled);
+        assert_eq!(embedded.lock_screen.theme_override, "MATCH_ACTIVE");
+    }
+
+    #[test]
+    fn test_display_timeouts_and_budgets_validity() {
+        let valid_timeouts = [0, 15, 30, 60, 120, 300, 600];
+        let valid_budgets = [0, 60, 120, 180, 240];
+
+        let mut config = DisplayConfig::default();
+        assert_eq!(config.screen_timeout_secs, 30);
+        assert_eq!(config.screen_time_budget_mins, 120);
+
+        for timeout in valid_timeouts {
+            config.screen_timeout_secs = timeout;
+            assert_eq!(config.screen_timeout_secs, timeout);
+        }
+
+        for budget in valid_budgets {
+            config.screen_time_budget_mins = budget;
+            assert_eq!(config.screen_time_budget_mins, budget);
+        }
+    }
+
+    #[test]
+    fn test_sound_config_volume_and_vibration() {
+        let mut sound = SoundConfig::default();
+        assert_eq!(sound.ring_volume_percent, 80);
+        assert!(sound.vibration_enabled);
+
+        sound.ring_volume_percent = 0;
+        assert_eq!(sound.ring_volume_percent, 0);
+
+        sound.ring_volume_percent = 100;
+        assert_eq!(sound.ring_volume_percent, 100);
+    }
+
+    #[test]
+    fn test_connectivity_toggles_and_airplane_mode() {
+        let mut conn = ConnectivityConfig::default();
+        assert!(conn.wifi_enabled);
+        assert!(!conn.bluetooth_enabled);
+        assert!(conn.mobile_data_enabled);
+        assert!(!conn.airplane_mode);
+
+        conn.airplane_mode = true;
+        conn.wifi_enabled = false;
+        conn.mobile_data_enabled = false;
+        conn.bluetooth_enabled = false;
+
+        assert!(conn.airplane_mode);
+        assert!(!conn.wifi_enabled);
+        assert!(!conn.mobile_data_enabled);
     }
 }

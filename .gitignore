@@ -49,3 +49,4 @@ graphify-out/
 *.pem
 *.key
 *.tontbak
+logs/
