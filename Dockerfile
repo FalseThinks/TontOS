@@ -1,100 +1,92 @@
 # syntax=docker/dockerfile:1
 # ==============================================================================
-# TontOS AOSP ROM Alpine Builder
-# Minimalist Alpine-based container environment for compiling TontOS AOSP platform.
+# TontOS Universal Containerized Builder (Debian Bookworm Slim)
+# Encapsulates 100% of TontOS build toolchains, dependencies, and environment:
+# - AOSP Platform & Soong/Ninja build tools
+# - Rust Stable Toolchain (for all 11 microdaemons in crates/)
+# - Android SDK & Java 17 headless runtime
+# - Google Repo CLI & CCache acceleration
+# All data, caches (.ccache/), and outputs (out/) stay INSIDE the project tree.
 # Maintainer: FalseThinks <paproken@protonmail.com>
 # ==============================================================================
 
-FROM alpine:3.20
+FROM debian:bookworm-slim
 
 LABEL maintainer="FalseThinks <paproken@protonmail.com>"
-LABEL description="Minimalist Alpine Linux builder for TontOS AOSP ROM"
+LABEL description="Unified containerized build environment for TontOS (Rust + AOSP + Android Launcher)"
 
-# 1. Install base utilities, build toolchains, and JDK
-RUN apk update && apk add --no-cache \
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1. Install base utilities, C/C++ compiler toolchains, Java 17, and dependencies
+RUN apt-get update -qq && apt-get install -qq -y --no-install-recommends \
     bash \
     coreutils \
-    findutils \
-    gawk \
-    grep \
-    sed \
-    diffutils \
-    patch \
     git \
     git-lfs \
     curl \
     wget \
-    tar \
-    gzip \
-    bzip2 \
-    xz \
+    file \
+    python3 \
+    python3-dev \
+    python3-pip \
+    openjdk-17-jdk-headless \
+    ccache \
+    rsync \
     zip \
     unzip \
-    rsync \
-    file \
-    which \
-    procps \
-    ncurses \
-    ncurses-dev \
-    openssl \
-    openssl-dev \
-    zlib \
-    zlib-dev \
-    bc \
     bison \
     flex \
+    bc \
     m4 \
     make \
     gcc \
     g++ \
-    musl-dev \
-    linux-headers \
-    python3 \
-    py3-pip \
-    python3-dev \
-    openjdk17 \
-    ccache \
+    ca-certificates \
+    procps \
     sudo \
-    shadow \
     jq \
-    # Glibc compatibility layer for AOSP prebuilt host binaries
-    gcompat \
-    libc6-compat
+    libncurses5 \
+    libncurses-dev \
+    libssl-dev \
+    zlib1g-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
 
-# 2. Configure glibc dynamic linker compatibility symlinks
-# AOSP prebuilts expect /lib64/ld-linux-x86-64.so.2 and standard glibc lib paths
-RUN mkdir -p /lib64 /usr/lib64 && \
-    if [ -f /lib/ld-linux-x86-64.so.2 ]; then \
-        ln -sf /lib/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2; \
-    elif [ -f /lib/ld-musl-x86_64.so.1 ]; then \
-        ln -sf /lib/ld-musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2; \
-    fi
+# 2. Install Rust stable toolchain system-wide
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --default-toolchain stable --profile minimal && \
+    chmod -R a+w /usr/local/cargo /usr/local/rustup
 
 # 3. Install Google repo tool
 RUN curl -s https://storage.googleapis.com/git-repo-downloads/repo > /usr/local/bin/repo && \
     chmod a+rx /usr/local/bin/repo
 
 # 4. Create non-root build user matching host UID/GID (1000:1000)
-# This prevents permission mismatch when mounting host AOSP source trees
+# Prevents file permission conflicts with host workspace
 RUN groupadd -g 1000 tontos && \
     useradd -u 1000 -g tontos -m -s /bin/bash tontos && \
     echo "tontos ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# 5. Environment configuration for AOSP & Soong
-ENV USER=tontos
-ENV HOME=/home/tontos
-ENV LANG=C.UTF-8
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
-ENV PATH=/usr/lib/ccache/bin:/usr/local/bin:/usr/bin:/bin:$PATH
-ENV USE_CCACHE=1
-ENV CCACHE_DIR=/home/tontos/.ccache
-ENV CCACHE_EXEC=/usr/bin/ccache
-ENV CCACHE_MAXSIZE=50G
-ENV CCACHE_SLOPPINESS=time_macros,include_file_mtime,file_macro
-ENV NINJA_STATUS="[%p %f/%t %e] "
+# 5. Environment configuration: project-internal cache & output paths
+ENV USER=tontos \
+    HOME=/home/tontos \
+    LANG=C.UTF-8 \
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+    PATH=/usr/local/cargo/bin:/usr/lib/ccache:/usr/local/bin:/usr/bin:/bin:$PATH \
+    USE_CCACHE=1 \
+    CCACHE_DIR=/workspace/.ccache \
+    CCACHE_EXEC=/usr/bin/ccache \
+    CCACHE_MAXSIZE=50G \
+    CCACHE_SLOPPINESS=time_macros,include_file_mtime,file_macro \
+    NINJA_STATUS="[%p %f/%t %e] "
+
+# 6. Set default workspace inside project directory
+WORKDIR /workspace
 
 USER tontos
-WORKDIR /home/tontos/aosp
 
-# 6. Default command launches bash with AOSP environment prompt
 CMD ["/bin/bash"]

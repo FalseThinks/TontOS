@@ -45,12 +45,14 @@ fi
 # Step 4: Shell Scripts & System Configurations Hygiene
 echo ""
 echo "--> [4/4] Verifying Shell Scripts & Permissions Hygiene..."
-for script in "$ROOT_DIR/scripts"/*.sh; do
-    if bash -n "$script"; then
-        :
-    else
-        echo "  [FAIL] Syntax error in script: $script"
-        FAILED=1
+for script in "$ROOT_DIR/scripts"/*.sh "$ROOT_DIR/scripts/helpers"/*.sh; do
+    if [[ -f "$script" ]]; then
+        if bash -n "$script"; then
+            :
+        else
+            echo "  [FAIL] Syntax error in script: $script"
+            FAILED=1
+        fi
     fi
 done
 

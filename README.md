@@ -3,12 +3,12 @@
 <div align="center">
 
 ```text
-████████╗ ██████╗ ███╗   ██╗████████╗ ██████╗ ███████╗
-╚══██╔══╝██╔═══██╗████╗  ██║╚══██╔══╝██╔═══██╗██╔════╝
-   ██║   ██║   ██║██╔██╗ ██║   ██║   ██║   ██║███████╗
-   ██║   ██║   ██║██║╚██╗██║   ██║   ██║   ██║╚════██║
-   ██║   ╚██████╔╝██║ ╚████║   ██║   ╚██████╔╝███████║
-   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚══════╝
+ _____           _   _____ _____ 
+|_   _|         | | |  _  /  ___|
+  | | ___  _ __ | |_| | | \ `--. 
+  | |/ _ \| '_ \| __| | | |`--. \
+  | | (_) | | | | |_\ \_/ /\__/ /
+  \_/\___/|_| |_|\__|\___/\____/ 
 ```
 
 **Minimalist AOSP Distribution · Rust System Daemons · Low-Distraction Interface**
@@ -19,7 +19,7 @@
 [![AOSP](https://img.shields.io/badge/AOSP-17.0.0__r1-3DDC84.svg?style=flat-square&logo=android&logoColor=white)](https://source.android.com/)
 [![Tests](https://img.shields.io/badge/tests-54%20passed-10B981.svg?style=flat-square)](crates/)
 [![Safety](https://img.shields.io/badge/unsafe_code-forbid-059669.svg?style=flat-square)](crates/)
-[![Docker Builder](https://img.shields.io/badge/docker-debian%20slim%20glibc-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](Dockerfile.aosp)
+[![Docker Builder](https://img.shields.io/badge/docker-debian%20slim%20glibc-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](Dockerfile)
 [![License](https://img.shields.io/badge/license-Apache--2.0%20%7C%20MIT-gray.svg?style=flat-square)](LICENSE)
 
 *Maintained by [FalseThinks](https://github.com/FalseThinks) (`paproken@protonmail.com`)*
@@ -31,14 +31,16 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [System Architecture](#system-architecture)
+2. [Hardware & PC Requirements](#hardware--pc-requirements)
+3. [System Architecture](#system-architecture)
    - [1. System & Hardware Daemons (Rust)](#1-system--hardware-daemons-rust)
    - [2. Minimalist Interface & Digital Wellbeing](#2-minimalist-interface--digital-wellbeing)
    - [3. AOSP Target & Low-RAM Constraints](#3-aosp-target--low-ram-constraints)
-3. [Repository Structure](#repository-structure)
-4. [Quick Start & Compilation](#quick-start--compilation)
-5. [Core Features](#core-features)
-6. [License](#license)
+4. [Repository Structure](#repository-structure)
+5. [Quick Start & Compilation](#quick-start--compilation)
+6. [Flashing & Installation Guide](#flashing--installation-guide)
+7. [Core Features](#core-features)
+8. [License](#license)
 
 ---
 
@@ -50,6 +52,26 @@ TontOS is an open-source mobile operating system engineered for digital detox, b
 - **Low Memory Footprint:** Configured for low system RAM consumption (target $\le$ 500 MB idle) using AOSP low-RAM optimizations and strict process controls.
 - **Digital Detox Tools:** Intentional launch delays (mindful pause), daily screen-time budget, system-wide grayscale, and aggressive background app termination.
 - **Preinstalled FOSS Essentials:** Lightweight open-source utilities (`org.fossify.*`, `eu.faircode.email`, `de.baumann.browser`).
+
+---
+
+## Hardware & PC Requirements
+
+### 1. Target Device (Smartphone / Hardware)
+- **Architecture:** ARM64 (`arm64-v8a`) or x86_64 (virtual reference).
+- **RAM:** Minimum 1 GB (optimized low-RAM AOSP configuration; idle target $\le$ 500 MB).
+- **Partition Scheme:** A/B dynamic partitions with Project Treble compliance (Android 10+ baseline).
+- **Bootloader:** Unlocked.
+
+### 2. Host Development PC
+| Workflow | CPU | RAM | Free Disk Space | Operating System |
+| :--- | :--- | :--- | :--- | :--- |
+| **Launcher APK & Rust Testing** | 2+ Cores | 4 GB | 10 GB | Linux / macOS / Windows (Docker) |
+| **Cuttlefish VM Emulation** | 4+ Cores (VT-x / AMD-V) | 8 GB | 25 GB | Linux with `/dev/kvm` access |
+| **Full AOSP ROM Compilation** | 8+ Cores recommended | 16 GB + 16–32 GB Swap/zRAM | 150 GB (NVMe SSD) | Linux (Arch, Debian, Ubuntu) or Docker |
+
+> [!NOTE]
+> When compiling full AOSP on host machines with 16 GB of physical RAM, Soong and Ninja require tiered swap (zRAM + NVMe swapfile) or limiting parallel threads via `--jobs=4` to prevent OOM termination. Alternatively, use `./scripts/clean_install_and_monitor.sh --docker` or `./scripts/helpers/setup_host_swap.sh setup` automatically.
 
 ---
 
@@ -95,7 +117,12 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 │   └── tont-telephony/        # Cellular and radio state manager
 ├── launcher_apk/              # System Launcher (Java 17, AOSP system_ext)
 ├── platform/                  # AOSP BoardConfig, manifests, and product targets
-├── scripts/                   # Build, test, and VM automation scripts
+├── scripts/                   # Minimalist entrypoints & helpers
+│   ├── clean_install_and_monitor.sh # Master pipeline: swap -> test -> build -> boot -> monitor
+│   ├── docker_build_rom.sh    # Hermetic containerized ROM builder
+│   ├── run_all_tests.sh       # Unified test gate (Rust crates, Java contracts, APK)
+│   ├── build_launcher_apk.sh  # Standalone launcher compiler & signer
+│   └── helpers/               # Specialized automation (host swap, GSI, Cuttlefish, security)
 └── tests/                     # Test suites (Rust, Java, UI)
 ```
 
@@ -103,27 +130,110 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 
 ## Quick Start & Compilation
 
-### 1. Build Launcher APK
+### 1. Zero-Setup Containerized Build (Docker - Recommended)
+Hermetic build environment: all dependencies (Rust, Java 17, AOSP, Repo, CCache) run in an isolated Debian container with caches (`.ccache/`) and artifacts (`out/`) preserved inside the repository:
+```bash
+# Build AOSP ROM inside Docker:
+./scripts/docker_build_rom.sh --build
+
+# Run test suite inside Docker:
+./scripts/docker_build_rom.sh --test
+
+# Build launcher APK inside Docker:
+./scripts/docker_build_rom.sh --apk
+
+# Interactive container shell:
+./scripts/docker_build_rom.sh --shell
+
+# Clean internal caches and output:
+./scripts/docker_build_rom.sh --clean
+```
+
+### 2. Unified Clean Install & Monitor (Orchestrator)
+Orchestrates memory preflight, workspace testing, optional AOSP compile (host or `--docker`), Cuttlefish boot, and live RAM monitoring:
+```bash
+# Boot existing build with live performance monitoring:
+./scripts/clean_install_and_monitor.sh
+
+# Complete cycle in Docker (zero host toolchain or swap changes):
+./scripts/clean_install_and_monitor.sh --docker
+
+# Local host build (incremental):
+./scripts/clean_install_and_monitor.sh --build
+```
+
+### 3. Automated Host Memory & Swap Setup (Linux - Optional for Host Builds)
+Prepares host memory before heavy host-native AOSP builds (auto-detects Btrfs vs Ext4, configures tiered zRAM + 32GB NVMe swapfile, and applies kernel sysctl):
+```bash
+# Check memory & swap status:
+./scripts/helpers/setup_host_swap.sh status
+
+# Configure and activate:
+sudo ./scripts/helpers/setup_host_swap.sh setup
+
+# Clean/reclaim disk space (swapoff & delete /swapfile_aosp):
+sudo ./scripts/helpers/setup_host_swap.sh clean
+```
+
+### 3. Build Launcher APK (Fast Iteration)
 ```bash
 ./scripts/build_launcher_apk.sh
 adb install -r launcher_apk/tontos-launcher.apk
 adb shell cmd package set-home-activity org.tontos.launcher/.MainActivity
 ```
 
-### 2. Run All Tests
+### 4. Run System Test Suite
 ```bash
 ./scripts/run_all_tests.sh
 ```
 
-### 3. Containerized ROM Build
+### 5. Hermetic Containerized ROM Build
 ```bash
 env BUILD_TARGET="systemimage" ./scripts/docker_build_rom.sh
 ```
 
-### 4. Run in Cuttlefish Emulator
+---
+
+## Flashing & Installation Guide
+
+### Method 1: Physical Device Flashing (Fastboot / Project Treble)
+Deploy the compiled TontOS system image to any Treble-compliant Android smartphone:
+
+1. **Reboot to Dynamic Fastboot Mode (`fastbootd`):**
+   ```bash
+   adb reboot fastboot
+   ```
+2. **Flash Dynamic Partitions:**
+   ```bash
+   # Flash boot and system partitions:
+   fastboot flash boot out/target/product/vsoc_x86_64_only/boot.img
+   fastboot flash system out/target/product/vsoc_x86_64_only/system.img
+   ```
+3. **Format User Data (Factory Wipe) & Reboot:**
+   ```bash
+   fastboot -w
+   fastboot reboot
+   ```
+
+### Method 2: Cuttlefish Virtual Platform (Automated VM Testing)
+Boot a clean factory-state Cuttlefish instance on Linux with hardware KVM acceleration:
 ```bash
-./scripts/run_cuttlefish.sh
-./scripts/stop_cuttlefish.sh
+# Automated launch with real-time memory and log monitoring:
+./scripts/clean_install_and_monitor.sh
+
+# Or provision and flash clean standard Android AVD emulator:
+./scripts/helpers/flash_virtual_device.sh --wipe-data --cold-boot
+```
+
+### Method 3: Standalone Launcher Deployment (Any Stock Android 10+)
+Install the TontOS digital detox interface onto your daily personal smartphone without flashing partitions:
+```bash
+# Build and sign the APK:
+./scripts/build_launcher_apk.sh
+
+# Sideload and assign default home role:
+adb install -r launcher_apk/tontos-launcher.apk
+adb shell cmd package set-home-activity org.tontos.launcher/.MainActivity
 ```
 
 ---

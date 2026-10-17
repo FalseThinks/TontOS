@@ -1,27 +1,104 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# TontOS Clean Installer & Real-Time Performance Monitor
-# Boots AOSP 17 from scratch, monitors resource consumption, and logs metrics.
+# TontOS Unified Clean Installer, Builder & Real-Time Performance Monitor
+# Orchestrates Host Swap, Workspace Testing, AOSP Build & Cuttlefish VM Boot.
 # Maintainer: FalseThinks <paproken@protonmail.com>
 # ==============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+HELPERS_DIR="$SCRIPT_DIR/helpers"
 AOSP_DIR="${AOSP_DIR:-$HOME/aosp/tontos}"
 PRODUCT_OUT="$AOSP_DIR/out/target/product/vsoc_x86_64_only"
 HOST_OUT="$AOSP_DIR/out/host/linux-x86"
 LOGS_DIR="$ROOT_DIR/logs"
 
-# Parameters
+# Default configuration
+DO_BUILD=false
+BUILD_FROM_SCRATCH=false
+RUN_TESTS=true
+SETUP_SWAP=true
+USE_DOCKER=false
+CLEAN_VM_BOOT=true
+RUN_CUTTLEFISH=true
+EXPLICIT_SKIP_BUILD=false
 SAMPLE_INTERVAL=5
-CLEAN_BOOT=true
 MONITOR_DURATION=0 # 0 = infinite until Ctrl+C
+BUILD_JOBS=""
+
+print_help() {
+    cat << EOF
+Usage: ./scripts/clean_install_and_monitor.sh [OPTIONS]
+
+Unified Orchestrator: Swap Pre-flight -> Tests -> Build -> Cuttlefish Boot -> Monitoring
+
+Build Options:
+  --build              Compile TontOS Cuttlefish before booting
+  --docker             Compile AOSP inside isolated Docker container (zero host setup)
+  --from-scratch       Clean AOSP output artifacts and rebuild entirely from zero
+  --incremental        Trigger incremental AOSP build (preserves out/ state)
+  --skip-build         Skip AOSP build and boot existing compiled images (default)
+
+Quality & Memory Options:
+  --run-tests          Run full test suite (Rust, Java, APK, syntax) before build (default)
+  --skip-tests         Bypass pre-build test suite
+  --setup-swap         Ensure tiered zRAM + 32GB swapfile is active before build (default)
+  --skip-swap          Bypass automated swap & zRAM verification
+
+Cuttlefish & Monitoring Options:
+  --clean              Factory wipe VM runtime and data partition (default)
+  --no-clean           Resume existing VM state without wiping data (--resume)
+  --skip-cuttlefish    Stop after tests/build; do not boot Cuttlefish VM
+  --interval=SEC       Metric sampling interval in seconds (default: 5)
+  --duration=SEC       Stop monitoring after SEC seconds (default: infinite)
+  --help, -h           Show this help message
+EOF
+    exit 0
+}
 
 for arg in "$@"; do
     case "$arg" in
+        --build)
+            DO_BUILD=true
+            ;;
+        --docker)
+            USE_DOCKER=true
+            DO_BUILD=true
+            SETUP_SWAP=false
+            ;;
+        --from-scratch)
+            DO_BUILD=true
+            BUILD_FROM_SCRATCH=true
+            ;;
+        --incremental)
+            DO_BUILD=true
+            BUILD_FROM_SCRATCH=false
+            ;;
+        --skip-build|--no-build)
+            DO_BUILD=false
+            EXPLICIT_SKIP_BUILD=true
+            ;;
+        --run-tests)
+            RUN_TESTS=true
+            ;;
+        --skip-tests)
+            RUN_TESTS=false
+            ;;
+        --setup-swap)
+            SETUP_SWAP=true
+            ;;
+        --skip-swap)
+            SETUP_SWAP=false
+            ;;
+        --clean)
+            CLEAN_VM_BOOT=true
+            ;;
         --no-clean)
-            CLEAN_BOOT=false
+            CLEAN_VM_BOOT=false
+            ;;
+        --skip-cuttlefish|--no-cuttlefish)
+            RUN_CUTTLEFISH=false
             ;;
         --interval=*)
             SAMPLE_INTERVAL="${arg#*=}"
@@ -29,19 +106,135 @@ for arg in "$@"; do
         --duration=*)
             MONITOR_DURATION="${arg#*=}"
             ;;
+        --jobs=*)
+            BUILD_JOBS="-j${arg#*=}"
+            ;;
+        -j*)
+            BUILD_JOBS="$arg"
+            ;;
         --help|-h)
-            echo "Usage: ./scripts/monitor_tontos.sh [OPTIONS]"
-            echo "  --no-clean       Resume existing VM state instead of fresh clean install"
-            echo "  --interval=SEC   Metric sampling interval in seconds (default: 5)"
-            echo "  --duration=SEC   Stop monitoring after SEC seconds (default: infinite)"
-            exit 0
+            print_help
+            ;;
+        *)
+            echo "[-] Unknown option: $arg" >&2
+            echo "    Run with --help for usage." >&2
+            exit 1
             ;;
     esac
 done
 
-if [[ ! -d "$PRODUCT_OUT" ]]; then
-    echo "[-] ERROR: Compiled ROM images not found at $PRODUCT_OUT" >&2
-    echo "    Compile the ROM first with ./scripts/docker_build_rom.sh" >&2
+echo "=========================================================="
+echo "  TontOS Unified Clean-Install & Lifecycle Orchestrator"
+echo "=========================================================="
+echo "  Setup Swap & zRAM: $SETUP_SWAP"
+echo "  Execute Tests:     $RUN_TESTS"
+echo "  Build AOSP:        $DO_BUILD (From scratch: $BUILD_FROM_SCRATCH)"
+echo "  Launch Cuttlefish: $RUN_CUTTLEFISH (Clean boot: $CLEAN_VM_BOOT)"
+echo "  AOSP Directory:    $AOSP_DIR"
+echo "=========================================================="
+
+# ------------------------------------------------------------------------------
+# Phase 1: Host Swap & Memory Pre-flight
+# ------------------------------------------------------------------------------
+if [[ "$SETUP_SWAP" == true ]]; then
+    echo ""
+    echo "--> [1/5] Verifying Host Swap & zRAM Configuration..."
+    TOTAL_SWAP_KB="$(grep SwapTotal /proc/meminfo | awk '{print $2}')"
+    # If swap is under 20GB, ensure swapfile + zRAM are configured
+    if [[ "$TOTAL_SWAP_KB" -lt 20971520 ]] || ! grep -q "/swapfile_aosp" /proc/swaps 2>/dev/null; then
+        echo "    Configuring tiered memory (zRAM + 32GB NVMe swapfile)..."
+        "$HELPERS_DIR/setup_host_swap.sh" setup || {
+            echo "[!] Warning: Sudo needed for swap configuration. Proceeding with existing memory."
+        }
+    else
+        echo "    [PASS] Tiered host swap is active (${TOTAL_SWAP_KB} kB available)."
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+# Phase 2: System Quality & Test Gates
+# ------------------------------------------------------------------------------
+if [[ "$RUN_TESTS" == true ]]; then
+    echo ""
+    echo "--> [2/5] Running Unified System Test Suite..."
+    "$SCRIPT_DIR/run_all_tests.sh"
+fi
+
+# ------------------------------------------------------------------------------
+# Phase 3: Android Launcher Compilation & AOSP Build
+# ------------------------------------------------------------------------------
+echo ""
+echo "--> [3/5] Building TontOS Launcher APK..."
+"$SCRIPT_DIR/build_launcher_apk.sh"
+
+if [[ -d "$AOSP_DIR/vendor/tontos" ]]; then
+    echo "    Syncing latest platform makefiles, blueprints and APK to AOSP vendor tree..."
+    mkdir -p "$AOSP_DIR/vendor/tontos/products" "$AOSP_DIR/vendor/tontos/apps/prebuilts"
+    cp -f "$ROOT_DIR/platform/products/"*.mk "$AOSP_DIR/vendor/tontos/products/" 2>/dev/null || true
+    cp -f "$ROOT_DIR/platform/apps/prebuilts/Android.bp" "$AOSP_DIR/vendor/tontos/apps/prebuilts/" 2>/dev/null || true
+    cp -f "$ROOT_DIR/launcher_apk/tontos-launcher.apk" "$AOSP_DIR/vendor/tontos/apps/" 2>/dev/null || true
+fi
+
+has_compiled_images() {
+    [[ -f "$PRODUCT_OUT/boot.img" && -f "$PRODUCT_OUT/system.img" ]]
+}
+
+if [[ "$DO_BUILD" == true ]] || { [[ "$RUN_CUTTLEFISH" == true ]] && ! has_compiled_images && [[ "$EXPLICIT_SKIP_BUILD" != true ]]; }; then
+    echo ""
+    if ! has_compiled_images && [[ "$DO_BUILD" != true ]]; then
+        echo "[!] Target boot.img/system.img not found in $PRODUCT_OUT."
+        echo "--> Auto-initiating AOSP Target Build (tontos_cf_x86_64)..."
+    else
+        echo "--> Compiling AOSP Target (tontos_cf_x86_64)..."
+    fi
+
+    if [[ ! -d "$AOSP_DIR" ]]; then
+        echo "[-] ERROR: AOSP directory not found at $AOSP_DIR" >&2
+        exit 1
+    fi
+
+    if [[ "$BUILD_FROM_SCRATCH" == true ]]; then
+        echo "    Wiping previous output for 100% clean rebuild..."
+        rm -rf "$PRODUCT_OUT"
+    fi
+
+    if [[ "$USE_DOCKER" == true ]]; then
+        echo "    Delegating compilation to isolated Docker container ($ROOT_DIR/scripts/docker_build_rom.sh)..."
+        "$SCRIPT_DIR/docker_build_rom.sh" --build
+        echo "    [PASS] Containerized AOSP build completed successfully."
+    else
+        echo "    Invoking Soong build in $AOSP_DIR..."
+        (
+            cd "$AOSP_DIR"
+            source build/envsetup.sh
+            lunch tontos_cf_x86_64-trunk_staging-userdebug
+            m $BUILD_JOBS
+        )
+        echo "    [PASS] AOSP build completed successfully."
+    fi
+fi
+
+if [[ "$RUN_CUTTLEFISH" != true ]]; then
+    echo ""
+    echo "=========================================================="
+    echo " [SUCCESS] Pipeline complete. (--skip-cuttlefish specified)"
+    echo "=========================================================="
+    exit 0
+fi
+
+# ------------------------------------------------------------------------------
+# Phase 4: Prepare Cuttlefish Environment
+# ------------------------------------------------------------------------------
+if ! has_compiled_images; then
+    echo ""
+    echo "[-] ERROR: Compiled ROM images (boot.img, system.img) not found at: $PRODUCT_OUT" >&2
+    if [[ "$EXPLICIT_SKIP_BUILD" == true ]]; then
+        echo "    You specified --skip-build, but Cuttlefish VM requires boot.img to boot." >&2
+        echo "    Point to prebuilts with AOSP_DIR=<path> or compile once with:" >&2
+        echo "    ./scripts/clean_install_and_monitor.sh --build" >&2
+    else
+        echo "    Run with --build to compile first." >&2
+    fi
     exit 1
 fi
 
@@ -54,32 +247,27 @@ export ANDROID_PRODUCT_OUT="$PRODUCT_OUT"
 export ANDROID_HOST_OUT="$HOST_OUT"
 export PATH="$HOST_OUT/bin:$PATH"
 
-echo "=========================================================="
-echo " TontOS Clean Boot & Performance Monitor (Android 17)"
-echo " ROM Output:  $PRODUCT_OUT"
-echo " Usage Log:   $USAGE_LOG"
-echo " Logcat Log:  $LOGCAT_LOG"
-echo " Clean Boot:  $CLEAN_BOOT"
-echo " Sample Rate: ${SAMPLE_INTERVAL}s"
-echo "=========================================================="
+echo ""
+echo "--> [4/5] Preparing Cuttlefish Environment..."
+"$HELPERS_DIR/stop_cuttlefish.sh" >/dev/null 2>&1 || true
 
-# 1. Stop any existing Cuttlefish instances
-echo "[1/4] Stopping active instances and clearing sockets..."
-"$SCRIPT_DIR/stop_cuttlefish.sh" >/dev/null 2>&1 || true
-
-if [[ "$CLEAN_BOOT" == true ]]; then
-    echo "[2/4] Wiping runtime overlay and caches for 100% clean factory boot..."
+if [[ "$CLEAN_VM_BOOT" == true ]]; then
+    echo "    Wiping runtime overlays for clean factory boot..."
     rm -rf "$PRODUCT_OUT"/cuttlefish_assembly* \
            "$PRODUCT_OUT"/cuttlefish_runtime* \
            "$HOME"/cuttlefish_runtime* \
            /tmp/cf_avd_* 2>/dev/null || true
     EXTRA_FLAGS=("--noresume")
 else
-    echo "[2/4] Preserving existing data partition (--resume)..."
+    echo "    Preserving user data partition (--resume)..."
     EXTRA_FLAGS=("--resume=true")
 fi
 
-echo "[3/4] Launching Cuttlefish VM (4 Cores, 4GB RAM, SwiftShader)..."
+# ------------------------------------------------------------------------------
+# Phase 5: Launch & Live Performance Monitoring
+# ------------------------------------------------------------------------------
+echo ""
+echo "--> [5/5] Booting Cuttlefish VM & Launching Metrics Monitor..."
 cd "$PRODUCT_OUT"
 launch_cvd \
     --daemon \
@@ -90,8 +278,7 @@ launch_cvd \
     --system_image_dir="$PRODUCT_OUT" \
     "${EXTRA_FLAGS[@]}"
 
-# Wait for ADB connection
-echo "[4/4] Connecting ADB (127.0.0.1:6520) and waiting for boot completion..."
+echo "    Waiting for ADB boot completion (127.0.0.1:6520)..."
 BOOT_START_TIME=$(date +%s)
 adb connect 127.0.0.1:6520 >/dev/null 2>&1 || true
 
@@ -107,111 +294,56 @@ done
 BOOT_END_TIME=$(date +%s)
 BOOT_ELAPSED=$(( BOOT_END_TIME - BOOT_START_TIME ))
 
-echo
+echo ""
 echo "=========================================================="
-echo " [SUCCESS] TontOS boot completed in ${BOOT_ELAPSED}s!"
-echo " WebRTC GUI: https://localhost:8443"
+echo " [SUCCESS] TontOS Minimalist booted in ${BOOT_ELAPSED}s!"
+echo " WebRTC GUI:  https://localhost:8443"
+echo " Usage Log:   $USAGE_LOG"
+echo " Logcat Log:  $LOGCAT_LOG"
+echo " Press Ctrl+C to terminate monitoring and capture report."
 echo "=========================================================="
 
-# Start background logcat
 adb -s 127.0.0.1:6520 logcat -v threadtime > "$LOGCAT_LOG" 2>&1 &
 LOGCAT_PID=$!
 
 cleanup() {
-    echo -e "\n[*] Terminating performance monitor and flushing logs..."
-    if kill -0 "$LOGCAT_PID" 2>/dev/null; then
-        kill "$LOGCAT_PID" 2>/dev/null || true
-    fi
-    echo "[+] System usage log saved to: $USAGE_LOG"
-    echo "[+] System logcat log saved to: $LOGCAT_LOG"
+    echo ""
+    echo "[!] Stopping monitor and collecting final metrics..."
+    kill "$LOGCAT_PID" 2>/dev/null || true
+    echo "=========================================================="
+    echo " [SUMMARY] TontOS Live Session Closed"
+    echo " Logcat: $LOGCAT_LOG"
+    echo " Metrics: $USAGE_LOG"
+    echo "=========================================================="
     exit 0
 }
-trap cleanup SIGINT SIGTERM EXIT
+trap cleanup SIGINT SIGTERM
 
-# Gather system baseline
-{
-    echo "=========================================================="
-    echo " TontOS System Performance Baseline"
-    echo " Date: $(date -R)"
-    echo " Boot Time: ${BOOT_ELAPSED} seconds"
-    echo " OS Release: $(adb -s 127.0.0.1:6520 shell getprop ro.build.version.release)"
-    echo " Build ID:   $(adb -s 127.0.0.1:6520 shell getprop ro.build.id)"
-    echo " Model:      $(adb -s 127.0.0.1:6520 shell getprop ro.product.model)"
-    echo " Kernel:     $(adb -s 127.0.0.1:6520 shell uname -r)"
-    echo " SELinux:    $(adb -s 127.0.0.1:6520 shell getenforce)"
-    echo "=========================================================="
-    echo
-} | tee -a "$USAGE_LOG"
+echo "Timestamp,HostMemFreeMB,HostSwapUsedMB,GuestMemTotalKB,GuestMemFreeKB,GuestCachedKB,LauncherPSS_KB" > "$USAGE_LOG"
 
-echo "Streaming live metrics (Press Ctrl+C to stop)..."
-echo "----------------------------------------------------------------------------------"
-printf "%-8s | %-12s | %-10s | %-12s | %-12s | %s\n" "TIME" "RAM USED" "ZRAM" "LAUNCHER" "SYS_SERVER" "TOP CPU"
-echo "----------------------------------------------------------------------------------"
-
-TOTAL_SAMPLES=0
-START_MONITOR=$(date +%s)
-
+MONITOR_START=$(date +%s)
 while true; do
-    TIMESTAMP_NOW="$(date +'%H:%M:%S')"
-    
-    # 1. Memory stats
-    MEMINFO="$(adb -s 127.0.0.1:6520 shell cat /proc/meminfo 2>/dev/null || true)"
-    MEM_TOTAL_KB=$(echo "$MEMINFO" | grep MemTotal | awk '{print $2}' || echo 0)
-    MEM_AVAIL_KB=$(echo "$MEMINFO" | grep MemAvailable | awk '{print $2}' || echo 0)
-    SWAP_TOTAL_KB=$(echo "$MEMINFO" | grep SwapTotal | awk '{print $2}' || echo 0)
-    SWAP_FREE_KB=$(echo "$MEMINFO" | grep SwapFree | awk '{print $2}' || echo 0)
-    
-    if [[ -n "$MEM_TOTAL_KB" && -n "$MEM_AVAIL_KB" && "$MEM_TOTAL_KB" -gt 0 ]]; then
-        MEM_USED_MB=$(( (MEM_TOTAL_KB - MEM_AVAIL_KB) / 1024 ))
-        MEM_TOTAL_MB=$(( MEM_TOTAL_KB / 1024 ))
-        RAM_STR="${MEM_USED_MB}M/${MEM_TOTAL_MB}M"
-    else
-        RAM_STR="N/A"
-    fi
-    
-    if [[ -n "$SWAP_TOTAL_KB" && "$SWAP_TOTAL_KB" -gt 0 ]]; then
-        SWAP_USED_MB=$(( (SWAP_TOTAL_KB - SWAP_FREE_KB) / 1024 ))
-        ZRAM_STR="${SWAP_USED_MB}M"
-    else
-        ZRAM_STR="0M"
+    NOW=$(date +%s)
+    if [[ "$MONITOR_DURATION" -gt 0 ]] && [[ $(( NOW - MONITOR_START )) -ge "$MONITOR_DURATION" ]]; then
+        cleanup
     fi
 
-    # 2. Key Process Memory
-    LAUNCHER_RSS="$(adb -s 127.0.0.1:6520 shell pidof org.tontos.launcher 2>/dev/null || true)"
-    if [[ -n "$LAUNCHER_RSS" ]]; then
-        LAUNCHER_MEM_KB="$(adb -s 127.0.0.1:6520 shell cat /proc/$LAUNCHER_RSS/statm 2>/dev/null | awk '{print $2*4}' || echo 0)"
-        LAUNCHER_STR="$(( LAUNCHER_MEM_KB / 1024 ))MB"
-    else
-        LAUNCHER_STR="Inactive"
-    fi
+    HOST_MEM_FREE=$(free -m | awk '/^Mem:/ {print $4}')
+    HOST_SWAP_USED=$(free -m | awk '/^Swap:/ {print $3}')
 
-    SYS_SERVER_PID="$(adb -s 127.0.0.1:6520 shell pidof system_server 2>/dev/null || true)"
-    if [[ -n "$SYS_SERVER_PID" ]]; then
-        SYS_MEM_KB="$(adb -s 127.0.0.1:6520 shell cat /proc/$SYS_SERVER_PID/statm 2>/dev/null | awk '{print $2*4}' || echo 0)"
-        SYS_SERVER_STR="$(( SYS_MEM_KB / 1024 ))MB"
-    else
-        SYS_SERVER_STR="N/A"
-    fi
+    MEMINFO_RAW="$(adb -s 127.0.0.1:6520 shell cat /proc/meminfo 2>/dev/null || true)"
+    GUEST_MEM_TOTAL=$(echo "$MEMINFO_RAW" | awk '/^MemTotal:/ {print $2}')
+    GUEST_MEM_FREE=$(echo "$MEMINFO_RAW" | awk '/^MemFree:/ {print $2}')
+    GUEST_CACHED=$(echo "$MEMINFO_RAW" | awk '/^Cached:/ {print $2}')
 
-    # 3. Top process by CPU
-    TOP_CPU="$(adb -s 127.0.0.1:6520 shell top -b -n 1 -m 5 2>/dev/null | sed -n '5p' | awk '{print $9"% " $12}' || echo 'N/A')"
-    
-    # 4. Formatted Terminal Output
-    printf "%-8s | %-12s | %-10s | %-12s | %-12s | %s\n" \
-        "$TIMESTAMP_NOW" "$RAM_STR" "$ZRAM_STR" "$LAUNCHER_STR" "$SYS_SERVER_STR" "$TOP_CPU"
-    
-    # 5. Append structured entry to log
-    echo "[$TIMESTAMP_NOW] RAM: $RAM_STR | ZRAM: $ZRAM_STR | Launcher: $LAUNCHER_STR | SystemServer: $SYS_SERVER_STR | Top: $TOP_CPU" >> "$USAGE_LOG"
+    LAUNCHER_PSS="$(adb -s 127.0.0.1:6520 shell dumpsys meminfo org.tontos.launcher 2>/dev/null | awk '/TOTAL PSS:/ {print $3}' || echo 0)"
+    LAUNCHER_PSS="${LAUNCHER_PSS:-0}"
 
-    TOTAL_SAMPLES=$(( TOTAL_SAMPLES + 1 ))
+    TIMESTAMP_SAMPLE="$(date +'%Y-%m-%d %H:%M:%S')"
+    echo "$TIMESTAMP_SAMPLE,$HOST_MEM_FREE,$HOST_SWAP_USED,$GUEST_MEM_TOTAL,$GUEST_MEM_FREE,$GUEST_CACHED,$LAUNCHER_PSS" >> "$USAGE_LOG"
 
-    if [[ "$MONITOR_DURATION" -gt 0 ]]; then
-        NOW=$(date +%s)
-        if (( NOW - START_MONITOR >= MONITOR_DURATION )); then
-            echo "[*] Reached monitoring duration limit (${MONITOR_DURATION}s)."
-            break
-        fi
-    fi
+    printf "\r[METRICS] Host Swap: %s MB | Guest Free: %s KB | Launcher PSS: %s KB" \
+           "$HOST_SWAP_USED" "${GUEST_MEM_FREE:-0}" "${LAUNCHER_PSS:-0}"
 
     sleep "$SAMPLE_INTERVAL"
 done

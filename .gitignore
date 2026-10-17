@@ -50,3 +50,17 @@ graphify-out/
 *.key
 *.tontbak
 logs/
+
+# TontOS Docker & Internal Build Caches
+.build/
+.ccache/
+.aosp_tree/
+.docker/
+**/out/
+*.swapfile*
+
+# Cuttlefish VM runtime & assembly overlays
+cuttlefish_assembly*
+cuttlefish_runtime*
+cf_avd_*
+

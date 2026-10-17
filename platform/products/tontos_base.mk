@@ -55,7 +55,7 @@ PRODUCT_PRODUCT_PROPERTIES += \
     ro.config.ringtone=Titania.ogg
 
 # Perfil Low-RAM (Consumo <= 500 MB RAM) y control de memoria
-PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+PRODUCT_PRODUCT_PROPERTIES += \
     ro.config.low_ram=true \
     ro.sys.fw.bg_apps_limit=4 \
     ro.config.max_starting_bg=1 \
