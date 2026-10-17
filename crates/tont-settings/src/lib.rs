@@ -254,4 +254,56 @@ mod tests {
         assert!(embedded.lock_screen.enabled);
         assert_eq!(embedded.lock_screen.theme_override, "MATCH_ACTIVE");
     }
+
+    #[test]
+    fn test_display_timeouts_and_budgets_validity() {
+        let valid_timeouts = [0, 15, 30, 60, 120, 300, 600];
+        let valid_budgets = [0, 60, 120, 180, 240];
+
+        let mut config = DisplayConfig::default();
+        assert_eq!(config.screen_timeout_secs, 30);
+        assert_eq!(config.screen_time_budget_mins, 120);
+
+        for timeout in valid_timeouts {
+            config.screen_timeout_secs = timeout;
+            assert_eq!(config.screen_timeout_secs, timeout);
+        }
+
+        for budget in valid_budgets {
+            config.screen_time_budget_mins = budget;
+            assert_eq!(config.screen_time_budget_mins, budget);
+        }
+    }
+
+    #[test]
+    fn test_sound_config_volume_and_vibration() {
+        let mut sound = SoundConfig::default();
+        assert_eq!(sound.ring_volume_percent, 80);
+        assert!(sound.vibration_enabled);
+
+        sound.ring_volume_percent = 0;
+        assert_eq!(sound.ring_volume_percent, 0);
+
+        sound.ring_volume_percent = 100;
+        assert_eq!(sound.ring_volume_percent, 100);
+    }
+
+    #[test]
+    fn test_connectivity_toggles_and_airplane_mode() {
+        let mut conn = ConnectivityConfig::default();
+        assert!(conn.wifi_enabled);
+        assert!(!conn.bluetooth_enabled);
+        assert!(conn.mobile_data_enabled);
+        assert!(!conn.airplane_mode);
+
+        conn.airplane_mode = true;
+        conn.wifi_enabled = false;
+        conn.mobile_data_enabled = false;
+        conn.bluetooth_enabled = false;
+
+        assert!(conn.airplane_mode);
+        assert!(!conn.wifi_enabled);
+        assert!(!conn.mobile_data_enabled);
+    }
 }
+

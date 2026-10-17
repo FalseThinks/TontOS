@@ -479,6 +479,11 @@ public class MainActivity extends Activity {
         refreshInstalledAppsCache();
         applyThemeTokens();
         renderApps();
+
+        checkAndTerminateExitedApp();
+        if (!prefs.getBoolean(QuickStartGuideDialog.PREF_GUIDE_SHOWN, false)) {
+            QuickStartGuideDialog.show(this, currentTokens(), langCode);
+        }
     }
 
     private void applyFontScale() {
@@ -983,8 +988,11 @@ public class MainActivity extends Activity {
         return false;
     }
 
+    private String mLastLaunchedPackage = null;
+
     private void performLaunch(final String pkg) {
         if (pkg == null) return;
+        mLastLaunchedPackage = pkg;
         AppItem app = cachedAppLookup.get(pkg);
         if (app != null && app.activityName != null) {
             try {
@@ -1008,6 +1016,56 @@ public class MainActivity extends Activity {
             Toast.makeText(MainActivity.this, "Could not open " + (app != null ? app.label : pkg), Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void checkAndTerminateExitedApp() {
+        if (mLastLaunchedPackage == null) return;
+        final String exitedPkg = mLastLaunchedPackage;
+        mLastLaunchedPackage = null;
+
+        if (exitedPkg.equals(getPackageName())) return;
+        if (isEssentialSystemPackage(exitedPkg)) return;
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String policy = prefs.getString("bg_policy", "whitelist");
+        if ("allowed".equals(policy)) {
+            return;
+        }
+
+        boolean canRunBg = false;
+        if ("whitelist".equals(policy)) {
+            Set<String> allowed = prefs.getStringSet("bg_allowed_apps", Collections.<String>emptySet());
+            canRunBg = allowed != null && allowed.contains(exitedPkg);
+            if (AppPrivacyGuard.isBgRestricted(this, exitedPkg)) {
+                canRunBg = false;
+            }
+        }
+
+        if (!canRunBg) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    SafeCommandExecutor.executePrivileged("am", "force-stop", exitedPkg);
+                }
+            }, "TontOS-KillExitedApp").start();
+        }
+    }
+
+    private boolean isEssentialSystemPackage(String pkg) {
+        if (pkg == null) return true;
+        if (pkg.equals(getPackageName())
+                || pkg.equals("org.fossify.phone")
+                || pkg.equals("org.fossify.messages")
+                || pkg.equals("com.android.phone")
+                || pkg.equals("com.android.server.telecom")
+                || pkg.equals("com.android.systemui")
+                || pkg.equals("com.android.inputmethod.latin")
+                || pkg.equals("org.fossify.contacts")) {
+            return true;
+        }
+        String p = pkg.toLowerCase(Locale.ROOT);
+        return p.contains("telecom") || p.contains("dialer") || p.contains("inputmethod");
+    }
+
 
     @Override
     protected void onNewIntent(Intent intent) {

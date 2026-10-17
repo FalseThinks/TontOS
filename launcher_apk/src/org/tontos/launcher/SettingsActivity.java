@@ -557,70 +557,6 @@ public class SettingsActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("300", "5m"));
                 options.add(new SingleChoiceSelectorDialog.Option("600", "10m"));
 
-                // Embedded Screen Time Counter View inside Timeout dialog
-                float density = getResources().getDisplayMetrics().density;
-                LinearLayout timeoutHeaderBox = new LinearLayout(SettingsActivity.this);
-                timeoutHeaderBox.setOrientation(LinearLayout.VERTICAL);
-                timeoutHeaderBox.setPadding(0, 0, 0, (int) (14 * density));
-
-                final TextView counterText = new TextView(SettingsActivity.this);
-                long mins = MainActivity.getScreenTimeTodayMins();
-                String timeDisplay = (mins < 60) ? (mins + "m") : ((mins / 60) + "h " + (mins % 60) + "m");
-                counterText.setText(I18n.get(I18n.KEY_SCREEN_TIME_COUNTER, curLangCode) + ": " + timeDisplay);
-                counterText.setTextColor(tokens.textPrimary);
-                counterText.setTextSize(14);
-                counterText.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-                counterText.setPadding(0, 0, 0, (int) (6 * density));
-                timeoutHeaderBox.addView(counterText);
-
-                TextView resetBtn = new TextView(SettingsActivity.this);
-                resetBtn.setText(I18n.get(I18n.KEY_RESET_TODAY, curLangCode));
-                resetBtn.setTextColor(tokens.navAccent);
-                resetBtn.setTextSize(13);
-                resetBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-                resetBtn.setGravity(Gravity.CENTER);
-                resetBtn.setMinimumHeight((int) (44 * density));
-                resetBtn.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
-                resetBtn.setClickable(true);
-                resetBtn.setFocusable(true);
-
-                StateListDrawable rstSld = new StateListDrawable();
-                GradientDrawable rstPressed = new GradientDrawable();
-                rstPressed.setColor(tokens.controlBgPressed);
-                rstPressed.setCornerRadius((int) (4 * density));
-                rstSld.addState(new int[]{android.R.attr.state_pressed}, rstPressed);
-                rstSld.addState(new int[]{android.R.attr.state_focused}, rstPressed);
-                rstSld.addState(new int[]{}, new ColorDrawable(Color.TRANSPARENT));
-                resetBtn.setBackground(rstSld);
-
-                resetBtn.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        MainActivity.resetScreenTimeToday(SettingsActivity.this);
-                        counterText.setText(I18n.get(I18n.KEY_SCREEN_TIME_COUNTER, curLangCode) + ": 0m");
-                        AlertDialog.Builder okDialog = new AlertDialog.Builder(SettingsActivity.this, tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK);
-                        okDialog.setTitle(I18n.get(I18n.KEY_SCREEN_TIME_RESET_TITLE, curLangCode));
-                        okDialog.setMessage(I18n.get(I18n.KEY_SCREEN_TIME_RESET_OK, curLangCode));
-                        okDialog.setPositiveButton("OK", null);
-                        AlertDialog alert = okDialog.create();
-                        alert.show();
-                        if (alert.getWindow() != null) {
-                            alert.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-                        }
-                        Button pBtn = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                        if (pBtn != null) {
-                            pBtn.setTextColor(tokens.accent);
-                            pBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-                        }
-                    }
-                });
-                timeoutHeaderBox.addView(resetBtn);
-
-                View div = new View(SettingsActivity.this);
-                div.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (1 * density)));
-                div.setBackgroundColor(tokens.border);
-                timeoutHeaderBox.addView(div);
-
                 String curId = String.valueOf(Math.max(0, currentTimeout));
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -628,7 +564,6 @@ public class SettingsActivity extends Activity {
                     I18n.get(I18n.KEY_TIMEOUT, curLangCode),
                     options,
                     curId,
-                    timeoutHeaderBox,
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
@@ -657,16 +592,10 @@ public class SettingsActivity extends Activity {
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
                 options.add(new SingleChoiceSelectorDialog.Option("none", I18n.get(I18n.KEY_BUDGET_OFF, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("30m", "30m"));
                 options.add(new SingleChoiceSelectorDialog.Option("1h", "1h"));
                 options.add(new SingleChoiceSelectorDialog.Option("2h", "2h"));
                 options.add(new SingleChoiceSelectorDialog.Option("3h", "3h"));
                 options.add(new SingleChoiceSelectorDialog.Option("4h", "4h"));
-                options.add(new SingleChoiceSelectorDialog.Option("6h", "6h"));
-                options.add(new SingleChoiceSelectorDialog.Option("8h", "8h"));
-                options.add(new SingleChoiceSelectorDialog.Option("12h", "12h"));
-                options.add(new SingleChoiceSelectorDialog.Option("24h", "24h"));
-                options.add(new SingleChoiceSelectorDialog.Option("custom", I18n.get(I18n.KEY_BUDGET_CUSTOM, curLangCode)));
 
                 String curId = (currentBudgetMins <= 0) ? "none" : (currentBudgetMins % 60 == 0 ? (currentBudgetMins / 60) + "h" : currentBudgetMins + "m");
                 SingleChoiceSelectorDialog.show(
@@ -680,16 +609,10 @@ public class SettingsActivity extends Activity {
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
                             int mins = 0;
                             if ("none".equals(selected.id) || "disabled".equals(selected.id)) mins = 0;
-                            else if ("30m".equals(selected.id)) mins = 30;
                             else if ("1h".equals(selected.id)) mins = 60;
                             else if ("2h".equals(selected.id)) mins = 120;
                             else if ("3h".equals(selected.id)) mins = 180;
                             else if ("4h".equals(selected.id)) mins = 240;
-                            else if ("6h".equals(selected.id)) mins = 360;
-                            else if ("8h".equals(selected.id)) mins = 480;
-                            else if ("12h".equals(selected.id)) mins = 720;
-                            else if ("24h".equals(selected.id)) mins = 1440;
-                            else if ("custom".equals(selected.id)) { showCustomBudgetDialog(tokens, curLangCode); return; }
 
                             preferences.edit().putInt(KEY_BUDGET, mins).apply();
                             buildSettingsUI();
@@ -702,25 +625,19 @@ public class SettingsActivity extends Activity {
 
         final int curFontScale = preferences.getInt("pref_font_scale", 100);
         String curFontScaleDisplay;
-        if (curFontScale == 70) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XS, curLangCode);
-        else if (curFontScale == 85) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_SMALL, curLangCode);
+        if (curFontScale == 85) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_SMALL, curLangCode);
         else if (curFontScale == 115) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_LARGE, curLangCode);
         else if (curFontScale == 130) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XL, curLangCode);
-        else if (curFontScale == 150) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XXL, curLangCode);
-        else if (curFontScale == 175) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_MAX, curLangCode);
         else curFontScaleDisplay = I18n.get(I18n.KEY_FONT_NORMAL, curLangCode);
 
         addSelectorRow(I18n.get(I18n.KEY_FONT_SIZE, curLangCode), curFontScaleDisplay, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("70", I18n.get(I18n.KEY_FONT_XS, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("85", I18n.get(I18n.KEY_FONT_SMALL, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("100", I18n.get(I18n.KEY_FONT_NORMAL, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("115", I18n.get(I18n.KEY_FONT_LARGE, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option("130", I18n.get(I18n.KEY_FONT_XL, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("150", I18n.get(I18n.KEY_FONT_XXL, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("175", I18n.get(I18n.KEY_FONT_MAX, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -789,34 +706,36 @@ public class SettingsActivity extends Activity {
         }, tokens);
 
         final boolean glyphSupported = NothingGlyphManager.isGlyphHardwarePresent();
-        final boolean glyphMaster = NothingGlyphManager.isMasterEnabled(this);
-        addToggleRow(I18n.get(I18n.KEY_GLYPH_INTERFACE, curLangCode) + (glyphSupported ? "" : " (AW210xx)"), glyphMaster ? "[ ON ]" : "[ OFF ]", glyphMaster, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                boolean nextState = !glyphMaster;
-                NothingGlyphManager.setMasterEnabled(SettingsActivity.this, nextState);
-                buildSettingsUI();
+        if (glyphSupported) {
+            final boolean glyphMaster = NothingGlyphManager.isMasterEnabled(this);
+            addToggleRow(I18n.get(I18n.KEY_GLYPH_INTERFACE, curLangCode), glyphMaster ? "[ ON ]" : "[ OFF ]", glyphMaster, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    boolean nextState = !glyphMaster;
+                    NothingGlyphManager.setMasterEnabled(SettingsActivity.this, nextState);
+                    buildSettingsUI();
+                }
+            }, tokens);
+
+            if (glyphMaster) {
+                final boolean flipActive = NothingGlyphManager.isFlipToGlyphEnabled(this);
+                addToggleRow("  " + I18n.get(I18n.KEY_FLIP_TO_GLYPH, curLangCode), flipActive ? "[ ON ]" : "[ OFF ]", flipActive, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        NothingGlyphManager.setFlipToGlyphEnabled(SettingsActivity.this, !flipActive);
+                        buildSettingsUI();
+                    }
+                }, tokens);
+
+                final boolean essentialActive = NothingGlyphManager.isEssentialGlyphEnabled(this);
+                addToggleRow("  " + I18n.get(I18n.KEY_ESSENTIAL_GLYPH, curLangCode), essentialActive ? "[ ON ]" : "[ OFF ]", essentialActive, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        NothingGlyphManager.setEssentialGlyphEnabled(SettingsActivity.this, !essentialActive);
+                        buildSettingsUI();
+                    }
+                }, tokens);
             }
-        }, tokens);
-
-        if (glyphMaster) {
-            final boolean flipActive = NothingGlyphManager.isFlipToGlyphEnabled(this);
-            addToggleRow("  " + I18n.get(I18n.KEY_FLIP_TO_GLYPH, curLangCode), flipActive ? "[ ON ]" : "[ OFF ]", flipActive, new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    NothingGlyphManager.setFlipToGlyphEnabled(SettingsActivity.this, !flipActive);
-                    buildSettingsUI();
-                }
-            }, tokens);
-
-            final boolean essentialActive = NothingGlyphManager.isEssentialGlyphEnabled(this);
-            addToggleRow("  " + I18n.get(I18n.KEY_ESSENTIAL_GLYPH, curLangCode), essentialActive ? "[ ON ]" : "[ OFF ]", essentialActive, new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    NothingGlyphManager.setEssentialGlyphEnabled(SettingsActivity.this, !essentialActive);
-                    buildSettingsUI();
-                }
-            }, tokens);
         }
 
         // ==========================================
@@ -1395,12 +1314,23 @@ public class SettingsActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("5", "5s"));
                 options.add(new SingleChoiceSelectorDialog.Option("10", "10s"));
 
+                float density = getResources().getDisplayMetrics().density;
+                TextView helpBox = new TextView(SettingsActivity.this);
+                helpBox.setText(isEs
+                    ? "Temporizador consciente que retrasa la apertura de aplicaciones para evitar impulsos compulsivos o distracciones."
+                    : "Mindful countdown delay before opening applications to avoid impulsive or habitual distractions.");
+                helpBox.setTextColor(tokens.textMuted);
+                helpBox.setTextSize(12);
+                helpBox.setTypeface(Typeface.MONOSPACE);
+                helpBox.setPadding(0, 0, 0, (int) (12 * density));
+
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
                     tokens,
                     I18n.get(I18n.KEY_FRICTION_TITLE, curLangCode),
                     options,
                     String.valueOf(frictionSecs),
+                    helpBox,
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
@@ -1742,12 +1672,23 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        addSelectorRow(I18n.get(I18n.KEY_NFC_PAYMENTS, curLangCode), NfcPaymentSandboxManager.getSummaryStatus(this, curLangCode), new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                NfcPaymentSandboxManager.showDiagnosticsDialog(SettingsActivity.this, tokens, curLangCode);
-            }
-        }, tokens);
+        final boolean nfcSupported = getNfcHardwareState();
+        if (nfcSupported) {
+            addButtonRow(isEs ? "Ajustes de pagos NFC" : "NFC Payment Settings", I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS));
+                    } catch (Throwable e) {
+                        try {
+                            startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));
+                        } catch (Throwable t) {
+                            Toast.makeText(SettingsActivity.this, isEs ? "Ajustes NFC no disponibles" : "NFC settings not available", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+            }, tokens);
+        }
     }
 
     private String getBlockedCountSummary(Context context, String curLangCode) {
@@ -1838,8 +1779,6 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        addInfoRow(I18n.get(I18n.KEY_ACTIVE_CHANNEL, curLangCode), curChannel.getCode(), tokens);
-
         addButtonRow("Keyboard", "Input method", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1900,15 +1839,7 @@ public class SettingsActivity extends Activity {
         addButtonRow("GitHub Releases", I18n.get(I18n.KEY_CHECK_UPDATES, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String targetUrl = curChannel.getReleaseUrl();
-                Toast.makeText(SettingsActivity.this, "Opening release page for " + curChannel.getCode() + "...", Toast.LENGTH_SHORT).show();
-                try {
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl));
-                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(browserIntent);
-                } catch (Exception e) {
-                    Toast.makeText(SettingsActivity.this, "Release URL: " + targetUrl, Toast.LENGTH_LONG).show();
-                }
+                OtaUpdateManager.checkForUpdates(SettingsActivity.this, tokens, curChannel, curLangCode);
             }
         }, tokens);
 
@@ -1923,25 +1854,19 @@ public class SettingsActivity extends Activity {
         addButtonRow(I18n.get(I18n.KEY_CREATE_SNAPSHOT, curLangCode), I18n.get(I18n.KEY_CREATE_BACKUP, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                triggerBackupSnapshot();
+                BackupRestoreManager.showCreateBackupDialog(SettingsActivity.this, tokens, curLangCode, preferences);
             }
         }, tokens);
 
         addButtonRow(I18n.get(I18n.KEY_RESTORE_SNAPSHOT, curLangCode), I18n.get(I18n.KEY_RESTORE_BACKUP, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showConfirmDialog(
-                    I18n.get(I18n.KEY_CONFIRM_RESTORE_TITLE, curLangCode),
-                    I18n.get(I18n.KEY_CONFIRM_RESTORE_MSG, curLangCode),
-                    I18n.get(I18n.KEY_ACTION_RESTORE, curLangCode),
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            triggerBackupRestore();
-                        }
-                    },
-                    tokens
-                );
+                BackupRestoreManager.showRestoreBackupDialog(SettingsActivity.this, tokens, curLangCode, preferences, new Runnable() {
+                    @Override
+                    public void run() {
+                        buildSettingsUI();
+                    }
+                });
             }
         }, tokens);
 
@@ -1971,10 +1896,26 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
+        final boolean isEsLang = "es".equalsIgnoreCase(curLangCode);
+        addButtonRow(isEsLang ? "Guía de funciones esenciales" : "Essential Features Guide", I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                QuickStartGuideDialog.show(SettingsActivity.this, tokens, curLangCode);
+            }
+        }, tokens);
+
+
         addButtonRow(I18n.get(I18n.KEY_DEV_SETTINGS, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
+                    try {
+                        Settings.Global.putInt(getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+                    } catch (Throwable ignored) {}
+                    try {
+                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "development_settings_enabled", "1");
+                    } catch (Throwable ignored) {}
+
                     Intent devIntent = new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
                     devIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(devIntent);
@@ -1987,15 +1928,52 @@ public class SettingsActivity extends Activity {
         addButtonRow(I18n.get(I18n.KEY_HARDWARE_TEST, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:*#*#4636#*#*"));
-                    dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(dialIntent);
-                } catch (Exception e) {
-                    Toast.makeText(SettingsActivity.this, "Could not open Testing Menu", Toast.LENGTH_SHORT).show();
-                }
+                openTestingSettingsMenu();
             }
         }, tokens);
+    }
+
+    private void openTestingSettingsMenu() {
+        // 1. Direct launch to AOSP TestingSettingsActivity
+        try {
+            Intent directIntent = new Intent(Intent.ACTION_MAIN);
+            directIntent.setClassName("com.android.settings", "com.android.settings.Settings$TestingSettingsActivity");
+            directIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(directIntent);
+            return;
+        } catch (Throwable ignored) {}
+
+        // 2. Broadcast secret code to TestingSettingsBroadcastReceiver
+        try {
+            Intent secretIntent = new Intent("android.telephony.action.SECRET_CODE", Uri.parse("android_secret_code://4636"));
+            secretIntent.setPackage("com.android.settings");
+            sendBroadcast(secretIntent);
+            return;
+        } catch (Throwable ignored) {}
+
+        // 3. Direct launch to RadioInfo
+        try {
+            Intent radioIntent = new Intent(Intent.ACTION_MAIN);
+            radioIntent.setClassName("com.android.settings", "com.android.settings.RadioInfo");
+            radioIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(radioIntent);
+            return;
+        } catch (Throwable ignored) {}
+
+        // 4. Privileged am start via shell/su
+        try {
+            SafeCommandExecutor.executePrivileged("am", "start", "-n", "com.android.settings/.Settings$TestingSettingsActivity");
+            return;
+        } catch (Throwable ignored) {}
+
+        // 5. Fallback: dialer
+        try {
+            Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:*#*#4636#*#*"));
+            dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(dialIntent);
+        } catch (Throwable e) {
+            Toast.makeText(this, "Could not open Testing Menu", Toast.LENGTH_SHORT).show();
+        }
     }
 
     // ==========================================
@@ -2372,131 +2350,7 @@ public class SettingsActivity extends Activity {
         } catch (Throwable ignored) {}
     }
 
-    private void triggerBackupSnapshot() {
-        try {
-            JSONObject json = new JSONObject();
-            Map<String, ?> all = preferences.getAll();
-            for (Map.Entry<String, ?> entry : all.entrySet()) {
-                json.put(entry.getKey(), entry.getValue());
-            }
-            String payload = json.toString();
-            String checksum = sha256Hex(payload);
 
-            JSONObject envelope = new JSONObject();
-            envelope.put("version", 1);
-            envelope.put("sha256", checksum);
-            envelope.put("payload", payload);
-
-            File baseDir = getExternalFilesDir(null);
-            if (baseDir == null) baseDir = getFilesDir();
-            File dir = new File(baseDir, "backup");
-            if (!dir.exists()) dir.mkdirs();
-
-            File jsonFile = new File(dir, "tontos_settings.json");
-            FileWriter writer = new FileWriter(jsonFile);
-            writer.write(envelope.toString(2));
-            writer.close();
-
-            File bakFile = new File(dir, "tontos_latest.tontbak");
-            FileWriter bakWriter = new FileWriter(bakFile);
-            bakWriter.write(envelope.toString());
-            bakWriter.close();
-
-            Toast.makeText(this, "Backup saved to: " + bakFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Backup error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private static String sha256Hex(String input) {
-        try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] digest = md.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder sb = new StringBuilder(digest.length * 2);
-            for (byte b : digest) sb.append(String.format(Locale.ROOT, "%02x", b));
-            return sb.toString();
-        } catch (Exception e) {
-            return "";
-        }
-    }
-
-    private void triggerBackupRestore() {
-        try {
-            File baseDir = getExternalFilesDir(null);
-            if (baseDir == null) baseDir = getFilesDir();
-            File dir = new File(baseDir, "backup");
-            File bakFile = new File(dir, "tontos_latest.tontbak");
-            if (!bakFile.exists()) {
-                bakFile = new File(dir, "tontos_settings.json");
-            }
-
-            if (bakFile.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(bakFile));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) sb.append(line);
-                reader.close();
-
-                JSONObject envelope = new JSONObject(sb.toString());
-                if (!envelope.has("payload") || !envelope.has("sha256")) {
-                    Toast.makeText(this, "Restore error: missing integrity envelope", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                String payload = envelope.getString("payload");
-                if (!sha256Hex(payload).equalsIgnoreCase(envelope.getString("sha256"))) {
-                    Toast.makeText(this, "Restore error: checksum mismatch (tampered or corrupt backup)", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                JSONObject obj = new JSONObject(payload);
-                restorePrefsFromJson(obj);
-            } else {
-                Toast.makeText(this, "No backup file found in " + dir.getAbsolutePath(), Toast.LENGTH_SHORT).show();
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, "Restore error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void restorePrefsFromJson(JSONObject obj) {
-        SharedPreferences.Editor edit = preferences.edit();
-        try {
-            if (obj.has(KEY_THEME)) {
-                String themeId = obj.getString(KEY_THEME);
-                ThemePreset preset = ThemePreset.fromId(themeId);
-                if (preset != null) edit.putString(KEY_THEME, preset.getId());
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_OTA_CHANNEL)) {
-                UpdateChannel ch = UpdateChannel.fromCode(obj.getString(KEY_OTA_CHANNEL));
-                if (ch != null) edit.putString(KEY_OTA_CHANNEL, ch.getCode());
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_LANGUAGE)) {
-                String lang = obj.getString(KEY_LANGUAGE);
-                if (lang != null && lang.matches("[a-z]{2}(-[A-Z]{2})?")) edit.putString(KEY_LANGUAGE, lang);
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_BUDGET)) {
-                int budget = obj.getInt(KEY_BUDGET);
-                if (budget >= 0 && budget <= 1440) edit.putInt(KEY_BUDGET, budget);
-            }
-        } catch (Exception ignored) {}
-        try {
-            if (obj.has(KEY_PINNED_ORDER)) {
-                String order = obj.getString(KEY_PINNED_ORDER);
-                if (order != null && order.length() <= 4096 && order.matches("[A-Za-z0-9_.,\\-]*")) {
-                    edit.putString(KEY_PINNED_ORDER, order);
-                }
-            }
-        } catch (Exception ignored) {}
-        edit.apply();
-
-        buildSettingsUI();
-        Toast.makeText(this, "Backup restored successfully!", Toast.LENGTH_LONG).show();
-    }
 
     private Ringtone currentPlayingPreview = null;
 
@@ -2642,6 +2496,23 @@ public class SettingsActivity extends Activity {
         } else {
             preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
+        ThemeTokens tokens = currentTokens();
+        if (requestCode == BackupRestoreManager.REQUEST_CODE_SAF_CREATE && resultCode == RESULT_OK && data != null) {
+            BackupRestoreManager.handleSafCreateResult(this, data.getData(), tokens, curLangCode);
+        } else if (requestCode == BackupRestoreManager.REQUEST_CODE_SAF_RESTORE && resultCode == RESULT_OK && data != null) {
+            BackupRestoreManager.handleSafRestoreResult(this, data.getData(), tokens, curLangCode, preferences, new Runnable() {
+                @Override
+                public void run() {
+                    buildSettingsUI();
+                }
+            });
         }
     }
 

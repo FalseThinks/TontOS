@@ -229,6 +229,12 @@ public final class SystemProvisioningManager {
                     SafeCommandExecutor.executePrivileged("settings", "put", "system", "notification_sound", "content://media/internal/audio/media/7");
                     SafeCommandExecutor.executePrivileged("settings", "put", "system", "alarm_alert", "content://media/internal/audio/media/9");
 
+                    // 8. Enable Developer Options by default
+                    try {
+                        android.provider.Settings.Global.putInt(appContext.getContentResolver(), android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
+                    } catch (Throwable ignored) {}
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "development_settings_enabled", "1");
+
                     Log.i(TAG, "Initial TontOS system provisioning, debloat and hardening completed successfully.");
                 } catch (Throwable t) {
                     Log.w(TAG, "Provisioning step encountered error: " + t.getMessage());
