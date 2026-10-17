@@ -161,7 +161,11 @@ mod tests {
                 &tokens.nav_bg,
             ] {
                 assert!(color.starts_with('#'), "Color {color} must start with #");
-                assert_eq!(color.len(), 7, "Color {color} must be 7 characters (#RRGGBB)");
+                assert_eq!(
+                    color.len(),
+                    7,
+                    "Color {color} must be 7 characters (#RRGGBB)"
+                );
                 assert!(
                     color[1..].chars().all(|c| c.is_ascii_hexdigit()),
                     "Color {color} must contain valid hex digits"
@@ -170,4 +174,3 @@ mod tests {
         }
     }
 }
-

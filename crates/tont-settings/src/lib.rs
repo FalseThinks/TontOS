@@ -306,4 +306,3 @@ mod tests {
         assert!(!conn.mobile_data_enabled);
     }
 }
-
