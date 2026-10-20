@@ -189,4 +189,3 @@ impl TontSettings {
         self.default_apps.phone_app = app_id;
     }
 }
-

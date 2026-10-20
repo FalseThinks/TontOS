@@ -146,4 +146,3 @@ impl TelephonyManager {
         &self.sms_inbox
     }
 }
-

@@ -1,6 +1,4 @@
-use tont_common::{
-    AppLifecycleState, BatteryInfo, BatteryStatus, PowerState, SyncWindowConfig,
-};
+use tont_common::{AppLifecycleState, BatteryInfo, BatteryStatus, PowerState, SyncWindowConfig};
 
 #[test]
 fn test_sync_window_default() {

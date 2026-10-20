@@ -27,20 +27,28 @@ fn test_custom_ringtone_validation() {
     let mut settings = TontSettings::default();
 
     // Valid audio extensions
-    assert!(settings
-        .set_custom_ringtone("/home/user/Music/my_ring.ogg".to_string())
-        .is_ok());
-    assert!(settings
-        .set_custom_ringtone("/home/user/Music/custom.mp3".to_string())
-        .is_ok());
+    assert!(
+        settings
+            .set_custom_ringtone("/home/user/Music/my_ring.ogg".to_string())
+            .is_ok()
+    );
+    assert!(
+        settings
+            .set_custom_ringtone("/home/user/Music/custom.mp3".to_string())
+            .is_ok()
+    );
 
     // Invalid non-audio file
-    assert!(settings
-        .set_custom_ringtone("/etc/passwd".to_string())
-        .is_err());
-    assert!(settings
-        .set_custom_ringtone("malicious.sh".to_string())
-        .is_err());
+    assert!(
+        settings
+            .set_custom_ringtone("/etc/passwd".to_string())
+            .is_err()
+    );
+    assert!(
+        settings
+            .set_custom_ringtone("malicious.sh".to_string())
+            .is_err()
+    );
 }
 
 #[test]
@@ -121,10 +129,12 @@ fn test_connectivity_toggles_and_airplane_mode() {
 
 #[test]
 fn test_lock_screen_shortcuts_reconfiguration() {
-    let mut lock = LockScreenConfig::default();
-    lock.shortcut_left = "PHONE".to_string();
-    lock.shortcut_right = "NONE".to_string();
-    lock.clock_style = "ANALOG_MINIMAL".to_string();
+    let lock = LockScreenConfig {
+        shortcut_left: "PHONE".to_string(),
+        shortcut_right: "NONE".to_string(),
+        clock_style: "ANALOG_MINIMAL".to_string(),
+        ..Default::default()
+    };
 
     assert_eq!(lock.shortcut_left, "PHONE");
     assert_eq!(lock.shortcut_right, "NONE");

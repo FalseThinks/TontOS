@@ -44,16 +44,12 @@ DISK_SWAP_GB=$(( (DISK_SWAP_KB + 524288) / 1048576 ))
 
 # Automatically activate existing disk swapfile if available and inactive
 if (( DISK_SWAP_GB == 0 )) && [[ -f "/swapfile_aosp" ]]; then
-    if swapon -p 10 /swapfile_aosp 2>/dev/null; then
-        DISK_SWAP_KB=$(awk '$2 == "file" || ($2 == "partition" && $1 !~ /zram/) {sum += $3} END {print int(sum)}' /proc/swaps 2>/dev/null || echo 0)
-        DISK_SWAP_GB=$(( (DISK_SWAP_KB + 524288) / 1048576 ))
-    elif command -v sudo >/dev/null 2>&1; then
-        # Try non-interactive sudo (works in WSL2 passwordless sudo and cached sudo)
-        if sudo -n swapon -p 10 /swapfile_aosp 2>/dev/null; then
-            DISK_SWAP_KB=$(awk '$2 == "file" || ($2 == "partition" && $1 !~ /zram/) {sum += $3} END {print int(sum)}' /proc/swaps 2>/dev/null || echo 0)
-            DISK_SWAP_GB=$(( (DISK_SWAP_KB + 524288) / 1048576 ))
-        fi
+    SCRIPT_DIR_MEM="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+    if [[ -x "$SCRIPT_DIR_MEM/setup_swap.sh" ]]; then
+        "$SCRIPT_DIR_MEM/setup_swap.sh" 2>/dev/null || true
     fi
+    DISK_SWAP_KB=$(awk '$2 == "file" || ($2 == "partition" && $1 !~ /zram/) {sum += $3} END {print int(sum)}' /proc/swaps 2>/dev/null || echo 0)
+    DISK_SWAP_GB=$(( (DISK_SWAP_KB + 524288) / 1048576 ))
 fi
 
 get_profile_name() {

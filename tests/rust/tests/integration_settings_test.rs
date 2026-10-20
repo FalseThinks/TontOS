@@ -50,9 +50,14 @@ fn test_backup_and_settings_persistence_envelope() {
         category: AppCategory::Utility,
     }];
 
-    let backup =
-        BackupPackage::create(settings.clone(), vec![], apps, 1700000000, "x86_64".to_string())
-            .unwrap();
+    let backup = BackupPackage::create(
+        settings.clone(),
+        vec![],
+        apps,
+        1700000000,
+        "x86_64".to_string(),
+    )
+    .unwrap();
 
     assert!(backup.verify_integrity());
     assert_eq!(

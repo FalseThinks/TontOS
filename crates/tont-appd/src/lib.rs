@@ -92,4 +92,3 @@ impl CgroupFreezer {
         Ok(false)
     }
 }
-

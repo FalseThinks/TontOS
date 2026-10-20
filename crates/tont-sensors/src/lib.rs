@@ -69,4 +69,3 @@ impl SensorHub {
             .map_err(|e| SensorError::Parse(e.to_string()))
     }
 }
-

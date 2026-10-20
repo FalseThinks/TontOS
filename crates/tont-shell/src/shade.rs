@@ -151,4 +151,3 @@ impl QuickShade {
         self.is_open = false;
     }
 }
-

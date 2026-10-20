@@ -1,6 +1,5 @@
 use tont_input::{
-    AudioMixerController, HardwareKey, KeyAction, KeyProcessor, RawInputEvent, EV_KEY,
-    KEY_VOLUMEUP,
+    AudioMixerController, EV_KEY, HardwareKey, KEY_VOLUMEUP, KeyAction, KeyProcessor, RawInputEvent,
 };
 
 #[test]

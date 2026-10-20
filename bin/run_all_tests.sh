@@ -13,11 +13,11 @@ FAILED=0
 
 # Step 1: Rust System Daemons (14 Crates)
 echo ""
-echo "--> [1/4] Running Rust Workspace Tests (cargo test --workspace)..."
-if (cd "$ROOT_DIR" && cargo test --workspace); then
-    echo "  [PASS] All Rust daemons & settings passed."
+echo "--> [1/4] Running Rust Formatting & Workspace Tests..."
+if (cd "$ROOT_DIR" && cargo fmt --all -- --check && cargo test --workspace); then
+    echo "  [PASS] All Rust daemons & settings passed formatting & tests."
 else
-    echo "  [FAIL] Rust workspace tests failed."
+    echo "  [FAIL] Rust workspace tests or formatting failed."
     FAILED=1
 fi
 
