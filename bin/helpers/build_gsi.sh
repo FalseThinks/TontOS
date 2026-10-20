@@ -41,27 +41,27 @@ BUILD_JOBS="${BUILD_JOBS:-$SUGGESTED_JOBS}"
 
 show_help() {
     cat <<EOF
-Uso: $0 [OPCIONES]
+Usage: $0 [OPTIONS]
 
-Compilación automatizada de GSI (Generic System Image) para TontOS / Android Treble.
+Automated GSI (Generic System Image) build engine for TontOS / Android Treble.
 
-Arquitecturas soportadas:
-  --arch=arm64       ARM 64-bit universal (Smartphones modernos: Snapdragon, MediaTek, Tensor) [DEFAULT]
-  --arch=arm         ARM 32-bit universal (Móviles de entrada / Android Go / IoT)
-  --arch=x86_64      x86 64-bit universal (Emuladores, tablets x86, PCs)
-  --arch=all         Compilar todas las arquitecturas secuencialmente (arm64, arm, x86_64)
+Supported Architectures:
+  --arch=arm64       ARM 64-bit universal (Modern smartphones: Snapdragon, MediaTek, Tensor) [DEFAULT]
+  --arch=arm         ARM 32-bit universal (Entry-level devices / Android Go / IoT)
+  --arch=x86_64      x86 64-bit universal (Emulators, x86 tablets, PCs)
+  --arch=all         Build all architectures sequentially (arm64, arm, x86_64)
 
-Opciones:
-  --product=tontos   GSI nativa TontOS (con Launcher y suite FOSS integrados) [DEFAULT]
-  --product=aosp     GSI AOSP pura con overlay de vendor
-  --target=TARGET    Sobrescribir el target lunch de AOSP
-  --jobs=N, -j N     Número de hilos de compilación (por defecto: $BUILD_JOBS)
-  --docker           Compilar dentro del contenedor Docker aislado (Dockerfile.aosp)
-  --skip-apk         Omitir compilación previa de TontOSLauncher.apk
-  --no-compress      No comprimir con xz el system.img final
-  --clean            Limpiar directorio out antes de compilar
-  --dry-run          Validar lunch y sincronización de vendor sin ejecutar 'm systemimage'
-  --help, -h         Mostrar esta ayuda
+Options:
+  --product=tontos   Native TontOS GSI (with Launcher and bundled FOSS suite) [DEFAULT]
+  --product=aosp     Pure AOSP GSI with vendor overlay
+  --target=TARGET    Override AOSP lunch target
+  --jobs=N, -j N     Number of build threads (default: $BUILD_JOBS)
+  --docker           Compile inside isolated Docker container (Dockerfile.aosp)
+  --skip-apk         Skip pre-build of TontOSLauncher.apk
+  --no-compress      Do not compress final system.img with xz
+  --clean            Clean out directory before compiling
+  --dry-run          Validate lunch combo and vendor synchronization without executing 'm systemimage'
+  --help, -h         Show this help message
 EOF
     exit 0
 }
@@ -82,8 +82,8 @@ while [[ $# -gt 0 ]]; do
         --dry-run) DRY_RUN=true ;;
         --help|-h) show_help ;;
         *)
-            echo "Opción desconocida: $1" >&2
-            echo "Usa $0 --help para ver las opciones disponibles." >&2
+            echo "Unknown option: $1" >&2
+            echo "Run '$0 --help' for available options." >&2
             exit 1
             ;;
     esac
@@ -103,7 +103,7 @@ resolve_lunch_target() {
             arm)    echo "tontos_gsi_arm-trunk_staging-userdebug" ;;
             x86_64) echo "tontos_gsi_x86_64-trunk_staging-userdebug" ;;
             *)
-                echo "ERROR: Arquitectura no soportada: $target_arch" >&2
+                echo "ERROR: Unsupported architecture: $target_arch" >&2
                 exit 1
                 ;;
         esac
@@ -113,7 +113,7 @@ resolve_lunch_target() {
             arm)    echo "aosp_arm-trunk_staging-userdebug" ;;
             x86_64) echo "aosp_x86_64-trunk_staging-userdebug" ;;
             *)
-                echo "ERROR: Arquitectura no soportada: $target_arch" >&2
+                echo "ERROR: Unsupported architecture: $target_arch" >&2
                 exit 1
                 ;;
         esac
@@ -121,13 +121,13 @@ resolve_lunch_target() {
 }
 
 stage_vendor_files() {
-    echo "[*] Sincronizando componentes y vendor tree en AOSP ($AOSP_DIR)..."
+    echo "[*] Synchronizing components and vendor tree into AOSP ($AOSP_DIR)..."
     local vendor_dir="$AOSP_DIR/vendor/tontos"
     mkdir -p "$vendor_dir/apps/TontOSLauncher/src"
     mkdir -p "$vendor_dir/apps/prebuilts"
     mkdir -p "$vendor_dir/products"
 
-    # 1. Launcher APK y fuentes
+    # 1. Launcher APK and source
     if [[ -f "$ROOT_DIR/launcher_apk/tontos-launcher.apk" ]]; then
         cp -f "$ROOT_DIR/launcher_apk/tontos-launcher.apk" "$vendor_dir/apps/TontOSLauncher/TontOSLauncher.apk"
     fi
@@ -151,7 +151,7 @@ stage_vendor_files() {
         cp -f "$ROOT_DIR/platform/config/"*.xml "$vendor_dir/products/" 2>/dev/null || true
     fi
 
-    # 4. FOSS prebuilts si existen
+    # 4. FOSS prebuilts if present
     if [[ -d "$ROOT_DIR/apps" ]]; then
         cp -rf "$ROOT_DIR/apps/"*.apk "$vendor_dir/apps/prebuilts/" 2>/dev/null || true
     fi
@@ -165,33 +165,33 @@ build_single_gsi() {
     mkdir -p "$arch_out_dir"
 
     echo "=========================================================="
-    echo " Compilando TontOS GSI para arquitectura: $target_arch"
-    echo " Target Lunch:    $lunch_target"
-    echo " Directorio AOSP: $AOSP_DIR"
-    echo " Salida:          $arch_out_dir"
-    echo " Paralelismo:     -j$BUILD_JOBS ($TOTAL_CORES núcleos detectados)"
-    echo " Modo de build:   $([ "$USE_DOCKER" = true ] && echo "Docker" || echo "Host nativo")"
+    echo " Building TontOS GSI for Architecture: $target_arch"
+    echo " Lunch Target:   $lunch_target"
+    echo " AOSP Directory: $AOSP_DIR"
+    echo " Output Dir:     $arch_out_dir"
+    echo " Parallelism:    -j$BUILD_JOBS ($TOTAL_CORES cores detected)"
+    echo " Build Mode:     $([ "$USE_DOCKER" = true ] && echo "Docker" || echo "Native Host")"
     echo "=========================================================="
 
     if [[ "$CLEAN_BUILD" = true ]]; then
-        echo "[*] Limpiando out/target/product en AOSP..."
+        echo "[*] Cleaning out/target/product in AOSP..."
         rm -rf "$AOSP_DIR/out/target/product"
     fi
 
     if [[ "$DRY_RUN" = true ]]; then
-        echo "[*] MODO DRY-RUN: Validando configuración de entorno y lunch..."
+        echo "[*] DRY-RUN MODE: Validating environment setup and lunch..."
         (
             cd "$AOSP_DIR"
             # shellcheck disable=SC1091
             source build/envsetup.sh
             lunch "$lunch_target"
         )
-        echo "[+] Validación de target $lunch_target completada con éxito."
+        echo "[+] Validation of target $lunch_target completed successfully."
         return 0
     fi
 
-    # Compilación de imagen de sistema GSI
-    echo "[*] Iniciando compilación de 'systemimage' para $lunch_target..."
+    # System image compilation
+    echo "[*] Initiating 'systemimage' compilation for $lunch_target..."
     if [[ "$USE_DOCKER" = true ]]; then
         "$SCRIPT_DIR/docker_build_rom.sh" /bin/bash -c \
             "source build/envsetup.sh && lunch $lunch_target && m -j$BUILD_JOBS systemimage"
@@ -205,8 +205,8 @@ build_single_gsi() {
         )
     fi
 
-    # Localizar el archivo system.img generado
-    echo "[*] Localizando system.img generado..."
+    # Locate generated system.img
+    echo "[*] Locating generated system.img..."
     local system_img=""
     local candidate_dirs=(
         "$AOSP_DIR/out/target/product/tontos_gsi_$target_arch"
@@ -227,26 +227,26 @@ build_single_gsi() {
     fi
 
     if [[ -z "$system_img" || ! -f "$system_img" ]]; then
-        echo "ERROR: No se encontró system.img tras la compilación de $lunch_target" >&2
+        echo "ERROR: system.img not found after building $lunch_target" >&2
         exit 1
     fi
 
     local gsi_output_img="$arch_out_dir/tontos-gsi-$target_arch.img"
-    echo "[+] Copiando $system_img -> $gsi_output_img"
+    echo "[+] Copying $system_img -> $gsi_output_img"
     cp -f "$system_img" "$gsi_output_img"
 
-    # Verificar formato de la imagen generada
-    echo "[*] Información de imagen:"
+    # Verify generated image format
+    echo "[*] Image metadata:"
     file "$gsi_output_img" || true
     ls -lh "$gsi_output_img"
 
-    # Generar script de flasheo para el usuario
+    # Generate flashing script for user
     local flash_script="$arch_out_dir/flash_gsi.sh"
     cat > "$flash_script" <<FLASH_EOF
 #!/usr/bin/env bash
 # ==============================================================================
-# Script de flasheo rápido TontOS GSI ($target_arch)
-# Conecta el teléfono por USB con USB Debugging y OEM Unlocked habilitado.
+# TontOS GSI Quick Flash Script ($target_arch)
+# Connect your smartphone via USB with USB Debugging & OEM Unlocked enabled.
 # ==============================================================================
 set -e
 
@@ -254,76 +254,76 @@ IMG_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
 IMG_FILE="\$IMG_DIR/tontos-gsi-$target_arch.img"
 
 if [[ ! -f "\$IMG_FILE" && -f "\$IMG_FILE.xz" ]]; then
-    echo "[*] Descomprimiendo \$IMG_FILE.xz..."
+    echo "[*] Decompressing \$IMG_FILE.xz..."
     xz -d -k "\$IMG_FILE.xz"
 fi
 
 if [[ ! -f "\$IMG_FILE" ]]; then
-    echo "ERROR: \$IMG_FILE no encontrado." >&2
+    echo "ERROR: \$IMG_FILE not found." >&2
     exit 1
 fi
 
-echo "=== Flasheando TontOS GSI ($target_arch) ==="
-echo "1. Reiniciando a fastbootd..."
+echo "=== Flashing TontOS GSI ($target_arch) ==="
+echo "1. Rebooting to fastbootd..."
 adb reboot fastboot || fastboot reboot fastboot
 
-echo "2. Esperando dispositivo fastboot..."
+echo "2. Waiting for fastboot device..."
 fastboot wait-for-device
 
-echo "3. Flasheando partición system..."
+echo "3. Flashing system partition..."
 fastboot flash system "\$IMG_FILE"
 
-echo "4. ¿Deseas hacer wipe data / factory reset? (Recomendado al instalar GSI)"
-read -r -p "Ejecutar fastboot -w? [s/N]: " resp
-if [[ "\$resp" =~ ^[sSyY]$ ]]; then
+echo "4. Wipe data / factory reset? (Recommended for fresh GSI install)"
+read -r -p "Execute fastboot -w? [y/N]: " resp
+if [[ "\$resp" =~ ^[yY]$ ]]; then
     fastboot -w
 fi
 
-echo "5. Reiniciando teléfono..."
+echo "5. Rebooting phone..."
 fastboot reboot
-echo "=== Instalación completada con éxito ==="
+echo "=== Installation completed successfully ==="
 FLASH_EOF
     chmod +x "$flash_script"
 
-    # Comprimir si está habilitado
+    # Compress if enabled
     if [[ "$NO_COMPRESS" = false ]]; then
-        echo "[*] Generando archivo comprimido xz (multithread)..."
+        echo "[*] Generating multithreaded xz compressed archive..."
         xz -T0 -k -f "$gsi_output_img"
         sha256sum "$gsi_output_img.xz" > "$gsi_output_img.xz.sha256"
-        echo "[+] Archivo comprimido generado: $gsi_output_img.xz"
+        echo "[+] Compressed archive created: $gsi_output_img.xz"
         echo "[+] SHA256: $(cat "$gsi_output_img.xz.sha256")"
     else
         sha256sum "$gsi_output_img" > "$gsi_output_img.sha256"
     fi
 
     echo "=========================================================="
-    echo " GSI $target_arch generada exitosamente en $arch_out_dir"
+    echo " GSI $target_arch successfully generated at $arch_out_dir"
     echo "=========================================================="
 }
 
-# --- Ejecución Principal ---
+# --- Main Execution ---
 
 if [[ ! -d "$AOSP_DIR" ]]; then
-    echo "ERROR: Árbol AOSP no encontrado en $AOSP_DIR" >&2
-    echo "Configura AOSP_DIR=/ruta/aosp o ejecuta scripts/sync_aosp.sh primero." >&2
+    echo "ERROR: AOSP tree not found at $AOSP_DIR" >&2
+    echo "Configure AOSP_DIR=/path/to/aosp or run bin/helpers/sync_aosp.sh first." >&2
     exit 1
 fi
 
 mkdir -p "$OUTPUT_ROOT"
 mkdir -p "$CCACHE_DIR"
 
-# 1. Compilar TontOS Launcher APK si no se omite
+# 1. Compile signed TontOS Launcher APK if not skipped
 if [[ "$SKIP_APK" = false ]]; then
-    echo "[*] Paso 1: Verificando / Compilando TontOS Launcher APK firmado..."
-    "$SCRIPT_DIR/build_launcher_apk.sh"
+    echo "[*] Step 1: Compiling signed TontOS Launcher APK..."
+    "$ROOT_DIR/bin/build_launcher_apk.sh"
 fi
 
-# 2. Sincronizar vendor en árbol AOSP
+# 2. Stage vendor files into AOSP tree
 stage_vendor_files
 
-# 3. Compilar según arquitectura seleccionada
+# 3. Build for selected architecture(s)
 if [[ "$ARCH" == "all" ]]; then
-    echo "[*] Compilando suite completa de arquitecturas: arm64, arm, x86_64"
+    echo "[*] Compiling full architecture suite: arm64, arm, x86_64"
     build_single_gsi "arm64"
     build_single_gsi "arm"
     build_single_gsi "x86_64"
@@ -332,5 +332,5 @@ else
 fi
 
 echo
-echo "=== Proceso GSI finalizado con éxito ==="
-echo "Imágenes disponibles en: $OUTPUT_ROOT"
+echo "=== GSI Build Process Completed Successfully ==="
+echo "Images available at: $OUTPUT_ROOT"

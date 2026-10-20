@@ -15,6 +15,7 @@ members = [
     "crates/tont-backup",
     "crates/tont-init",
     "crates/tont-romctl",
+    "tests/rust",
 ]
 
 [workspace.package]

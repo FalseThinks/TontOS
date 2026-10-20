@@ -63,6 +63,8 @@ public class SetupWizardActivity extends Activity {
     private LanguageLocale selectedLanguage = LanguageLocale.EN_US;
     private ThemePreset selectedTheme = ThemePreset.AMOLED;
     private int selectedBudgetMinutes = DEFAULT_BUDGET_MINUTES;
+    private int selectedFontScale = 100;
+    private boolean selectedClock24h = true;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -84,7 +86,9 @@ public class SetupWizardActivity extends Activity {
         selectedLocale = LocaleManager.getLanguage(savedLang);
         selectedRegion = LocaleManager.getRegion(savedRegion);
         selectedLanguage = LanguageLocale.fromCode(selectedLocale.getTag());
-        I18n.applyLocale(this, selectedLocale.getTag(), selectedRegion.getCode());
+        selectedFontScale = preferences.getInt("pref_font_scale", 100);
+        selectedClock24h = preferences.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
+        I18n.applyLocaleAndScale(this, selectedLocale.getTag(), selectedRegion.getCode(), selectedFontScale / 100.0f);
 
         ThemeTokens initTokens = ThemeTokens.get(selectedTheme);
 
@@ -215,6 +219,8 @@ public class SetupWizardActivity extends Activity {
             .putString(KEY_SYSTEM_REGION, selectedRegion.getCode())
             .putString(KEY_SELECTED_THEME, selectedTheme.getId())
             .putInt(KEY_DAILY_BUDGET, selectedBudgetMinutes)
+            .putInt("pref_font_scale", selectedFontScale)
+            .putBoolean("pref_clock_24h", selectedClock24h)
             .putString(KEY_OTA_CHANNEL, UpdateChannel.BETA.getCode())
             .putStringSet(MainActivity.KEY_PINNED_APPS, new java.util.HashSet<String>(MainActivity.DEFAULT_PINNED_PACKAGES))
             .putString(MainActivity.KEY_PINNED_APPS_ORDER, pinnedOrder)
@@ -222,7 +228,11 @@ public class SetupWizardActivity extends Activity {
             .putString("bg_policy", "whitelist")
             .putStringSet("bg_allowed_apps", new java.util.HashSet<String>(MainActivity.DEFAULT_PINNED_PACKAGES))
             .apply();
-        I18n.applyLocale(this, selectedLocale.getTag(), selectedRegion.getCode());
+        I18n.applyLocaleAndScale(this, selectedLocale.getTag(), selectedRegion.getCode(), selectedFontScale / 100.0f);
+        try {
+            android.provider.Settings.System.putString(getContentResolver(), android.provider.Settings.System.TIME_12_24, selectedClock24h ? "24" : "12");
+            SafeCommandExecutor.executePrivileged("settings", "put", "system", "time_12_24", selectedClock24h ? "24" : "12");
+        } catch (Throwable ignored) {}
 
         Toast.makeText(SetupWizardActivity.this, "TontOS Initialized", Toast.LENGTH_SHORT).show();
         Intent homeIntent = new Intent(SetupWizardActivity.this, MainActivity.class);
@@ -362,8 +372,13 @@ public class SetupWizardActivity extends Activity {
                         public void onLocaleSelected(LocaleItem selected) {
                             selectedLocale = selected;
                             selectedLanguage = LanguageLocale.fromCode(selected.getTag());
-                            preferences.edit().putString(KEY_SYSTEM_LANGUAGE, selected.getTag()).apply();
-                            I18n.applyLocale(SetupWizardActivity.this, selected.getTag(), selectedRegion != null ? selectedRegion.getCode() : "US");
+                            String defRegion = LocaleManager.getDefaultRegionForLanguage(selected.getTag());
+                            selectedRegion = LocaleManager.getRegion(defRegion);
+                            preferences.edit()
+                                .putString(KEY_SYSTEM_LANGUAGE, selected.getTag())
+                                .putString(KEY_SYSTEM_REGION, selectedRegion.getCode())
+                                .apply();
+                            I18n.applyLocaleAndScale(SetupWizardActivity.this, selected.getTag(), selectedRegion.getCode(), selectedFontScale / 100.0f);
                             renderStep();
                             Toast.makeText(SetupWizardActivity.this, "Language: " + selected.getDisplayName(), Toast.LENGTH_SHORT).show();
                         }
@@ -372,8 +387,6 @@ public class SetupWizardActivity extends Activity {
             }
         }, tokens);
 
-        // Region selector deactivated per user requirement: "desactiva el selector de region, no lo requerimos. Dejalo comentado en el codigo"
-        /*
         addSelectorRow(I18n.get(I18n.KEY_REGION, langCode), selectedRegion.getDisplayName() + " [" + selectedRegion.getCode() + "]", new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -386,7 +399,7 @@ public class SetupWizardActivity extends Activity {
                         public void onRegionSelected(RegionItem selected) {
                             selectedRegion = selected;
                             preferences.edit().putString(KEY_SYSTEM_REGION, selected.getCode()).apply();
-                            I18n.applyLocale(SetupWizardActivity.this, selectedLocale.getTag(), selected.getCode());
+                            I18n.applyLocaleAndScale(SetupWizardActivity.this, selectedLocale.getTag(), selected.getCode(), selectedFontScale / 100.0f);
                             renderStep();
                             Toast.makeText(SetupWizardActivity.this, "Region: " + selected.getDisplayName(), Toast.LENGTH_SHORT).show();
                         }
@@ -394,7 +407,70 @@ public class SetupWizardActivity extends Activity {
                 );
             }
         }, tokens);
-        */
+
+        String curFontScaleDisplay;
+        if (selectedFontScale == 85) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_SMALL, langCode);
+        else if (selectedFontScale == 115) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_LARGE, langCode);
+        else if (selectedFontScale == 130) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XL, langCode);
+        else curFontScaleDisplay = I18n.get(I18n.KEY_FONT_NORMAL, langCode);
+
+        addSelectorRow(I18n.get(I18n.KEY_FONT_SIZE, langCode), curFontScaleDisplay, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                options.add(new SingleChoiceSelectorDialog.Option("85", I18n.get(I18n.KEY_FONT_SMALL, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("100", I18n.get(I18n.KEY_FONT_NORMAL, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("115", I18n.get(I18n.KEY_FONT_LARGE, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("130", I18n.get(I18n.KEY_FONT_XL, langCode)));
+
+                SingleChoiceSelectorDialog.show(
+                    SetupWizardActivity.this,
+                    tokens,
+                    I18n.get(I18n.KEY_FONT_SIZE, langCode),
+                    options,
+                    String.valueOf(selectedFontScale),
+                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                        @Override
+                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            selectedFontScale = Integer.parseInt(selected.id);
+                            preferences.edit().putInt("pref_font_scale", selectedFontScale).apply();
+                            I18n.applyLocaleAndScale(SetupWizardActivity.this, selectedLocale.getTag(), selectedRegion != null ? selectedRegion.getCode() : "US", selectedFontScale / 100.0f);
+                            renderStep();
+                        }
+                    }
+                );
+            }
+        }, tokens);
+
+        String clockLabel = selectedClock24h ? I18n.get(I18n.KEY_CLOCK_24H, langCode) : I18n.get(I18n.KEY_CLOCK_12H, langCode);
+        addSelectorRow(I18n.get(I18n.KEY_CLOCK_FORMAT, langCode), clockLabel, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                options.add(new SingleChoiceSelectorDialog.Option("24", I18n.get(I18n.KEY_CLOCK_24H, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("12", I18n.get(I18n.KEY_CLOCK_12H, langCode)));
+
+                SingleChoiceSelectorDialog.show(
+                    SetupWizardActivity.this,
+                    tokens,
+                    I18n.get(I18n.KEY_CLOCK_FORMAT, langCode),
+                    options,
+                    selectedClock24h ? "24" : "12",
+                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                        @Override
+                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            selectedClock24h = "24".equals(selected.id);
+                            preferences.edit().putBoolean("pref_clock_24h", selectedClock24h).apply();
+                            try {
+                                android.provider.Settings.System.putString(getContentResolver(), android.provider.Settings.System.TIME_12_24, selectedClock24h ? "24" : "12");
+                                SafeCommandExecutor.executePrivileged("settings", "put", "system", "time_12_24", selectedClock24h ? "24" : "12");
+                            } catch (Throwable ignored) {}
+                            renderStep();
+                        }
+                    }
+                );
+            }
+        }, tokens);
     }
 
     private void renderThemeSelection(final ThemeTokens tokens) {
@@ -474,11 +550,6 @@ public class SetupWizardActivity extends Activity {
                 options.add(new SingleChoiceSelectorDialog.Option("2h", "2h"));
                 options.add(new SingleChoiceSelectorDialog.Option("3h", "3h"));
                 options.add(new SingleChoiceSelectorDialog.Option("4h", "4h"));
-                options.add(new SingleChoiceSelectorDialog.Option("6h", "6h"));
-                options.add(new SingleChoiceSelectorDialog.Option("8h", "8h"));
-                options.add(new SingleChoiceSelectorDialog.Option("12h", "12h"));
-                options.add(new SingleChoiceSelectorDialog.Option("24h", "24h"));
-                options.add(new SingleChoiceSelectorDialog.Option("custom", I18n.get(I18n.KEY_BUDGET_CUSTOM, langCode)));
 
                 String curId = (selectedBudgetMinutes <= 0) ? "none" : (selectedBudgetMinutes % 60 == 0 ? (selectedBudgetMinutes / 60) + "h" : selectedBudgetMinutes + "m");
                 SingleChoiceSelectorDialog.show(
@@ -497,11 +568,6 @@ public class SetupWizardActivity extends Activity {
                             else if ("2h".equals(selected.id)) minutes = 120;
                             else if ("3h".equals(selected.id)) minutes = 180;
                             else if ("4h".equals(selected.id)) minutes = 240;
-                            else if ("6h".equals(selected.id)) minutes = 360;
-                            else if ("8h".equals(selected.id)) minutes = 480;
-                            else if ("12h".equals(selected.id)) minutes = 720;
-                            else if ("24h".equals(selected.id)) minutes = 1440;
-                            else if ("custom".equals(selected.id)) { showCustomBudgetDialog(tokens); return; }
 
                             selectedBudgetMinutes = minutes;
                             preferences.edit().putInt(KEY_DAILY_BUDGET, minutes).apply();
@@ -511,31 +577,6 @@ public class SetupWizardActivity extends Activity {
                 );
             }
         }, tokens);
-    }
-
-    private void showCustomBudgetDialog(final ThemeTokens tokens) {
-        final String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
-        final android.widget.EditText input = new android.widget.EditText(this);
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setHint(I18n.get(I18n.KEY_BUDGET_CUSTOM_HINT, langCode));
-        if (selectedBudgetMinutes > 0) input.setText(String.valueOf(selectedBudgetMinutes));
-        try { input.setSelection(input.getText() != null ? input.getText().length() : 0); } catch (Throwable ignored) {}
-        new android.app.AlertDialog.Builder(this)
-            .setTitle(I18n.get(I18n.KEY_DAILY_BUDGET, langCode))
-            .setView(input)
-            .setPositiveButton(android.R.string.ok, new android.content.DialogInterface.OnClickListener() {
-                @Override public void onClick(android.content.DialogInterface d, int w) {
-                    try {
-                        int v = Integer.parseInt(input.getText().toString().trim());
-                        v = Math.max(1, Math.min(1440, v));
-                        selectedBudgetMinutes = v;
-                        preferences.edit().putInt(KEY_DAILY_BUDGET, v).apply();
-                    } catch (Throwable ignored) {}
-                    renderStep();
-                }
-            })
-            .setNegativeButton(android.R.string.cancel, null)
-            .show();
     }
 
     private void renderSummary(ThemeTokens tokens) {

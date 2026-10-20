@@ -18,6 +18,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.net.Uri;
+import android.provider.AlarmClock;
+import android.provider.ContactsContract;
+import android.provider.MediaStore;
+import android.provider.Settings;
+import java.lang.reflect.Method;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -133,6 +139,7 @@ public class MainActivity extends Activity {
     // Performance & scaling optimizations: font scale and cached formatters
     private float fontScale = 1.0f;
     private Locale cachedLocale;
+    private boolean cachedIs24 = true;
     private SimpleDateFormat cachedTimeFormat;
     private SimpleDateFormat cachedDateFormat;
     private final Date reusableDate = new Date();
@@ -550,23 +557,46 @@ public class MainActivity extends Activity {
     }
 
     private void hideSystemUI() {
-        // TontOS compositor owns chrome. Use app top bar; don't hide
-        // Pixel system bars via WindowInsets/controller.
-        // No-op keeps background/defaults visible and avoids AOSP dependency.
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && getWindow().getInsetsController() != null) {
+                getWindow().getInsetsController().hide(WindowInsets.Type.statusBars());
+                getWindow().getInsetsController().setSystemBarsBehavior(
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                );
+            } else {
+                getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                );
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void disableStatusBarExpansion() {
-        // TontOS owns its shade (UltraShadeDialog + in-app top bar).
-        // No Pixel/AOSP 'cmd statusbar' dependency.
+        try {
+            Object sbm = getSystemService("statusbar");
+            if (sbm != null) {
+                Method disableMethod = sbm.getClass().getMethod("disable", int.class);
+                disableMethod.invoke(sbm, 0x00010000); // StatusBarManager.DISABLE_EXPAND
+            }
+        } catch (Throwable ignored) {}
+        try {
+            SafeCommandExecutor.executePrivileged("cmd", "statusbar", "send-disable-flag",
+                "statusbar-expansion", "quick-settings", "notification-peek");
+        } catch (Throwable ignored) {}
     }
 
     private void updateDateFormats(String langCode, String regionCode) {
         Locale targetLocale = (regionCode != null && !regionCode.isEmpty())
             ? new Locale(langCode, regionCode)
             : new Locale(langCode);
-        if (cachedLocale == null || !cachedLocale.equals(targetLocale)) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean is24 = prefs.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
+        if (cachedLocale == null || !cachedLocale.equals(targetLocale) || cachedIs24 != is24) {
             cachedLocale = targetLocale;
-            cachedTimeFormat = new SimpleDateFormat("HH:mm", cachedLocale);
+            cachedIs24 = is24;
+            cachedTimeFormat = new SimpleDateFormat(is24 ? "HH:mm" : "hh:mm a", cachedLocale);
             cachedDateFormat = new SimpleDateFormat("EEEE, MMMM d", cachedLocale);
         }
     }
@@ -637,8 +667,6 @@ public class MainActivity extends Activity {
         String modeTag = "";
         if (mode == BatteryProtectionManager.MODE_80) {
             modeTag = " [80%]";
-        } else if (mode == BatteryProtectionManager.MODE_BYPASS) {
-            modeTag = " [BYPASS]";
         }
         batteryView.setText(batteryLevel + "%" + (isCharging ? " ⚡" : "") + modeTag);
     }
@@ -994,6 +1022,18 @@ public class MainActivity extends Activity {
         if (pkg == null) return;
         mLastLaunchedPackage = pkg;
         AppItem app = cachedAppLookup.get(pkg);
+
+        // 1. Try canonical getLaunchIntentForPackage first (resolves active activities/aliases)
+        try {
+            Intent launchIntent = getPackageManager().getLaunchIntentForPackage(pkg);
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                startActivity(launchIntent);
+                return;
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Try explicit ComponentName from cached activity info
         if (app != null && app.activityName != null) {
             try {
                 Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -1002,19 +1042,44 @@ public class MainActivity extends Activity {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 startActivity(intent);
                 return;
-            } catch (Exception ignored) {}
+            } catch (Throwable ignored) {}
         }
+
+        // 3. Semantic fallback intents for core apps
         try {
-            Intent fallback = getPackageManager().getLaunchIntentForPackage(pkg);
+            String p = pkg.toLowerCase(Locale.ROOT);
+            Intent fallback = null;
+            if (p.contains("camera")) {
+                fallback = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
+            } else if (p.contains("dialer") || p.contains("phone")) {
+                fallback = new Intent(Intent.ACTION_DIAL);
+            } else if (p.contains("message") || p.contains("sms") || p.contains("mms")) {
+                fallback = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING);
+            } else if (p.contains("browser")) {
+                fallback = new Intent(Intent.ACTION_VIEW, Uri.parse("https://duckduckgo.com"));
+            } else if (p.contains("gallery") || p.contains("photo")) {
+                fallback = new Intent(Intent.ACTION_VIEW).setType("image/*");
+            } else if (p.contains("email")) {
+                fallback = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_EMAIL);
+            } else if (p.contains("contact")) {
+                fallback = new Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI);
+            } else if (p.contains("settings")) {
+                fallback = new Intent(Settings.ACTION_SETTINGS);
+            }
+
             if (fallback != null) {
                 fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(fallback);
-            } else {
-                Toast.makeText(MainActivity.this, "Could not open " + (app != null ? app.label : pkg), Toast.LENGTH_SHORT).show();
+                return;
             }
-        } catch (Exception ex) {
-            Toast.makeText(MainActivity.this, "Could not open " + (app != null ? app.label : pkg), Toast.LENGTH_SHORT).show();
-        }
+        } catch (Throwable ignored) {}
+
+        // 4. Try privileged monkey launcher
+        try {
+            SafeCommandExecutor.executePrivileged("monkey", "-p", pkg, "-c", "android.intent.category.LAUNCHER", "1");
+        } catch (Throwable ignored) {}
+
+        Toast.makeText(MainActivity.this, "Could not open " + (app != null ? app.label : pkg), Toast.LENGTH_SHORT).show();
     }
 
     private void checkAndTerminateExitedApp() {
@@ -1053,17 +1118,31 @@ public class MainActivity extends Activity {
     private boolean isEssentialSystemPackage(String pkg) {
         if (pkg == null) return true;
         if (pkg.equals(getPackageName())
-                || pkg.equals("org.fossify.phone")
-                || pkg.equals("org.fossify.messages")
+                || pkg.startsWith("org.fossify.")
+                || pkg.equals("eu.faircode.email")
+                || pkg.equals("de.baumann.browser")
+                || pkg.equals("app.organicmaps")
+                || pkg.equals("org.breezyweather")
+                || pkg.equals("com.aurora.store")
                 || pkg.equals("com.android.phone")
                 || pkg.equals("com.android.server.telecom")
                 || pkg.equals("com.android.systemui")
                 || pkg.equals("com.android.inputmethod.latin")
-                || pkg.equals("org.fossify.contacts")) {
+                || pkg.equals("com.android.settings")
+                || pkg.equals("com.android.dialer")
+                || pkg.equals("com.android.messaging")
+                || pkg.equals("com.android.camera2")
+                || pkg.equals("com.android.gallery3d")
+                || pkg.equals("com.android.deskclock")
+                || pkg.equals("com.android.calculator2")
+                || pkg.equals("com.android.contacts")
+                || pkg.equals("com.android.calendar")
+                || pkg.equals("com.android.documentsui")
+                || DEFAULT_PINNED_PACKAGES.contains(pkg)) {
             return true;
         }
         String p = pkg.toLowerCase(Locale.ROOT);
-        return p.contains("telecom") || p.contains("dialer") || p.contains("inputmethod");
+        return p.contains("telecom") || p.contains("dialer") || p.contains("inputmethod") || p.contains("systemui");
     }
 
 

@@ -105,9 +105,11 @@ public class SettingsActivity extends Activity {
     private AudioManager audioManager;
     private Equalizer systemEqualizer;
     private SettingsSection currentSection = SettingsSection.MENU;
+    private SettingsSubSection currentSubSection = SettingsSubSection.NONE;
     private int pendingRestoreScrollY = -1;
 
     public static final String PREF_LAST_SETTINGS_SECTION = "pref_last_settings_section";
+    public static final String PREF_LAST_SETTINGS_SUB_SECTION = "pref_last_settings_sub_section";
     public static final String PREF_LAST_SETTINGS_SCROLL_Y = "pref_last_settings_scroll_y";
 
     // Algorithmic optimization: Cached ResolveInfo and resolved label index to prevent repeated PackageManager IPC scans
@@ -170,12 +172,24 @@ public class SettingsActivity extends Activity {
                     currentSection = SettingsSection.valueOf(secName);
                 } catch (Exception ignored) {}
             }
+            String subSecName = savedInstanceState.getString("saved_sub_section");
+            if (subSecName != null) {
+                try {
+                    currentSubSection = SettingsSubSection.valueOf(subSecName);
+                } catch (Exception ignored) {}
+            }
             pendingRestoreScrollY = savedInstanceState.getInt("saved_scroll_y", -1);
         } else {
             String lastSec = preferences.getString(PREF_LAST_SETTINGS_SECTION, null);
             if (lastSec != null) {
                 try {
                     currentSection = SettingsSection.valueOf(lastSec);
+                } catch (Exception ignored) {}
+            }
+            String lastSubSec = preferences.getString(PREF_LAST_SETTINGS_SUB_SECTION, null);
+            if (lastSubSec != null) {
+                try {
+                    currentSubSection = SettingsSubSection.valueOf(lastSubSec);
                 } catch (Exception ignored) {}
             }
             pendingRestoreScrollY = preferences.getInt(PREF_LAST_SETTINGS_SCROLL_Y, -1);
@@ -185,6 +199,7 @@ public class SettingsActivity extends Activity {
             if (extraSec != null) {
                 try {
                     currentSection = SettingsSection.valueOf(extraSec);
+                    currentSubSection = SettingsSubSection.NONE;
                 } catch (Exception ignored) {}
             }
         }
@@ -202,6 +217,9 @@ public class SettingsActivity extends Activity {
         super.onSaveInstanceState(outState);
         if (currentSection != null) {
             outState.putString("saved_section", currentSection.name());
+        }
+        if (currentSubSection != null) {
+            outState.putString("saved_sub_section", currentSubSection.name());
         }
         if (scrollView != null) {
             outState.putInt("saved_scroll_y", scrollView.getScrollY());
@@ -342,6 +360,7 @@ public class SettingsActivity extends Activity {
             @Override
             public void onClick(View v) {
                 currentSection = SettingsSection.DISPLAY;
+                currentSubSection = SettingsSubSection.NONE;
                 preferences.edit().putString(PREF_LAST_SETTINGS_SECTION, currentSection.name()).apply();
                 if (scrollView != null) scrollView.scrollTo(0, 0);
                 buildSettingsUI();
@@ -352,6 +371,7 @@ public class SettingsActivity extends Activity {
             @Override
             public void onClick(View v) {
                 currentSection = SettingsSection.SOUND;
+                currentSubSection = SettingsSubSection.NONE;
                 preferences.edit().putString(PREF_LAST_SETTINGS_SECTION, currentSection.name()).apply();
                 if (scrollView != null) scrollView.scrollTo(0, 0);
                 buildSettingsUI();
@@ -362,6 +382,7 @@ public class SettingsActivity extends Activity {
             @Override
             public void onClick(View v) {
                 currentSection = SettingsSection.HOME_DRAWER;
+                currentSubSection = SettingsSubSection.NONE;
                 preferences.edit().putString(PREF_LAST_SETTINGS_SECTION, currentSection.name()).apply();
                 if (scrollView != null) scrollView.scrollTo(0, 0);
                 buildSettingsUI();
@@ -372,6 +393,7 @@ public class SettingsActivity extends Activity {
             @Override
             public void onClick(View v) {
                 currentSection = SettingsSection.CONNECTIVITY;
+                currentSubSection = SettingsSubSection.NONE;
                 preferences.edit().putString(PREF_LAST_SETTINGS_SECTION, currentSection.name()).apply();
                 if (scrollView != null) scrollView.scrollTo(0, 0);
                 buildSettingsUI();
@@ -382,6 +404,7 @@ public class SettingsActivity extends Activity {
             @Override
             public void onClick(View v) {
                 currentSection = SettingsSection.SYSTEM;
+                currentSubSection = SettingsSubSection.NONE;
                 preferences.edit().putString(PREF_LAST_SETTINGS_SECTION, currentSection.name()).apply();
                 if (scrollView != null) scrollView.scrollTo(0, 0);
                 buildSettingsUI();
@@ -418,8 +441,67 @@ public class SettingsActivity extends Activity {
     // ==========================================
     private void buildDisplayThemeSection(final ThemeTokens tokens) {
         final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
-        final String curRegionCode = preferences.getString(KEY_REGION, "US");
-        addBackHeader(I18n.get(I18n.KEY_SEC_DISPLAY, curLangCode), tokens);
+        if (currentSubSection == SettingsSubSection.NONE) {
+            addBackHeader(I18n.get(I18n.KEY_SEC_DISPLAY, curLangCode), tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_DISPLAY_STYLE, curLangCode), I18n.get(I18n.KEY_SUB_DISPLAY_STYLE_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.DISPLAY_STYLE;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_DISPLAY_LOCALE, curLangCode), I18n.get(I18n.KEY_SUB_DISPLAY_LOCALE_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.DISPLAY_LOCALE;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_DISPLAY_LOCKSCREEN, curLangCode), I18n.get(I18n.KEY_SUB_DISPLAY_LOCKSCREEN_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.DISPLAY_LOCKSCREEN;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_DISPLAY_DETOX, curLangCode), I18n.get(I18n.KEY_SUB_DISPLAY_DETOX_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.DISPLAY_DETOX;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            return;
+        }
+
+        switch (currentSubSection) {
+            case DISPLAY_STYLE:
+                buildDisplayStyleSubSection(tokens, curLangCode);
+                break;
+            case DISPLAY_LOCALE:
+                buildDisplayLocaleSubSection(tokens, curLangCode);
+                break;
+            case DISPLAY_LOCKSCREEN:
+                buildDisplayLockscreenSubSection(tokens, curLangCode);
+                break;
+            case DISPLAY_DETOX:
+                buildDisplayDetoxSubSection(tokens, curLangCode);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void buildDisplayStyleSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_DISPLAY_STYLE, curLangCode), tokens);
 
         final boolean isGray = GrayscaleManager.isGrayscaleEnabled(this);
         final ThemePreset curPreset = ThemePreset.fromId(preferences.getString(KEY_THEME, ThemePreset.AMOLED.getId()));
@@ -471,57 +553,6 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        final LocaleItem curLang = LocaleManager.getLanguage(curLangCode);
-        addSelectorRow(I18n.get(I18n.KEY_LANGUAGE, curLangCode), curLang.getDisplayName(), new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                LanguagePickerDialog.show(
-                    SettingsActivity.this,
-                    tokens,
-                    curLang,
-                    new LanguagePickerDialog.OnLocaleSelectedListener() {
-                        @Override
-                        public void onLocaleSelected(LocaleItem selected) {
-                            preferences.edit()
-                                .putString(KEY_LANGUAGE, selected.getTag())
-                                .putString(MainActivity.KEY_SYSTEM_LANGUAGE, selected.getTag())
-                                .apply();
-                            I18n.applyLocale(SettingsActivity.this, selected.getTag(), preferences.getString(KEY_REGION, "US"));
-                            buildSettingsUI();
-                            Toast.makeText(SettingsActivity.this, "Language: " + selected.getDisplayName(), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                );
-            }
-        }, tokens);
-
-        // Region selector deactivated per user requirement: "desactiva el selector de region, no lo requerimos. Dejalo comentado en el codigo"
-        /*
-        final RegionItem curRegion = LocaleManager.getRegion(curRegionCode);
-        addSelectorRow(I18n.get(I18n.KEY_REGION, curLangCode), curRegion.getDisplayName() + " [" + curRegion.getCode() + "]", new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                RegionPickerDialog.show(
-                    SettingsActivity.this,
-                    tokens,
-                    curRegion,
-                    new RegionPickerDialog.OnRegionSelectedListener() {
-                        @Override
-                        public void onRegionSelected(RegionItem selected) {
-                            preferences.edit()
-                                .putString(KEY_REGION, selected.getCode())
-                                .putString(MainActivity.KEY_SYSTEM_REGION, selected.getCode())
-                                .apply();
-                            I18n.applyLocale(SettingsActivity.this, preferences.getString(KEY_LANGUAGE, "en"), selected.getCode());
-                            buildSettingsUI();
-                            Toast.makeText(SettingsActivity.this, "Region: " + selected.getDisplayName(), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                );
-            }
-        }, tokens);
-        */
-
         int currentBrightness = preferences.getInt(KEY_BRIGHTNESS, 50);
         addSliderRow(I18n.get(I18n.KEY_BRIGHTNESS, curLangCode), currentBrightness, 10, 100, new OnSliderChangedListener() {
             @Override
@@ -532,6 +563,46 @@ public class SettingsActivity extends Activity {
             public void onStop(int progress) {
                 preferences.edit().putInt(KEY_BRIGHTNESS, progress).apply();
                 applySystemBrightness(progress);
+            }
+        }, tokens);
+
+        final int curFontScale = preferences.getInt("pref_font_scale", 100);
+        String curFontScaleDisplay;
+        if (curFontScale == 85) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_SMALL, curLangCode);
+        else if (curFontScale == 115) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_LARGE, curLangCode);
+        else if (curFontScale == 130) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XL, curLangCode);
+        else curFontScaleDisplay = I18n.get(I18n.KEY_FONT_NORMAL, curLangCode);
+
+        addSelectorRow(I18n.get(I18n.KEY_FONT_SIZE, curLangCode), curFontScaleDisplay, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                options.add(new SingleChoiceSelectorDialog.Option("85", I18n.get(I18n.KEY_FONT_SMALL, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("100", I18n.get(I18n.KEY_FONT_NORMAL, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("115", I18n.get(I18n.KEY_FONT_LARGE, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("130", I18n.get(I18n.KEY_FONT_XL, curLangCode)));
+
+                SingleChoiceSelectorDialog.show(
+                    SettingsActivity.this,
+                    tokens,
+                    I18n.get(I18n.KEY_FONT_SIZE, curLangCode),
+                    options,
+                    String.valueOf(curFontScale),
+                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                        @Override
+                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            int val = Integer.parseInt(selected.id);
+                            int currentScroll = scrollView != null ? scrollView.getScrollY() : 0;
+                            preferences.edit()
+                                .putInt("pref_font_scale", val)
+                                .putString(PREF_LAST_SETTINGS_SECTION, currentSection.name())
+                                .putInt(PREF_LAST_SETTINGS_SCROLL_Y, currentScroll)
+                                .apply();
+                            Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_FONT_SIZE, curLangCode) + ": " + selected.label, Toast.LENGTH_SHORT).show();
+                            recreate();
+                        }
+                    }
+                );
             }
         }, tokens);
 
@@ -576,6 +647,207 @@ public class SettingsActivity extends Activity {
                 );
             }
         }, tokens);
+    }
+
+    private void buildDisplayLocaleSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_DISPLAY_LOCALE, curLangCode), tokens);
+
+        final LocaleItem curLang = LocaleManager.getLanguage(curLangCode);
+        addSelectorRow(I18n.get(I18n.KEY_LANGUAGE, curLangCode), curLang.getDisplayName(), new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LanguagePickerDialog.show(
+                    SettingsActivity.this,
+                    tokens,
+                    curLang,
+                    new LanguagePickerDialog.OnLocaleSelectedListener() {
+                        @Override
+                        public void onLocaleSelected(LocaleItem selected) {
+                            String defaultRegion = LocaleManager.getDefaultRegionForLanguage(selected.getTag());
+                            preferences.edit()
+                                .putString(KEY_LANGUAGE, selected.getTag())
+                                .putString(MainActivity.KEY_SYSTEM_LANGUAGE, selected.getTag())
+                                .putString(KEY_REGION, defaultRegion)
+                                .putString(MainActivity.KEY_SYSTEM_REGION, defaultRegion)
+                                .apply();
+                            I18n.applyLocale(SettingsActivity.this, selected.getTag(), defaultRegion);
+                            buildSettingsUI();
+                            Toast.makeText(SettingsActivity.this, "Language: " + selected.getDisplayName(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                );
+            }
+        }, tokens);
+
+        final String curRegionCode = preferences.getString(KEY_REGION, "US");
+        final RegionItem curRegion = LocaleManager.getRegion(curRegionCode);
+        addSelectorRow(I18n.get(I18n.KEY_REGION, curLangCode), curRegion.getDisplayName() + " [" + curRegion.getCode() + "]", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RegionPickerDialog.show(
+                    SettingsActivity.this,
+                    tokens,
+                    curRegion,
+                    new RegionPickerDialog.OnRegionSelectedListener() {
+                        @Override
+                        public void onRegionSelected(RegionItem selected) {
+                            preferences.edit()
+                                .putString(KEY_REGION, selected.getCode())
+                                .putString(MainActivity.KEY_SYSTEM_REGION, selected.getCode())
+                                .apply();
+                            I18n.applyLocale(SettingsActivity.this, preferences.getString(KEY_LANGUAGE, "en"), selected.getCode());
+                            buildSettingsUI();
+                            Toast.makeText(SettingsActivity.this, "Region: " + selected.getDisplayName(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                );
+            }
+        }, tokens);
+    }
+
+    private void buildDisplayLockscreenSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_DISPLAY_LOCKSCREEN, curLangCode), tokens);
+
+        final boolean lockEnabled = LockScreenManager.isLockScreenEnabled(this);
+        addToggleRow(I18n.get(I18n.KEY_LOCKSCREEN_ENABLE, curLangCode), lockEnabled ? "[ ON ]" : "[ OFF ]", lockEnabled, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LockScreenManager.setLockScreenEnabled(SettingsActivity.this, !lockEnabled);
+                buildSettingsUI();
+            }
+        }, tokens);
+
+        if (lockEnabled) {
+            final LockClockStyle curClockStyle = LockScreenManager.getClockStyle(this);
+            String clockStyleDisplay;
+            switch (curClockStyle) {
+                case BIG_MONOSPACE: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_BIG, curLangCode); break;
+                case VERTICAL_STACKED: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_STACKED, curLangCode); break;
+                case TERMINAL_RETRO: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_TERMINAL, curLangCode); break;
+                case COMPACT_SINGLE: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_COMPACT, curLangCode); break;
+                case THEME_DEFAULT:
+                default: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_DEFAULT, curLangCode); break;
+            }
+
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_CLOCK_STYLE, curLangCode), clockStyleDisplay, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.THEME_DEFAULT.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_DEFAULT, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.BIG_MONOSPACE.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_BIG, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.VERTICAL_STACKED.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_STACKED, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.TERMINAL_RETRO.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_TERMINAL, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.COMPACT_SINGLE.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_COMPACT, curLangCode)));
+
+                    SingleChoiceSelectorDialog.show(
+                        SettingsActivity.this,
+                        tokens,
+                        I18n.get(I18n.KEY_LOCK_CLOCK_STYLE, curLangCode),
+                        options,
+                        curClockStyle.getId(),
+                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                            @Override
+                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                                LockScreenManager.setClockStyle(SettingsActivity.this, LockClockStyle.fromId(selected.id));
+                                buildSettingsUI();
+                            }
+                        }
+                    );
+                }
+            }, tokens);
+
+            final String curThemeOverride = LockScreenManager.getThemeOverride(this);
+            String themeOverrideDisplay;
+            if (LockScreenManager.THEME_MATCH_ACTIVE.equalsIgnoreCase(curThemeOverride)) {
+                themeOverrideDisplay = I18n.get(I18n.KEY_LOCK_THEME_MATCH, curLangCode);
+            } else {
+                ThemePreset p = ThemePreset.fromId(curThemeOverride);
+                themeOverrideDisplay = p != null ? p.getDisplayName() : curThemeOverride;
+            }
+
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_THEME_OVERRIDE, curLangCode), themeOverrideDisplay, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                    options.add(new SingleChoiceSelectorDialog.Option(LockScreenManager.THEME_MATCH_ACTIVE, I18n.get(I18n.KEY_LOCK_THEME_MATCH, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.AMOLED.getId(), "AMOLED Black"));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.AMBER.getId(), "Amber CRT"));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.E_INK.getId(), "E-Ink Paper"));
+                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.SLATE.getId(), "Slate Midnight"));
+
+                    SingleChoiceSelectorDialog.show(
+                        SettingsActivity.this,
+                        tokens,
+                        I18n.get(I18n.KEY_LOCK_THEME_OVERRIDE, curLangCode),
+                        options,
+                        curThemeOverride,
+                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                            @Override
+                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                                LockScreenManager.setThemeOverride(SettingsActivity.this, selected.id);
+                                buildSettingsUI();
+                            }
+                        }
+                    );
+                }
+            }, tokens);
+
+            final boolean showDetox = LockScreenManager.isShowDetox(this);
+            addToggleRow(I18n.get(I18n.KEY_LOCK_SHOW_DETOX, curLangCode), showDetox ? "[ ON ]" : "[ OFF ]", showDetox, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    LockScreenManager.setShowDetox(SettingsActivity.this, !showDetox);
+                    buildSettingsUI();
+                }
+            }, tokens);
+
+            final boolean showBattery = LockScreenManager.isShowBattery(this);
+            addToggleRow(I18n.get(I18n.KEY_LOCK_SHOW_BATTERY, curLangCode), showBattery ? "[ ON ]" : "[ OFF ]", showBattery, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    LockScreenManager.setShowBattery(SettingsActivity.this, !showBattery);
+                    buildSettingsUI();
+                }
+            }, tokens);
+
+            String ownerInfo = LockScreenManager.getOwnerInfo(this);
+            String ownerDisplay = TextUtils.isEmpty(ownerInfo) ? "[ NONE ]" : (ownerInfo.length() > 20 ? ownerInfo.substring(0, 18) + "..." : ownerInfo);
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_OWNER_INFO, curLangCode), ownerDisplay, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLockOwnerDialog(tokens, curLangCode);
+                }
+            }, tokens);
+
+            final LockShortcut curLeft = LockScreenManager.getLeftShortcut(this);
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_SHORTCUT_LEFT, curLangCode), getLockShortcutDisplay(curLeft, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLockShortcutPicker(true, curLeft, tokens, curLangCode);
+                }
+            }, tokens);
+
+            final LockShortcut curRight = LockScreenManager.getRightShortcut(this);
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_SHORTCUT_RIGHT, curLangCode), getLockShortcutDisplay(curRight, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLockShortcutPicker(false, curRight, tokens, curLangCode);
+                }
+            }, tokens);
+
+            addButtonRow(I18n.get(I18n.KEY_LOCK_TEST_BTN, curLangCode), "TEST", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent testIntent = new Intent(SettingsActivity.this, LockScreenActivity.class);
+                    testIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(testIntent);
+                }
+            }, tokens);
+        }
+    }
+
+    private void buildDisplayDetoxSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_DISPLAY_DETOX, curLangCode), tokens);
 
         final int currentBudgetMins = preferences.getInt(KEY_BUDGET, MainActivity.DEFAULT_BUDGET_MINUTES);
         String currentBudgetDisplay;
@@ -623,40 +895,31 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        final int curFontScale = preferences.getInt("pref_font_scale", 100);
-        String curFontScaleDisplay;
-        if (curFontScale == 85) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_SMALL, curLangCode);
-        else if (curFontScale == 115) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_LARGE, curLangCode);
-        else if (curFontScale == 130) curFontScaleDisplay = I18n.get(I18n.KEY_FONT_XL, curLangCode);
-        else curFontScaleDisplay = I18n.get(I18n.KEY_FONT_NORMAL, curLangCode);
-
-        addSelectorRow(I18n.get(I18n.KEY_FONT_SIZE, curLangCode), curFontScaleDisplay, new View.OnClickListener() {
+        final boolean curClock24 = preferences.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
+        String clockLabel = curClock24 ? I18n.get(I18n.KEY_CLOCK_24H, curLangCode) : I18n.get(I18n.KEY_CLOCK_12H, curLangCode);
+        addSelectorRow(I18n.get(I18n.KEY_CLOCK_FORMAT, curLangCode), clockLabel, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("85", I18n.get(I18n.KEY_FONT_SMALL, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("100", I18n.get(I18n.KEY_FONT_NORMAL, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("115", I18n.get(I18n.KEY_FONT_LARGE, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option("130", I18n.get(I18n.KEY_FONT_XL, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("24", I18n.get(I18n.KEY_CLOCK_24H, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("12", I18n.get(I18n.KEY_CLOCK_12H, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
                     tokens,
-                    I18n.get(I18n.KEY_FONT_SIZE, curLangCode),
+                    I18n.get(I18n.KEY_CLOCK_FORMAT, curLangCode),
                     options,
-                    String.valueOf(curFontScale),
+                    curClock24 ? "24" : "12",
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                            int val = Integer.parseInt(selected.id);
-                            int currentScroll = scrollView != null ? scrollView.getScrollY() : 0;
-                            preferences.edit()
-                                .putInt("pref_font_scale", val)
-                                .putString(PREF_LAST_SETTINGS_SECTION, currentSection.name())
-                                .putInt(PREF_LAST_SETTINGS_SCROLL_Y, currentScroll)
-                                .apply();
-                            Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_FONT_SIZE, curLangCode) + ": " + selected.label, Toast.LENGTH_SHORT).show();
-                            recreate();
+                            boolean is24 = "24".equals(selected.id);
+                            preferences.edit().putBoolean("pref_clock_24h", is24).apply();
+                            try {
+                                android.provider.Settings.System.putString(getContentResolver(), android.provider.Settings.System.TIME_12_24, is24 ? "24" : "12");
+                                SafeCommandExecutor.executePrivileged("settings", "put", "system", "time_12_24", is24 ? "24" : "12");
+                            } catch (Throwable ignored) {}
+                            buildSettingsUI();
                         }
                     }
                 );
@@ -672,10 +935,8 @@ public class SettingsActivity extends Activity {
                     "100", BatteryProtectionManager.getOptionDisplay(BatteryProtectionManager.MODE_100, curLangCode)));
                 options.add(new SingleChoiceSelectorDialog.Option(
                     "80", BatteryProtectionManager.getOptionDisplay(BatteryProtectionManager.MODE_80, curLangCode)));
-                options.add(new SingleChoiceSelectorDialog.Option(
-                    "bypass", BatteryProtectionManager.getOptionDisplay(BatteryProtectionManager.MODE_BYPASS, curLangCode)));
 
-                String curId = curBatteryMode == BatteryProtectionManager.MODE_80 ? "80" : (curBatteryMode == BatteryProtectionManager.MODE_BYPASS ? "bypass" : "100");
+                String curId = curBatteryMode == BatteryProtectionManager.MODE_80 ? "80" : "100";
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
                     tokens,
@@ -685,10 +946,7 @@ public class SettingsActivity extends Activity {
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                            int targetMode = BatteryProtectionManager.MODE_100;
-                            if ("80".equals(selected.id)) targetMode = BatteryProtectionManager.MODE_80;
-                            else if ("bypass".equals(selected.id)) targetMode = BatteryProtectionManager.MODE_BYPASS;
-
+                            int targetMode = "80".equals(selected.id) ? BatteryProtectionManager.MODE_80 : BatteryProtectionManager.MODE_100;
                             BatteryProtectionManager.ModeResult result =
                                 BatteryProtectionManager.setMode(SettingsActivity.this, targetMode);
                             if (result == BatteryProtectionManager.ModeResult.APPLIED) {
@@ -736,162 +994,6 @@ public class SettingsActivity extends Activity {
                     }
                 }, tokens);
             }
-        }
-
-        // ==========================================
-        // LOCK SCREEN CONFIGURATION
-        // ==========================================
-        TextView lockHeader = new TextView(this);
-        lockHeader.setText(I18n.get(I18n.KEY_LOCKSCREEN_HEADER, curLangCode));
-        lockHeader.setTextColor(tokens.accent);
-        lockHeader.setTextSize(14);
-        lockHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        lockHeader.setPadding(0, 18, 0, 8);
-        contentContainer.addView(lockHeader);
-
-        final boolean lockEnabled = LockScreenManager.isLockScreenEnabled(this);
-        addToggleRow(I18n.get(I18n.KEY_LOCKSCREEN_ENABLE, curLangCode), lockEnabled ? "[ ON ]" : "[ OFF ]", lockEnabled, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                LockScreenManager.setLockScreenEnabled(SettingsActivity.this, !lockEnabled);
-                buildSettingsUI();
-            }
-        }, tokens);
-
-        if (lockEnabled) {
-            // 1. Clock style selector
-            final LockClockStyle curClockStyle = LockScreenManager.getClockStyle(this);
-            String clockStyleDisplay;
-            switch (curClockStyle) {
-                case BIG_MONOSPACE: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_BIG, curLangCode); break;
-                case VERTICAL_STACKED: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_STACKED, curLangCode); break;
-                case TERMINAL_RETRO: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_TERMINAL, curLangCode); break;
-                case COMPACT_SINGLE: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_COMPACT, curLangCode); break;
-                case THEME_DEFAULT:
-                default: clockStyleDisplay = I18n.get(I18n.KEY_LOCK_CLOCK_DEFAULT, curLangCode); break;
-            }
-
-            addSelectorRow(I18n.get(I18n.KEY_LOCK_CLOCK_STYLE, curLangCode), clockStyleDisplay, new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.THEME_DEFAULT.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_DEFAULT, curLangCode)));
-                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.BIG_MONOSPACE.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_BIG, curLangCode)));
-                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.VERTICAL_STACKED.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_STACKED, curLangCode)));
-                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.TERMINAL_RETRO.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_TERMINAL, curLangCode)));
-                    options.add(new SingleChoiceSelectorDialog.Option(LockClockStyle.COMPACT_SINGLE.getId(), I18n.get(I18n.KEY_LOCK_CLOCK_COMPACT, curLangCode)));
-
-                    SingleChoiceSelectorDialog.show(
-                        SettingsActivity.this,
-                        tokens,
-                        I18n.get(I18n.KEY_LOCK_CLOCK_STYLE, curLangCode),
-                        options,
-                        curClockStyle.getId(),
-                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
-                            @Override
-                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                                LockScreenManager.setClockStyle(SettingsActivity.this, LockClockStyle.fromId(selected.id));
-                                buildSettingsUI();
-                            }
-                        }
-                    );
-                }
-            }, tokens);
-
-            // 2. Lock screen theme override selector
-            final String curThemeOverride = LockScreenManager.getThemeOverride(this);
-            String themeOverrideDisplay;
-            if (LockScreenManager.THEME_MATCH_ACTIVE.equalsIgnoreCase(curThemeOverride)) {
-                themeOverrideDisplay = I18n.get(I18n.KEY_LOCK_THEME_MATCH, curLangCode);
-            } else {
-                ThemePreset p = ThemePreset.fromId(curThemeOverride);
-                themeOverrideDisplay = p != null ? p.getDisplayName() : curThemeOverride;
-            }
-
-            addSelectorRow(I18n.get(I18n.KEY_LOCK_THEME_OVERRIDE, curLangCode), themeOverrideDisplay, new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                    options.add(new SingleChoiceSelectorDialog.Option(LockScreenManager.THEME_MATCH_ACTIVE, I18n.get(I18n.KEY_LOCK_THEME_MATCH, curLangCode)));
-                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.AMOLED.getId(), "AMOLED Black"));
-                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.AMBER.getId(), "Amber CRT"));
-                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.E_INK.getId(), "E-Ink Paper"));
-                    options.add(new SingleChoiceSelectorDialog.Option(ThemePreset.SLATE.getId(), "Slate Midnight"));
-
-                    SingleChoiceSelectorDialog.show(
-                        SettingsActivity.this,
-                        tokens,
-                        I18n.get(I18n.KEY_LOCK_THEME_OVERRIDE, curLangCode),
-                        options,
-                        curThemeOverride,
-                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
-                            @Override
-                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                                LockScreenManager.setThemeOverride(SettingsActivity.this, selected.id);
-                                buildSettingsUI();
-                            }
-                        }
-                    );
-                }
-            }, tokens);
-
-            // 3. Toggle Detox progress bar
-            final boolean showDetox = LockScreenManager.isShowDetox(this);
-            addToggleRow(I18n.get(I18n.KEY_LOCK_SHOW_DETOX, curLangCode), showDetox ? "[ ON ]" : "[ OFF ]", showDetox, new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    LockScreenManager.setShowDetox(SettingsActivity.this, !showDetox);
-                    buildSettingsUI();
-                }
-            }, tokens);
-
-            // 4. Toggle Battery status
-            final boolean showBattery = LockScreenManager.isShowBattery(this);
-            addToggleRow(I18n.get(I18n.KEY_LOCK_SHOW_BATTERY, curLangCode), showBattery ? "[ ON ]" : "[ OFF ]", showBattery, new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    LockScreenManager.setShowBattery(SettingsActivity.this, !showBattery);
-                    buildSettingsUI();
-                }
-            }, tokens);
-
-            // 5. Custom owner info row
-            String ownerInfo = LockScreenManager.getOwnerInfo(this);
-            String ownerDisplay = TextUtils.isEmpty(ownerInfo) ? "[ NONE ]" : (ownerInfo.length() > 20 ? ownerInfo.substring(0, 18) + "..." : ownerInfo);
-            addSelectorRow(I18n.get(I18n.KEY_LOCK_OWNER_INFO, curLangCode), ownerDisplay, new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showLockOwnerDialog(tokens, curLangCode);
-                }
-            }, tokens);
-
-            // 6. Left shortcut
-            final LockShortcut curLeft = LockScreenManager.getLeftShortcut(this);
-            addSelectorRow(I18n.get(I18n.KEY_LOCK_SHORTCUT_LEFT, curLangCode), getLockShortcutDisplay(curLeft, curLangCode), new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showLockShortcutPicker(true, curLeft, tokens, curLangCode);
-                }
-            }, tokens);
-
-            // 7. Right shortcut
-            final LockShortcut curRight = LockScreenManager.getRightShortcut(this);
-            addSelectorRow(I18n.get(I18n.KEY_LOCK_SHORTCUT_RIGHT, curLangCode), getLockShortcutDisplay(curRight, curLangCode), new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showLockShortcutPicker(false, curRight, tokens, curLangCode);
-                }
-            }, tokens);
-
-            // 8. Test lockscreen button
-            addButtonRow(I18n.get(I18n.KEY_LOCK_TEST_BTN, curLangCode), "TEST", new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent testIntent = new Intent(SettingsActivity.this, LockScreenActivity.class);
-                    testIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(testIntent);
-                }
-            }, tokens);
         }
     }
 
@@ -974,7 +1076,43 @@ public class SettingsActivity extends Activity {
     // ==========================================
     private void buildSoundSection(ThemeTokens tokens) {
         final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
-        addBackHeader(SettingsSection.SOUND.getTitle(curLangCode), tokens);
+        if (currentSubSection == SettingsSubSection.NONE) {
+            addBackHeader(SettingsSection.SOUND.getTitle(curLangCode), tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_SOUND_VOLUMES, curLangCode), I18n.get(I18n.KEY_SUB_SOUND_VOLUMES_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.SOUND_VOLUMES;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_SOUND_EQUALIZER, curLangCode), I18n.get(I18n.KEY_SUB_SOUND_EQUALIZER_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.SOUND_EQUALIZER;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            return;
+        }
+
+        switch (currentSubSection) {
+            case SOUND_VOLUMES:
+                buildSoundVolumesSubSection(tokens, curLangCode);
+                break;
+            case SOUND_EQUALIZER:
+                buildSoundEqualizerSubSection(tokens, curLangCode);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void buildSoundVolumesSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_SOUND_VOLUMES, curLangCode), tokens);
 
         int maxMedia = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         int curMedia = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -1062,32 +1200,12 @@ public class SettingsActivity extends Activity {
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                            android.app.NotificationManager nm = (android.app.NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                            boolean needDnd = ("VIBRATE".equals(selected.id) || "SILENT".equals(selected.id))
-                                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                                && nm != null && !nm.isNotificationPolicyAccessGranted();
-                            if (needDnd) {
-                                startActivity(new Intent(android.provider.Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
-                                Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_ENABLED, curLangCode) + " DND access", Toast.LENGTH_SHORT).show();
-                                return;
-                            }
-                            if ("NORMAL".equals(selected.id)) {
-                                audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-                                if (nm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && nm.isNotificationPolicyAccessGranted()) {
-                                    nm.setInterruptionFilter(android.app.NotificationManager.INTERRUPTION_FILTER_ALL);
-                                }
-                                int maxN = audioManager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION);
-                                int savedN = preferences.getInt("pref_user_notif_vol", (int)(maxN * 0.7));
-                                if (savedN <= 0) savedN = (int)(maxN * 0.7);
-                                audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, savedN, 0);
-                            } else if ("VIBRATE".equals(selected.id)) {
-                                int curN = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
-                                if (curN > 0) preferences.edit().putInt("pref_user_notif_vol", curN).apply();
+                            if ("VIBRATE".equals(selected.id)) {
                                 audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
                             } else if ("SILENT".equals(selected.id)) {
-                                int curN = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
-                                if (curN > 0) preferences.edit().putInt("pref_user_notif_vol", curN).apply();
                                 audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+                            } else {
+                                audioManager.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
                             }
                             buildSettingsUI();
                         }
@@ -1096,86 +1214,80 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        final NotificationDigestManager.DeliveryMode curDeliveryMode = NotificationDigestManager.getDeliveryMode(this);
-        String curDeliveryLabel;
-        switch (curDeliveryMode) {
+        final NotificationDigestManager.DeliveryMode curMode = NotificationDigestManager.getDeliveryMode(this);
+        String notifModeLabel;
+        switch (curMode) {
             case SCHEDULED_DIGEST:
-                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode);
+                notifModeLabel = I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode);
                 break;
             case STARRED_ONLY:
-                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode);
+                notifModeLabel = I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode);
                 break;
             case IMMEDIATE:
             default:
-                curDeliveryLabel = I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode);
+                notifModeLabel = I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode);
                 break;
         }
 
-        addSelectorRow(I18n.get(I18n.KEY_NOTIFICATION_DELIVERY_TITLE, curLangCode), curDeliveryLabel, new View.OnClickListener() {
+        addSelectorRow(I18n.get(I18n.KEY_NOTIFICATION_DELIVERY_TITLE, curLangCode), notifModeLabel, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option(
-                    NotificationDigestManager.DeliveryMode.IMMEDIATE.name(),
-                    I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode)
-                ));
-                options.add(new SingleChoiceSelectorDialog.Option(
-                    NotificationDigestManager.DeliveryMode.SCHEDULED_DIGEST.name(),
-                    I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode)
-                ));
-                options.add(new SingleChoiceSelectorDialog.Option(
-                    NotificationDigestManager.DeliveryMode.STARRED_ONLY.name(),
-                    I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode)
-                ));
+                options.add(new SingleChoiceSelectorDialog.Option(NotificationDigestManager.DeliveryMode.IMMEDIATE.name(), I18n.get(I18n.KEY_NOTIF_IMMEDIATE, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(NotificationDigestManager.DeliveryMode.SCHEDULED_DIGEST.name(), I18n.get(I18n.KEY_NOTIF_DIGEST, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(NotificationDigestManager.DeliveryMode.STARRED_ONLY.name(), I18n.get(I18n.KEY_NOTIF_STARRED, curLangCode)));
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
                     tokens,
                     I18n.get(I18n.KEY_NOTIFICATION_DELIVERY_TITLE, curLangCode),
                     options,
-                    curDeliveryMode.name(),
+                    curMode.name(),
                     new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                         @Override
                         public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                            NotificationDigestManager.DeliveryMode chosenMode;
                             try {
-                                chosenMode = NotificationDigestManager.DeliveryMode.valueOf(selected.id);
-                            } catch (Exception e) {
-                                chosenMode = NotificationDigestManager.DeliveryMode.IMMEDIATE;
-                            }
-                            NotificationDigestManager.setDeliveryMode(SettingsActivity.this, chosenMode);
-                            NotificationDigestManager.syncDoNotDisturb(SettingsActivity.this, chosenMode);
-                            buildSettingsUI();
+                                NotificationDigestManager.DeliveryMode newMode = NotificationDigestManager.DeliveryMode.valueOf(selected.id);
+                                NotificationDigestManager.setDeliveryMode(SettingsActivity.this, newMode);
+                                NotificationDigestManager.syncDoNotDisturb(SettingsActivity.this, newMode);
+                                buildSettingsUI();
+                            } catch (Exception ignored) {}
                         }
                     }
                 );
             }
         }, tokens);
 
-        addSelectorRow(I18n.get(I18n.KEY_RINGTONE_TITLE, curLangCode), getToneLabel(RingtoneManager.TYPE_RINGTONE, curLangCode), new View.OnClickListener() {
+        String ringToneLabel = getToneLabel(RingtoneManager.TYPE_RINGTONE, curLangCode);
+        addSelectorRow(I18n.get(I18n.KEY_RINGTONE_TITLE, curLangCode), ringToneLabel, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showTonePickerModal(RingtoneManager.TYPE_RINGTONE, I18n.get(I18n.KEY_RINGTONE_TITLE, curLangCode), tokens, curLangCode);
             }
         }, tokens);
 
-        addSelectorRow(I18n.get(I18n.KEY_NOTIFICATION_SOUND_TITLE, curLangCode), getToneLabel(RingtoneManager.TYPE_NOTIFICATION, curLangCode), new View.OnClickListener() {
+        String notifToneLabel = getToneLabel(RingtoneManager.TYPE_NOTIFICATION, curLangCode);
+        addSelectorRow(I18n.get(I18n.KEY_NOTIFICATION_SOUND_TITLE, curLangCode), notifToneLabel, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showTonePickerModal(RingtoneManager.TYPE_NOTIFICATION, I18n.get(I18n.KEY_NOTIFICATION_SOUND_TITLE, curLangCode), tokens, curLangCode);
             }
         }, tokens);
 
-        addSelectorRow(I18n.get(I18n.KEY_ALARM_SOUND_TITLE, curLangCode), getToneLabel(RingtoneManager.TYPE_ALARM, curLangCode), new View.OnClickListener() {
+        String alarmToneLabel = getToneLabel(RingtoneManager.TYPE_ALARM, curLangCode);
+        addSelectorRow(I18n.get(I18n.KEY_ALARM_SOUND_TITLE, curLangCode), alarmToneLabel, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showTonePickerModal(RingtoneManager.TYPE_ALARM, I18n.get(I18n.KEY_ALARM_SOUND_TITLE, curLangCode), tokens, curLangCode);
             }
         }, tokens);
+    }
 
-        // Embed 5-Band Equalizer
+    private void buildSoundEqualizerSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_SOUND_EQUALIZER, curLangCode), tokens);
+
         final boolean eqEnabled = preferences.getBoolean("pref_eq_enabled", true);
-        addToggleRow("Equalizer", eqEnabled ? "[ ON ]" : "[ OFF ]", eqEnabled, new View.OnClickListener() {
+        addToggleRow(I18n.get(I18n.KEY_EQUALIZER, curLangCode), eqEnabled ? "[ ON ]" : "[ OFF ]", eqEnabled, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 boolean nextState = !eqEnabled;
@@ -1186,16 +1298,16 @@ public class SettingsActivity extends Activity {
         }, tokens);
 
         if (eqEnabled) {
-            final String curPreset = preferences.getString("pref_eq_preset", "flat");
-            String curPresetLabel;
-            if ("bass".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_BASS, curLangCode);
-            else if ("vocal".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_VOCAL, curLangCode);
-            else if ("treble".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_TREBLE, curLangCode);
-            else if ("rock".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_ROCK, curLangCode);
-            else if ("custom".equals(curPreset)) curPresetLabel = I18n.get(I18n.KEY_EQ_CUSTOM, curLangCode);
-            else curPresetLabel = I18n.get(I18n.KEY_EQ_FLAT, curLangCode);
+            final String curEqPreset = preferences.getString("pref_eq_preset", "flat");
+            String eqPresetLabel;
+            if ("bass".equals(curEqPreset)) eqPresetLabel = I18n.get(I18n.KEY_EQ_BASS, curLangCode);
+            else if ("vocal".equals(curEqPreset)) eqPresetLabel = I18n.get(I18n.KEY_EQ_VOCAL, curLangCode);
+            else if ("treble".equals(curEqPreset)) eqPresetLabel = I18n.get(I18n.KEY_EQ_TREBLE, curLangCode);
+            else if ("rock".equals(curEqPreset)) eqPresetLabel = I18n.get(I18n.KEY_EQ_ROCK, curLangCode);
+            else if ("custom".equals(curEqPreset)) eqPresetLabel = I18n.get(I18n.KEY_EQ_CUSTOM, curLangCode);
+            else eqPresetLabel = I18n.get(I18n.KEY_EQ_FLAT, curLangCode);
 
-            addSelectorRow(I18n.get(I18n.KEY_EQ_PRESET, curLangCode), curPresetLabel, new View.OnClickListener() {
+            addSelectorRow(I18n.get(I18n.KEY_EQ_PRESET, curLangCode), eqPresetLabel, new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
@@ -1211,31 +1323,25 @@ public class SettingsActivity extends Activity {
                         tokens,
                         I18n.get(I18n.KEY_EQ_PRESET, curLangCode),
                         options,
-                        curPreset,
+                        curEqPreset,
                         new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
                             @Override
                             public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                                String chosen = selected.id;
-                                preferences.edit().putString("pref_eq_preset", chosen).apply();
-                                if (!"custom".equals(chosen)) {
-                                    int[] presetBands;
-                                    if ("bass".equals(chosen)) {
-                                        presetBands = new int[]{6, 4, 1, 0, -1};
-                                    } else if ("vocal".equals(chosen)) {
-                                        presetBands = new int[]{-2, 0, 5, 3, -1};
-                                    } else if ("treble".equals(chosen)) {
-                                        presetBands = new int[]{-2, 0, 1, 4, 6};
-                                    } else if ("rock".equals(chosen)) {
-                                        presetBands = new int[]{5, 2, -1, 2, 5};
-                                    } else {
-                                        presetBands = new int[]{0, 0, 0, 0, 0};
+                                preferences.edit().putString("pref_eq_preset", selected.id).apply();
+                                int[] presetBands;
+                                if ("bass".equals(selected.id)) presetBands = new int[]{5, 3, 0, 0, 0};
+                                else if ("vocal".equals(selected.id)) presetBands = new int[]{-2, 0, 4, 2, 0};
+                                else if ("treble".equals(selected.id)) presetBands = new int[]{0, 0, 0, 3, 5};
+                                else if ("rock".equals(selected.id)) presetBands = new int[]{4, 2, -1, 2, 4};
+                                else presetBands = new int[]{0, 0, 0, 0, 0};
+
+                                if (!"custom".equals(selected.id)) {
+                                    SharedPreferences.Editor ed = preferences.edit();
+                                    for (int b = 0; b < 5; b++) {
+                                        ed.putInt("pref_eq_band_" + b, presetBands[b]);
+                                        applyEqualizerBand(b, presetBands[b]);
                                     }
-                                    SharedPreferences.Editor editor = preferences.edit();
-                                    for (int i = 0; i < 5; i++) {
-                                        editor.putInt("pref_eq_band_" + i, presetBands[i]);
-                                        applyEqualizerBand(i, presetBands[i]);
-                                    }
-                                    editor.apply();
+                                    ed.apply();
                                 }
                                 buildSettingsUI();
                             }
@@ -1244,13 +1350,11 @@ public class SettingsActivity extends Activity {
                 }
             }, tokens);
 
-            final String[] bandLabels = new String[]{"60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz"};
-            for (int i = 0; i < 5; i++) {
-                final int bandIndex = i;
-                final String bandLabel = bandLabels[i];
-                int currentDb = preferences.getInt("pref_eq_band_" + bandIndex, 0);
-                if (currentDb < -10) currentDb = -10;
-                if (currentDb > 10) currentDb = 10;
+            String[] bandLabels = {"60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz"};
+            for (int b = 0; b < 5; b++) {
+                final int bandIndex = b;
+                final String bandLabel = bandLabels[b];
+                final int currentDb = preferences.getInt("pref_eq_band_" + b, 0);
                 applyEqualizerBand(bandIndex, currentDb);
                 addEqBandSliderRow(bandLabel, bandIndex, currentDb, tokens);
             }
@@ -1262,7 +1366,55 @@ public class SettingsActivity extends Activity {
     // ==========================================
     private void buildHomeDrawerSection(final ThemeTokens tokens) {
         final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
-        addBackHeader(SettingsSection.HOME_DRAWER.getTitle(curLangCode), tokens);
+        if (currentSubSection == SettingsSubSection.NONE) {
+            addBackHeader(SettingsSection.HOME_DRAWER.getTitle(curLangCode), tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_HOME_CONFIG, curLangCode), I18n.get(I18n.KEY_SUB_HOME_CONFIG_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.HOME_CONFIG;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_HOME_PINNED, curLangCode), I18n.get(I18n.KEY_SUB_HOME_PINNED_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.HOME_PINNED;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_HOME_DRAWER_ALL, curLangCode), I18n.get(I18n.KEY_SUB_HOME_DRAWER_ALL_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.HOME_DRAWER_ALL;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            return;
+        }
+
+        switch (currentSubSection) {
+            case HOME_CONFIG:
+                buildHomeConfigSubSection(tokens, curLangCode);
+                break;
+            case HOME_PINNED:
+                buildHomePinnedSubSection(tokens, curLangCode);
+                break;
+            case HOME_DRAWER_ALL:
+                buildHomeDrawerAllSubSection(tokens, curLangCode);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void buildHomeConfigSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_HOME_CONFIG, curLangCode), tokens);
 
         final int currentLimit = preferences.getInt(KEY_APP_LIMIT, MainActivity.DEFAULT_HOME_APP_LIMIT);
         final String limitDisplay = (currentLimit >= 999)
@@ -1347,9 +1499,62 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
+        final String curBgPolicy = preferences.getString("bg_policy", "whitelist");
+        String bgPolicyDisplay;
+        if ("strict".equals(curBgPolicy)) bgPolicyDisplay = I18n.get(I18n.KEY_BG_STRICT, curLangCode);
+        else if ("allowed".equals(curBgPolicy)) bgPolicyDisplay = I18n.get(I18n.KEY_BG_ALLOWED_ALL, curLangCode);
+        else bgPolicyDisplay = I18n.get(I18n.KEY_BG_WHITELIST, curLangCode);
+
+        addSelectorRow(I18n.get(I18n.KEY_BG_POLICY, curLangCode), bgPolicyDisplay, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                options.add(new SingleChoiceSelectorDialog.Option("whitelist", I18n.get(I18n.KEY_BG_WHITELIST, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("strict", I18n.get(I18n.KEY_BG_STRICT, curLangCode)));
+                options.add(new SingleChoiceSelectorDialog.Option("allowed", I18n.get(I18n.KEY_BG_ALLOWED_ALL, curLangCode)));
+
+                SingleChoiceSelectorDialog.show(
+                    SettingsActivity.this,
+                    tokens,
+                    I18n.get(I18n.KEY_BG_POLICY, curLangCode),
+                    options,
+                    curBgPolicy,
+                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                        @Override
+                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            preferences.edit().putString("bg_policy", selected.id).apply();
+                            MainActivity.applyBackgroundPolicy(SettingsActivity.this);
+                            buildSettingsUI();
+                            Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_BG_POLICY, curLangCode) + ": " + selected.label, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                );
+            }
+        }, tokens);
+
+        if ("whitelist".equals(curBgPolicy)) {
+            addButtonRow(I18n.get(I18n.KEY_BG_APPS_CONFIG, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showBackgroundAppsConfigDialog(tokens);
+                }
+            }, tokens);
+        }
+
+        addSelectorRow(I18n.get(I18n.KEY_SHADE_TILES_TITLE, curLangCode), getShadeTilesSummary(curLangCode), new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showShadeTilesDialog(tokens, curLangCode);
+            }
+        }, tokens);
+    }
+
+    private void buildHomePinnedSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_HOME_PINNED, curLangCode), tokens);
+
+        final int currentLimit = preferences.getInt(KEY_APP_LIMIT, MainActivity.DEFAULT_HOME_APP_LIMIT);
         final Set<String> pinned = new HashSet<>(preferences.getStringSet(KEY_PINNED, MainActivity.DEFAULT_PINNED_PACKAGES));
 
-        // Parse custom order in O(M) time using cachedActivityMap
         String orderCsv = preferences.getString(KEY_PINNED_ORDER, null);
         final List<String> orderedPinned = new ArrayList<>();
         if (orderCsv != null && !orderCsv.trim().isEmpty()) {
@@ -1375,14 +1580,14 @@ public class SettingsActivity extends Activity {
             return;
         }
 
-        // Group 1: MAIN VIEW APPS (PINNED & SORTABLE)
-        TextView mainHeader = new TextView(this);
-        mainHeader.setText("=== " + I18n.get(I18n.KEY_PINNED_APPS_HEADER, curLangCode) + " ===");
-        mainHeader.setTextColor(tokens.accent);
-        mainHeader.setTextSize(14);
-        mainHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        mainHeader.setPadding(0, 20, 0, 8);
-        contentContainer.addView(mainHeader);
+        TextView countView = new TextView(this);
+        String limitStr = (currentLimit >= 999) ? I18n.get(I18n.KEY_APP_LIMIT_UNLIMITED, curLangCode) : String.valueOf(currentLimit);
+        countView.setText(orderedPinned.size() + " / " + limitStr + " pinned apps");
+        countView.setTextColor(tokens.textMuted);
+        countView.setTextSize(12);
+        countView.setTypeface(Typeface.MONOSPACE);
+        countView.setPadding(0, 0, 0, 12);
+        contentContainer.addView(countView);
 
         for (int i = 0; i < orderedPinned.size(); i++) {
             final int index = i;
@@ -1440,34 +1645,55 @@ public class SettingsActivity extends Activity {
                 itemRow.addView(downBtn);
             }
 
-            TextView remBtn = createReorderButton("[ - ]", tokens.textPrimary, new View.OnClickListener() {
+            TextView removeBtn = createReorderButton("[x]", tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555"), new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     pinned.remove(pkg);
-                    orderedPinned.remove(pkg);
+                    orderedPinned.remove(index);
                     saveOrderAndRefresh(orderedPinned, pinned);
                 }
             }, tokens);
-            itemRow.addView(remBtn);
+            itemRow.addView(removeBtn);
 
             contentContainer.addView(itemRow);
         }
-
         if (orderedPinned.isEmpty()) {
-            addInfoRow("Main View", "No apps pinned (All in drawer)", tokens);
+            addInfoRow("Pinned Apps", "No apps currently pinned", tokens);
+        }
+    }
+
+    private void buildHomeDrawerAllSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_HOME_DRAWER_ALL, curLangCode), tokens);
+
+        final int currentLimit = preferences.getInt(KEY_APP_LIMIT, MainActivity.DEFAULT_HOME_APP_LIMIT);
+        final Set<String> pinned = new HashSet<>(preferences.getStringSet(KEY_PINNED, MainActivity.DEFAULT_PINNED_PACKAGES));
+
+        String orderCsv = preferences.getString(KEY_PINNED_ORDER, null);
+        final List<String> orderedPinned = new ArrayList<>();
+        if (orderCsv != null && !orderCsv.trim().isEmpty()) {
+            for (String p : orderCsv.split(",")) {
+                String clean = p.trim();
+                if (pinned.contains(clean) && cachedActivityMap.containsKey(clean) && !orderedPinned.contains(clean)) {
+                    orderedPinned.add(clean);
+                }
+            }
+        }
+        for (String p : pinned) {
+            if (cachedActivityMap.containsKey(p) && !orderedPinned.contains(p)) {
+                orderedPinned.add(p);
+            }
         }
 
-        // Group 2: DRAWER ONLY APPS
-        TextView drawerHeader = new TextView(this);
-        drawerHeader.setText("=== " + I18n.get(I18n.KEY_DRAWER_ONLY, curLangCode) + " ===");
-        drawerHeader.setTextColor(tokens.textMuted);
-        drawerHeader.setTextSize(14);
-        drawerHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        drawerHeader.setPadding(0, 20, 0, 8);
-        contentContainer.addView(drawerHeader);
+        List<Map.Entry<String, CachedApp>> sortedEntries = new ArrayList<>(cachedActivityMap.entrySet());
+        Collections.sort(sortedEntries, new Comparator<Map.Entry<String, CachedApp>>() {
+            @Override
+            public int compare(Map.Entry<String, CachedApp> e1, Map.Entry<String, CachedApp> e2) {
+                return e1.getValue().label.compareToIgnoreCase(e2.getValue().label);
+            }
+        });
 
         int drawerCount = 0;
-        for (final Map.Entry<String, CachedApp> entry : cachedActivityMap.entrySet()) {
+        for (Map.Entry<String, CachedApp> entry : sortedEntries) {
             final String pkg = entry.getKey();
             if (!pinned.contains(pkg)) {
                 drawerCount++;
@@ -1510,107 +1736,55 @@ public class SettingsActivity extends Activity {
     }
 
     // ==========================================
-    private void showCustomBudgetDialog(final ThemeTokens tokens, final String curLangCode) {
-        final android.widget.EditText input = new android.widget.EditText(this);
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
-        input.setHint(I18n.get(I18n.KEY_BUDGET_CUSTOM_HINT, curLangCode));
-        int cur = preferences.getInt(KEY_BUDGET, MainActivity.DEFAULT_BUDGET_MINUTES);
-        if (cur > 0) input.setText(String.valueOf(cur));
-        try { input.setSelection(input.getText() != null ? input.getText().length() : 0); } catch (Throwable ignored) {}
-        new android.app.AlertDialog.Builder(this)
-            .setTitle(I18n.get(I18n.KEY_DAILY_BUDGET, curLangCode))
-            .setView(input)
-            .setPositiveButton(android.R.string.ok, new android.content.DialogInterface.OnClickListener() {
-                @Override public void onClick(android.content.DialogInterface d, int w) {
-                    try {
-                        int v = Integer.parseInt(input.getText().toString().trim());
-                        v = Math.max(1, Math.min(1440, v));
-                        preferences.edit().putInt(KEY_BUDGET, v).apply();
-                    } catch (Throwable ignored) {}
-                    buildSettingsUI();
-                }
-            })
-            .setNegativeButton(android.R.string.cancel, null)
-            .show();
-    }
-
     // SECTION 4: CONNECTIVITY & RADIOS
     // ==========================================
     private void buildConnectivitySection(ThemeTokens tokens) {
         final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
-        addBackHeader(SettingsSection.CONNECTIVITY.getTitle(curLangCode), tokens);
+        if (currentSubSection == SettingsSubSection.NONE) {
+            addBackHeader(SettingsSection.CONNECTIVITY.getTitle(curLangCode), tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_CONN_FIREWALL, curLangCode), I18n.get(I18n.KEY_SUB_CONN_FIREWALL_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.CONN_FIREWALL;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_CONN_RADIOS, curLangCode), I18n.get(I18n.KEY_SUB_CONN_RADIOS_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.CONN_RADIOS;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            return;
+        }
 
-        final boolean wifiState = getWifiHardwareState();
-        addToggleRow(I18n.get(I18n.KEY_WIFI_RADIO, curLangCode), wifiState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), wifiState, new View.OnClickListener() {
+        switch (currentSubSection) {
+            case CONN_FIREWALL:
+                buildConnFirewallSubSection(tokens, curLangCode);
+                break;
+            case CONN_RADIOS:
+                buildConnRadiosSubSection(tokens, curLangCode);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void buildConnFirewallSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_CONN_FIREWALL, curLangCode), tokens);
+
+        addSelectorRow(I18n.get(I18n.KEY_APP_NETWORK_FIREWALL, curLangCode), getBlockedCountSummary(this, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setRadioState("wifi", !wifiState);
-                buildSettingsUI();
+                AppNetworkFirewall.showFirewallDialog(SettingsActivity.this, tokens, curLangCode);
             }
         }, tokens);
 
-        final boolean btState = getBluetoothHardwareState();
-        addToggleRow(I18n.get(I18n.KEY_BT_RADIO, curLangCode), btState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), btState, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setRadioState("bluetooth", !btState);
-                buildSettingsUI();
-            }
-        }, tokens);
-
-        final boolean dataState = preferences.getBoolean(KEY_DATA_STATE, true);
-        addToggleRow(I18n.get(I18n.KEY_CELLULAR_DATA, curLangCode), dataState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), dataState, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setRadioState("data", !dataState);
-                preferences.edit().putBoolean(KEY_DATA_STATE, !dataState).apply();
-                buildSettingsUI();
-            }
-        }, tokens);
-
-        final boolean nfcState = getNfcHardwareState();
-        addToggleRow(I18n.get(I18n.KEY_NFC_RADIO, curLangCode), nfcState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), nfcState, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                setNfcState(!nfcState);
-                buildSettingsUI();
-            }
-        }, tokens);
-
-        final int currentBatch = preferences.getInt("sync_batching_mins", 30);
-        String batchDisplay;
-        if (currentBatch == 15) batchDisplay = I18n.get(I18n.KEY_BATCH_15M, curLangCode);
-        else if (currentBatch == 60) batchDisplay = I18n.get(I18n.KEY_BATCH_60M, curLangCode);
-        else batchDisplay = I18n.get(I18n.KEY_BATCH_30M, curLangCode);
-
-        addSelectorRow(I18n.get(I18n.KEY_SYNC_BATCHING, curLangCode), currentBatch + "m", new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
-                options.add(new SingleChoiceSelectorDialog.Option("15", "15m"));
-                options.add(new SingleChoiceSelectorDialog.Option("30", "30m"));
-                options.add(new SingleChoiceSelectorDialog.Option("60", "60m"));
-
-                SingleChoiceSelectorDialog.show(
-                    SettingsActivity.this,
-                    tokens,
-                    I18n.get(I18n.KEY_SYNC_BATCHING, curLangCode),
-                    options,
-                    String.valueOf(currentBatch),
-                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
-                        @Override
-                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
-                            int mins = Integer.parseInt(selected.id);
-                            preferences.edit().putInt("sync_batching_mins", mins).apply();
-                            buildSettingsUI();
-                            Toast.makeText(SettingsActivity.this, "Sync: " + selected.label, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                );
-            }
-        }, tokens);
-
-        // Background App Execution Policy
         final String curBgPolicy = preferences.getString("bg_policy", "whitelist");
         String bgPolicyDisplay;
         if ("strict".equals(curBgPolicy)) bgPolicyDisplay = I18n.get(I18n.KEY_BG_STRICT, curLangCode);
@@ -1652,18 +1826,45 @@ public class SettingsActivity extends Activity {
                 }
             }, tokens);
         }
+    }
 
-        addSelectorRow(I18n.get(I18n.KEY_SHADE_TILES_TITLE, curLangCode), getShadeTilesSummary(curLangCode), new View.OnClickListener() {
+    private void buildConnRadiosSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_CONN_RADIOS, curLangCode), tokens);
+
+        final boolean wifiState = getWifiHardwareState();
+        addToggleRow(I18n.get(I18n.KEY_WIFI_RADIO, curLangCode), wifiState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), wifiState, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showShadeTilesDialog(tokens, curLangCode);
+                setRadioState("wifi", !wifiState);
+                buildSettingsUI();
             }
         }, tokens);
 
-        addSelectorRow(I18n.get(I18n.KEY_APP_NETWORK_FIREWALL, curLangCode), getBlockedCountSummary(this, curLangCode), new View.OnClickListener() {
+        final boolean btState = getBluetoothHardwareState();
+        addToggleRow(I18n.get(I18n.KEY_BT_RADIO, curLangCode), btState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), btState, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AppNetworkFirewall.showFirewallDialog(SettingsActivity.this, tokens, curLangCode);
+                setRadioState("bluetooth", !btState);
+                buildSettingsUI();
+            }
+        }, tokens);
+
+        final boolean dataState = preferences.getBoolean(KEY_DATA_STATE, true);
+        addToggleRow(I18n.get(I18n.KEY_CELLULAR_DATA, curLangCode), dataState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), dataState, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setRadioState("data", !dataState);
+                preferences.edit().putBoolean(KEY_DATA_STATE, !dataState).apply();
+                buildSettingsUI();
+            }
+        }, tokens);
+
+        final boolean nfcState = getNfcHardwareState();
+        addToggleRow(I18n.get(I18n.KEY_NFC_RADIO, curLangCode), nfcState ? I18n.get(I18n.KEY_ENABLED, curLangCode) : I18n.get(I18n.KEY_DISABLED, curLangCode), nfcState, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setNfcState(!nfcState);
+                buildSettingsUI();
             }
         }, tokens);
 
@@ -1672,18 +1873,50 @@ public class SettingsActivity extends Activity {
             addButtonRow(I18n.get(I18n.KEY_NFC_PAYMENTS, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    try {
-                        startActivity(new Intent(Settings.ACTION_NFC_PAYMENT_SETTINGS));
-                    } catch (Throwable e) {
-                        try {
-                            startActivity(new Intent(Settings.ACTION_NFC_SETTINGS));
-                        } catch (Throwable t) {
-                            Toast.makeText(SettingsActivity.this, I18n.get(I18n.KEY_NFC_NOT_AVAILABLE, curLangCode), Toast.LENGTH_SHORT).show();
-                        }
-                    }
+                    NfcPaymentSandboxManager.showDiagnosticsDialog(SettingsActivity.this, tokens, curLangCode);
                 }
             }, tokens);
         }
+
+        final int currentBatch = preferences.getInt("sync_batching_mins", 30);
+        String batchDisplay;
+        if (currentBatch == 15) batchDisplay = I18n.get(I18n.KEY_BATCH_15M, curLangCode);
+        else if (currentBatch == 60) batchDisplay = I18n.get(I18n.KEY_BATCH_60M, curLangCode);
+        else batchDisplay = I18n.get(I18n.KEY_BATCH_30M, curLangCode);
+
+        addSelectorRow(I18n.get(I18n.KEY_SYNC_BATCHING, curLangCode), currentBatch + "m", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                options.add(new SingleChoiceSelectorDialog.Option("15", "15m"));
+                options.add(new SingleChoiceSelectorDialog.Option("30", "30m"));
+                options.add(new SingleChoiceSelectorDialog.Option("60", "60m"));
+
+                SingleChoiceSelectorDialog.show(
+                    SettingsActivity.this,
+                    tokens,
+                    I18n.get(I18n.KEY_SYNC_BATCHING, curLangCode),
+                    options,
+                    String.valueOf(currentBatch),
+                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                        @Override
+                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            int mins = Integer.parseInt(selected.id);
+                            preferences.edit().putInt("sync_batching_mins", mins).apply();
+                            buildSettingsUI();
+                            Toast.makeText(SettingsActivity.this, "Sync: " + selected.label, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                );
+            }
+        }, tokens);
+
+        addSelectorRow(I18n.get(I18n.KEY_SHADE_TILES_TITLE, curLangCode), getShadeTilesSummary(curLangCode), new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showShadeTilesDialog(tokens, curLangCode);
+            }
+        }, tokens);
     }
 
     private String getBlockedCountSummary(Context context, String curLangCode) {
@@ -1706,15 +1939,67 @@ public class SettingsActivity extends Activity {
     // ==========================================
     private void buildSystemSection(ThemeTokens tokens) {
         final String curLangCode = preferences.getString(KEY_LANGUAGE, "en");
-        addBackHeader(SettingsSection.SYSTEM.getTitle(curLangCode), tokens);
+        if (currentSubSection == SettingsSubSection.NONE) {
+            addBackHeader(SettingsSection.SYSTEM.getTitle(curLangCode), tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_SYS_INFO, curLangCode), I18n.get(I18n.KEY_SUB_SYS_INFO_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.SYS_INFO;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_SYS_UPDATES, curLangCode), I18n.get(I18n.KEY_SUB_SYS_UPDATES_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.SYS_UPDATES;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_SYS_BACKUP, curLangCode), I18n.get(I18n.KEY_SUB_SYS_BACKUP_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.SYS_BACKUP;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            addCategoryCard(I18n.get(I18n.KEY_SUB_SYS_ADVANCED, curLangCode), I18n.get(I18n.KEY_SUB_SYS_ADVANCED_DESC, curLangCode), new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    currentSubSection = SettingsSubSection.SYS_ADVANCED;
+                    preferences.edit().putString(PREF_LAST_SETTINGS_SUB_SECTION, currentSubSection.name()).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                }
+            }, tokens);
+            return;
+        }
 
-        TextView devHeader = new TextView(this);
-        devHeader.setText(I18n.get(I18n.KEY_DEVICE_INFO_HEADER, curLangCode));
-        devHeader.setTextColor(tokens.accent);
-        devHeader.setTextSize(14);
-        devHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        devHeader.setPadding(0, 8, 0, 8);
-        contentContainer.addView(devHeader);
+        switch (currentSubSection) {
+            case SYS_INFO:
+                buildSysInfoSubSection(tokens, curLangCode);
+                break;
+            case SYS_UPDATES:
+                buildSysUpdatesSubSection(tokens, curLangCode);
+                break;
+            case SYS_BACKUP:
+                buildSysBackupSubSection(tokens, curLangCode);
+                break;
+            case SYS_ADVANCED:
+                buildSysAdvancedSubSection(tokens, curLangCode);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void buildSysInfoSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_SYS_INFO, curLangCode), tokens);
 
         addInfoRow(I18n.get(I18n.KEY_DEVICE_MODEL, curLangCode), Build.MANUFACTURER + " " + Build.MODEL, tokens);
         addInfoRow(I18n.get(I18n.KEY_ANDROID_VERSION, curLangCode), Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")", tokens);
@@ -1722,28 +2007,10 @@ public class SettingsActivity extends Activity {
         addInfoRow(I18n.get(I18n.KEY_CHIPSET_PLATFORM, curLangCode), Build.HARDWARE + " (" + Build.BOARD + ")", tokens);
         addInfoRow(I18n.get(I18n.KEY_KERNEL_VERSION, curLangCode), formatCleanKernelVersion(System.getProperty("os.version")), tokens);
         addInfoRow(I18n.get(I18n.KEY_BUILD_ID, curLangCode), Build.DISPLAY != null ? Build.DISPLAY : Build.ID, tokens);
+    }
 
-        TextView blHeader = new TextView(this);
-        blHeader.setText(I18n.get(I18n.KEY_BOOTLOADER_HEADER, curLangCode));
-        blHeader.setTextColor(tokens.accent);
-        blHeader.setTextSize(14);
-        blHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        blHeader.setPadding(0, 18, 0, 8);
-        contentContainer.addView(blHeader);
-
-        addInfoRow(
-            I18n.get(I18n.KEY_BOOTLOADER_LOCK_STATUS, curLangCode),
-            BootloaderManager.getStatusDisplay(curLangCode),
-            tokens
-        );
-
-        TextView updHeader = new TextView(this);
-        updHeader.setText(I18n.get(I18n.KEY_OTA_HEADER, curLangCode));
-        updHeader.setTextColor(tokens.accent);
-        updHeader.setTextSize(14);
-        updHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        updHeader.setPadding(0, 18, 0, 8);
-        contentContainer.addView(updHeader);
+    private void buildSysUpdatesSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_SYS_UPDATES, curLangCode), tokens);
 
         final UpdateChannel curChannel = UpdateChannel.fromCode(preferences.getString(KEY_OTA_CHANNEL, UpdateChannel.BETA.getCode()));
 
@@ -1753,7 +2020,6 @@ public class SettingsActivity extends Activity {
                 List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
                 options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.RELEASE.getCode(), "Release"));
                 options.add(new SingleChoiceSelectorDialog.Option(UpdateChannel.BETA.getCode(), "Beta"));
-
 
                 SingleChoiceSelectorDialog.show(
                     SettingsActivity.this,
@@ -1774,18 +2040,10 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
-        addButtonRow("Keyboard", "Input method", new View.OnClickListener() {
+        addButtonRow("GitHub Releases", I18n.get(I18n.KEY_CHECK_UPDATES, curLangCode), new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-                    android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    if (imm != null) imm.showInputMethodPicker();
-                } catch (Throwable e) {
-                    try {
-                        startActivity(new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS));
-                    } catch (Throwable ignored) {}
-                }
+                OtaUpdateManager.checkForUpdates(SettingsActivity.this, tokens, curChannel, curLangCode);
             }
         }, tokens);
 
@@ -1801,7 +2059,6 @@ public class SettingsActivity extends Activity {
                     Toast.makeText(SettingsActivity.this, "No .apk in " + dir.getAbsolutePath(), Toast.LENGTH_LONG).show();
                     return;
                 }
-                // Limit picker to APKs already in app-scoped dir; no external storage traversal.
                 File apk = apks[0];
                 if (apk.length() > 300L * 1024L * 1024L) {
                     Toast.makeText(SettingsActivity.this, "APK too large (>300MB)", Toast.LENGTH_SHORT).show();
@@ -1817,7 +2074,6 @@ public class SettingsActivity extends Activity {
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setDataAndType(Uri.fromFile(apk), "application/vnd.android.package-archive");
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    // Guard: require explicit user action above; no auto-install without consent.
                     startActivity(intent);
                 } catch (Throwable e) {
                     try {
@@ -1830,21 +2086,10 @@ public class SettingsActivity extends Activity {
                 }
             }
         }, tokens);
+    }
 
-        addButtonRow("GitHub Releases", I18n.get(I18n.KEY_CHECK_UPDATES, curLangCode), new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                OtaUpdateManager.checkForUpdates(SettingsActivity.this, tokens, curChannel, curLangCode);
-            }
-        }, tokens);
-
-        TextView bakHeader = new TextView(this);
-        bakHeader.setText(I18n.get(I18n.KEY_BACKUP_HEADER, curLangCode));
-        bakHeader.setTextColor(tokens.accent);
-        bakHeader.setTextSize(14);
-        bakHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        bakHeader.setPadding(0, 18, 0, 8);
-        contentContainer.addView(bakHeader);
+    private void buildSysBackupSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_SYS_BACKUP, curLangCode), tokens);
 
         addButtonRow(I18n.get(I18n.KEY_CREATE_SNAPSHOT, curLangCode), I18n.get(I18n.KEY_CREATE_BACKUP, curLangCode), new View.OnClickListener() {
             @Override
@@ -1864,14 +2109,25 @@ public class SettingsActivity extends Activity {
                 });
             }
         }, tokens);
+    }
 
-        TextView toolsHeader = new TextView(this);
-        toolsHeader.setText(I18n.get(I18n.KEY_TESTING_HEADER, curLangCode));
-        toolsHeader.setTextColor(tokens.accent);
-        toolsHeader.setTextSize(14);
-        toolsHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        toolsHeader.setPadding(0, 18, 0, 8);
-        contentContainer.addView(toolsHeader);
+    private void buildSysAdvancedSubSection(final ThemeTokens tokens, final String curLangCode) {
+        addBackHeader(I18n.get(I18n.KEY_SUB_SYS_ADVANCED, curLangCode), tokens);
+
+        addButtonRow("Keyboard", "Input method", new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    android.view.inputmethod.InputMethodManager imm =
+                        (android.view.inputmethod.InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) imm.showInputMethodPicker();
+                } catch (Throwable e) {
+                    try {
+                        startActivity(new Intent(android.provider.Settings.ACTION_INPUT_METHOD_SETTINGS));
+                    } catch (Throwable ignored) {}
+                }
+            }
+        }, tokens);
 
         addButtonRow(I18n.get(I18n.KEY_RUN_WIZARD_ROW, curLangCode), I18n.get(I18n.KEY_RUN_WIZARD, curLangCode), new View.OnClickListener() {
             @Override
@@ -1897,7 +2153,6 @@ public class SettingsActivity extends Activity {
                 QuickStartGuideDialog.show(SettingsActivity.this, tokens, curLangCode);
             }
         }, tokens);
-
 
         addButtonRow(I18n.get(I18n.KEY_DEV_SETTINGS, curLangCode), I18n.get(I18n.KEY_OPEN, curLangCode), new View.OnClickListener() {
             @Override
@@ -1978,12 +2233,28 @@ public class SettingsActivity extends Activity {
         SettingsRowFactory.addBackHeader(this, contentContainer, tokens, langCode, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (currentSubSection != SettingsSubSection.NONE) {
+                    currentSubSection = SettingsSubSection.NONE;
+                    preferences.edit().remove(PREF_LAST_SETTINGS_SUB_SECTION).apply();
+                    if (scrollView != null) scrollView.scrollTo(0, 0);
+                    buildSettingsUI();
+                    return;
+                }
                 currentSection = SettingsSection.MENU;
-                preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
+                preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SUB_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
                 if (scrollView != null) scrollView.scrollTo(0, 0);
                 buildSettingsUI();
             }
         });
+        if (title != null && !title.isEmpty()) {
+            TextView subTitleView = new TextView(this);
+            subTitleView.setText("=== " + title + " ===");
+            subTitleView.setTextColor(tokens.accent);
+            subTitleView.setTextSize(14);
+            subTitleView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+            subTitleView.setPadding(0, dpToPx(4), 0, dpToPx(12));
+            contentContainer.addView(subTitleView);
+        }
     }
 
     private void addCategoryCard(String title, String subtitle, View.OnClickListener listener, ThemeTokens tokens) {
@@ -2482,13 +2753,20 @@ public class SettingsActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (currentSubSection != SettingsSubSection.NONE) {
+            currentSubSection = SettingsSubSection.NONE;
+            preferences.edit().remove(PREF_LAST_SETTINGS_SUB_SECTION).apply();
+            if (scrollView != null) scrollView.scrollTo(0, 0);
+            buildSettingsUI();
+            return;
+        }
         if (currentSection != SettingsSection.MENU) {
             currentSection = SettingsSection.MENU;
-            preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
+            preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SUB_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
             if (scrollView != null) scrollView.scrollTo(0, 0);
             buildSettingsUI();
         } else {
-            preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
+            preferences.edit().remove(PREF_LAST_SETTINGS_SECTION).remove(PREF_LAST_SETTINGS_SUB_SECTION).remove(PREF_LAST_SETTINGS_SCROLL_Y).apply();
             super.onBackPressed();
         }
     }

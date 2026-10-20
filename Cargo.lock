@@ -502,6 +502,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "tont-integration-tests"
+version = "0.0.2"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tont-backup",
+ "tont-common",
+ "tont-input",
+ "tont-powerd",
+ "tont-sensors",
+ "tont-settings",
+ "tont-shell",
+ "tont-syncd",
+ "tont-telephony",
+]
+
+[[package]]
 name = "tont-powerd"
 version = "0.0.2"
 dependencies = [
@@ -528,6 +546,7 @@ name = "tont-sensors"
 version = "0.0.2"
 dependencies = [
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "tont-common",

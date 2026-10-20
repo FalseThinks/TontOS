@@ -10,21 +10,23 @@ AOSP_DIR="${AOSP_DIR:-$HOME/aosp/tontos}"
 HOST_OUT="$AOSP_DIR/out/host/linux-x86"
 
 echo "=========================================================="
-echo " Deteniendo Cuttlefish Virtual Device (TontOS)..."
+echo " Stopping Cuttlefish Virtual Device (TontOS)..."
 echo "=========================================================="
 
-# 1. Ejecutar stop_cvd nativo de AOSP
+# 1. Execute native AOSP stop_cvd
 if [[ -x "$HOST_OUT/bin/stop_cvd" ]]; then
     export PATH="$HOST_OUT/bin:$PATH"
     "$HOST_OUT/bin/stop_cvd" 2>/dev/null || true
 fi
 
-# 2. Desconectar ADB
+# 2. Disconnect ADB
 adb disconnect 127.0.0.1:6520 2>/dev/null || true
 adb disconnect 0.0.0.0:6520 2>/dev/null || true
 
-# 3. Limpiar cualquier proceso residual
-pkill -f "run_cvd" 2>/dev/null || true
-pkill -f "crosvm" 2>/dev/null || true
+# 3. Terminate residual Cuttlefish processes
+pkill -9 -f "run_cvd|crosvm|launch_cvd|webRTC|adb_connector" 2>/dev/null || true
 
-echo "[+] Cuttlefish VM detenida y sockets liberados con éxito."
+# 4. Clean up sockets and ephemeral instance directories
+rm -rf "$HOME/cuttlefish" /tmp/cf_avd_* /tmp/cf_env_* "$HOME/cuttlefish_runtime"* 2>/dev/null || true
+
+echo "[+] Cuttlefish VM stopped and sockets cleared successfully."

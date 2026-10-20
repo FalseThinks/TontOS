@@ -1,0 +1,20 @@
+[package]
+name = "tont-integration-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+tont-common = { path = "../../crates/tont-common" }
+tont-powerd = { path = "../../crates/tont-powerd" }
+tont-syncd = { path = "../../crates/tont-syncd" }
+tont-telephony = { path = "../../crates/tont-telephony" }
+tont-sensors = { path = "../../crates/tont-sensors" }
+tont-backup = { path = "../../crates/tont-backup" }
+tont-shell = { path = "../../crates/tont-shell" }
+tont-settings = { path = "../../crates/tont-settings" }
+tont-input = { path = "../../crates/tont-input" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true

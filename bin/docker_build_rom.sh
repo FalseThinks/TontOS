@@ -24,37 +24,50 @@ if [[ ! -d "$AOSP_DIR" ]] && [[ -d "${AOSP_DIR_HOST:-$HOME/aosp/tontos}" ]]; the
     AOSP_DIR="${AOSP_DIR_HOST:-$HOME/aosp/tontos}"
 fi
 
-# Dynamic parallel job calculation (~2GB RAM per worker)
-TOTAL_CORES=$(nproc 2>/dev/null || echo 4)
-TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 8388608)
-RAM_JOBS=$(( TOTAL_RAM_KB / (1024 * 1024 * 2) ))
-
-if (( RAM_JOBS < 2 )); then
-    SUGGESTED_JOBS=2
-elif (( RAM_JOBS > TOTAL_CORES )); then
-    SUGGESTED_JOBS=$TOTAL_CORES
-else
-    SUGGESTED_JOBS=$RAM_JOBS
-fi
-BUILD_JOBS="${BUILD_JOBS:-$SUGGESTED_JOBS}"
+# ==============================================================================
+# Dynamic Hardware & Available RAM Profile Engine (4GB / 8GB / 16GB / 32GB)
+# ==============================================================================
+source "$SCRIPT_DIR/helpers/memory_profile.sh" "$@"
 BUILD_TARGET="${BUILD_TARGET:-droid}"
 
 print_header() {
     echo "=========================================================="
     echo "  TontOS Universal Containerized Engine (Docker)"
     echo "=========================================================="
-    echo "  Dockerfile:    $DOCKERFILE"
-    echo "  Target Image:  $IMAGE_NAME"
-    echo "  Workspace:     $ROOT_DIR"
+    echo "  Dockerfile:      $DOCKERFILE"
+    echo "  Target Image:    $IMAGE_NAME"
+    echo "  Workspace:       $ROOT_DIR"
     echo "  Internal Ccache: $CCACHE_DIR"
     echo "  Internal Out:    $OUT_DIR"
-    echo "  AOSP Source:   $AOSP_DIR"
-    echo "  Parallelism:   $TOTAL_CORES Cores -> -j$BUILD_JOBS workers"
+    echo "  AOSP Source:     $AOSP_DIR"
+    echo "  RAM Profile:     $PROFILE_LABEL"
+    echo "  RAM Strategy:    $STRATEGY_DESC"
+    echo "  Parallelism:     $TOTAL_CORES Cores -> -j$BUILD_JOBS workers"
+    echo "  JVM Heap:        -Xmx$JAVA_XMX | Shared Memory: $SHM_SIZE"
     echo "=========================================================="
 }
 
 ensure_directories() {
     mkdir -p "$BUILD_DIR" "$CCACHE_DIR" "$OUT_DIR"
+}
+
+ensure_memory_and_swap() {
+    local total_ram_kb
+    total_ram_kb=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 8388608)
+    local total_swap_kb
+    total_swap_kb=$(grep SwapTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
+    local required_swap_kb=$(( MIN_SWAP_REQUIRED_GB * 1024 * 1024 ))
+
+    # AOSP Baklava requires generous virtual memory during heavy R8 & LLVM link phases.
+    if (( total_swap_kb < required_swap_kb )); then
+        echo "[+] Active swap ($(( total_swap_kb / 1024 )) MB) is below recommended ($(( required_swap_kb / 1024 )) MB) for $PROFILE_LABEL."
+        echo "[+] Auto-configuring tiered NVMe swap to prevent systemd-oomd SIGKILL..."
+        if command -v sudo >/dev/null 2>&1; then
+            sudo "$SCRIPT_DIR/helpers/setup_host_swap.sh" setup
+        else
+            echo "[!] Warning: sudo unavailable. Build may run into memory pressure."
+        fi
+    fi
 }
 
 ensure_image() {
@@ -84,13 +97,19 @@ run_container() {
         sdk_mount=("-v" "$host_sdk:/home/tontos/Android/Sdk:ro")
     fi
 
+    local platform_flags=()
+    if [[ "$(uname -s)" != *"MINGW"* && "$(uname -s)" != *"MSYS"* && "$(uname -s)" != *"CYGWIN"* ]]; then
+        platform_flags+=("--net=host" "--oom-score-adj=-500")
+    fi
+
     docker run --rm "${tty_flags[@]}" \
         --privileged \
-        --net=host \
-        --shm-size=4g \
+        "${platform_flags[@]}" \
+        --shm-size="$SHM_SIZE" \
         -e BUILD_JOBS="$BUILD_JOBS" \
-        -e GOMAXPROCS=2 \
-        -e MALLOC_ARENA_MAX=2 \
+        -e GOMAXPROCS="$GOMAXPROCS_VAL" \
+        -e MALLOC_ARENA_MAX="$MALLOC_ARENA_MAX_VAL" \
+        -e _JAVA_OPTIONS="-Xmx$JAVA_XMX" \
         -e USE_CCACHE=1 \
         -e CCACHE_DIR=/workspace/.ccache \
         -v "$ROOT_DIR:/workspace" \
@@ -102,13 +121,50 @@ run_container() {
         "${cmd[@]}"
 }
 
-# Subcommand routing
-ACTION="${1:---build}"
+# Subcommand & Argument routing
+ACTION=""
+PASSTHROUGH_ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        --help|-h|help)
+            ACTION="help"
+            ;;
+        --clean|clean)
+            ACTION="clean"
+            ;;
+        --shell|shell)
+            ACTION="shell"
+            ;;
+        --test|test)
+            ACTION="test"
+            ;;
+        --apk|apk)
+            ACTION="apk"
+            ;;
+        --build|build)
+            ACTION="build"
+            ;;
+        --available|--mem-mode=*|--mode=*|--total|--force-total|--ram=*|--ram)
+            # Memory options consumed by memory_profile.sh
+            ;;
+        *)
+            PASSTHROUGH_ARGS+=("$arg")
+            ;;
+    esac
+done
+
+if [[ -z "$ACTION" ]]; then
+    if (( ${#PASSTHROUGH_ARGS[@]} > 0 )); then
+        ACTION="passthrough"
+    else
+        ACTION="build"
+    fi
+fi
 
 case "$ACTION" in
-    --help|-h|help)
+    help)
         print_header
-        echo "Usage: ./scripts/docker_build_rom.sh [COMMAND] [OPTIONS]"
+        echo "Usage: ./bin/docker_build_rom.sh [COMMAND] [OPTIONS]"
         echo ""
         echo "Commands:"
         echo "  --build (default)   Compile AOSP ROM inside isolated container"
@@ -117,37 +173,47 @@ case "$ACTION" in
         echo "  --shell             Start interactive bash shell inside container"
         echo "  --clean             Wipe internal .build/, .ccache/, and out/"
         echo "  --help, -h          Display this help message"
+        echo ""
+        echo "Hardware Options:"
+        echo "  --available         Adapt to currently available free RAM (safe default)"
+        echo "  --total             Adapt to total physical PC RAM capacity"
+        echo "  --ram=4|8|16|32     Explicitly enforce RAM profile and concurrency"
         exit 0
         ;;
-    --clean|clean)
+    clean)
         echo "[+] Cleaning internal project build directories and caches..."
         rm -rf "$BUILD_DIR" "$CCACHE_DIR" "$OUT_DIR"
+        if [[ -f "/swapfile_aosp" ]] && command -v sudo >/dev/null 2>&1; then
+            echo "[+] Cleaning AOSP swapfile..."
+            sudo "$SCRIPT_DIR/helpers/setup_host_swap.sh" clean 2>/dev/null || true
+        fi
         echo "[✓] Internal build directories cleaned."
         exit 0
         ;;
-    --shell|shell)
+    shell)
         ensure_directories
         ensure_image
         print_header
         echo "[+] Launching interactive shell inside TontOS container..."
         run_container /bin/bash
         ;;
-    --test|test)
+    test)
         ensure_directories
         ensure_image
         print_header
         echo "[+] Running Rust Workspace Test Suite inside container..."
         run_container cargo test --workspace
         ;;
-    --apk|apk)
+    apk)
         ensure_directories
         ensure_image
         print_header
         echo "[+] Building Android Launcher APK inside container..."
-        run_container ./scripts/build_launcher_apk.sh
+        run_container ./bin/build_launcher_apk.sh
         ;;
-    --build|build|"")
+    build)
         ensure_directories
+        ensure_memory_and_swap
         ensure_image
         print_header
         if [[ ! -d "$AOSP_DIR" ]]; then
@@ -160,7 +226,8 @@ case "$ACTION" in
         LUNCH_COMBO="${LUNCH_COMBO:-tontos_cf_x86_64-trunk_staging-userdebug}"
         echo "[+] Launching parallel AOSP compilation inside container (-j$BUILD_JOBS)..."
         run_container /bin/bash -c "
-            export GOMAXPROCS=2 && export MALLOC_ARENA_MAX=2 &&
+            export GOMAXPROCS=$GOMAXPROCS_VAL && export MALLOC_ARENA_MAX=$MALLOC_ARENA_MAX_VAL &&
+            export _JAVA_OPTIONS=\"-Xmx$JAVA_XMX\" &&
             ccache -M 50G &&
             cd /home/tontos/aosp 2>/dev/null || cd /workspace/.build/aosp &&
             source build/envsetup.sh &&
@@ -168,10 +235,9 @@ case "$ACTION" in
             m -j$BUILD_JOBS $BUILD_TARGET
         "
         ;;
-    *)
-        # Passthrough arbitrary commands to container
+    passthrough|*)
         ensure_directories
         ensure_image
-        run_container "$@"
+        run_container "${PASSTHROUGH_ARGS[@]}"
         ;;
 esac

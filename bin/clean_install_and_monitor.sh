@@ -10,8 +10,16 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 HELPERS_DIR="$SCRIPT_DIR/helpers"
 AOSP_DIR="${AOSP_DIR:-$HOME/aosp/tontos}"
-PRODUCT_OUT="$AOSP_DIR/out/target/product/vsoc_x86_64_only"
-HOST_OUT="$AOSP_DIR/out/host/linux-x86"
+if [[ -f "$ROOT_DIR/out/target/product/vsoc_x86_64_only/system.img" ]]; then
+    PRODUCT_OUT="$ROOT_DIR/out/target/product/vsoc_x86_64_only"
+    HOST_OUT="$ROOT_DIR/out/host/linux-x86"
+    if [[ ! -d "$HOST_OUT/bin" && -d "$AOSP_DIR/out/host/linux-x86/bin" ]]; then
+        HOST_OUT="$AOSP_DIR/out/host/linux-x86"
+    fi
+else
+    PRODUCT_OUT="$AOSP_DIR/out/target/product/vsoc_x86_64_only"
+    HOST_OUT="$AOSP_DIR/out/host/linux-x86"
+fi
 LOGS_DIR="$ROOT_DIR/logs"
 
 # Default configuration
@@ -26,10 +34,11 @@ EXPLICIT_SKIP_BUILD=false
 SAMPLE_INTERVAL=5
 MONITOR_DURATION=0 # 0 = infinite until Ctrl+C
 BUILD_JOBS=""
+VERBOSE=false
 
 print_help() {
     cat << EOF
-Usage: ./scripts/clean_install_and_monitor.sh [OPTIONS]
+Usage: ./bin/clean_install_and_monitor.sh [OPTIONS]
 
 Unified Orchestrator: Swap Pre-flight -> Tests -> Build -> Cuttlefish Boot -> Monitoring
 
@@ -41,6 +50,9 @@ Build Options:
   --skip-build         Skip AOSP build and boot existing compiled images (default)
 
 Quality & Memory Options:
+  --available          Use currently available free RAM (safe profile, avoids thrashing)
+  --total              Use full physical hardware RAM (maximum capacity profile)
+  --ram=<4|8|16|32>    Explicitly force a RAM tier (4GB, 8GB, 16GB, or 32GB)
   --run-tests          Run full test suite (Rust, Java, APK, syntax) before build (default)
   --skip-tests         Bypass pre-build test suite
   --setup-swap         Ensure tiered zRAM + 32GB swapfile is active before build (default)
@@ -52,6 +64,7 @@ Cuttlefish & Monitoring Options:
   --skip-cuttlefish    Stop after tests/build; do not boot Cuttlefish VM
   --interval=SEC       Metric sampling interval in seconds (default: 5)
   --duration=SEC       Stop monitoring after SEC seconds (default: infinite)
+  --verbose, -v        Display live boot progress and kernel logs
   --help, -h           Show this help message
 EOF
     exit 0
@@ -59,6 +72,9 @@ EOF
 
 for arg in "$@"; do
     case "$arg" in
+        --verbose|-v)
+            VERBOSE=true
+            ;;
         --build)
             DO_BUILD=true
             ;;
@@ -111,6 +127,15 @@ for arg in "$@"; do
             ;;
         -j*)
             BUILD_JOBS="$arg"
+            ;;
+        --available|--mem-mode=available|--mode=available)
+            # Memory strategy handled by memory_profile.sh
+            ;;
+        --total|--force-total|--mem-mode=total|--mode=total)
+            # Memory strategy handled by memory_profile.sh
+            ;;
+        --ram=*|--ram)
+            # RAM tier override handled by memory_profile.sh
             ;;
         --help|-h)
             print_help
@@ -199,16 +224,24 @@ if [[ "$DO_BUILD" == true ]] || { [[ "$RUN_CUTTLEFISH" == true ]] && ! has_compi
     fi
 
     if [[ "$USE_DOCKER" == true ]]; then
-        echo "    Delegating compilation to isolated Docker container ($ROOT_DIR/scripts/docker_build_rom.sh)..."
-        "$SCRIPT_DIR/docker_build_rom.sh" --build
+        echo "    Delegating compilation to isolated Docker container ($ROOT_DIR/bin/docker_build_rom.sh)..."
+        "$SCRIPT_DIR/docker_build_rom.sh" --build "$@"
         echo "    [PASS] Containerized AOSP build completed successfully."
     else
-        echo "    Invoking Soong build in $AOSP_DIR..."
+        echo "    Determining hardware & available memory profile..."
+        source "$HELPERS_DIR/memory_profile.sh" "$@"
+        echo "    Invoking Soong build in $AOSP_DIR ($STRATEGY_DESC, -j$BUILD_JOBS)..."
         (
             cd "$AOSP_DIR"
+            unset OUT_DIR
+            export USE_CCACHE=1
+            export CCACHE_DIR="$ROOT_DIR/.ccache"
+            export GOMAXPROCS=$GOMAXPROCS_VAL
+            export MALLOC_ARENA_MAX=$MALLOC_ARENA_MAX_VAL
+            export _JAVA_OPTIONS="-Xmx$JAVA_XMX"
             source build/envsetup.sh
             lunch tontos_cf_x86_64-trunk_staging-userdebug
-            m $BUILD_JOBS
+            m -j$BUILD_JOBS
         )
         echo "    [PASS] AOSP build completed successfully."
     fi
@@ -251,12 +284,20 @@ echo ""
 echo "--> [4/5] Preparing Cuttlefish Environment..."
 "$HELPERS_DIR/stop_cuttlefish.sh" >/dev/null 2>&1 || true
 
+if [[ -f "$PRODUCT_OUT/super.img" ]] && file "$PRODUCT_OUT/super.img" | grep -q "Android sparse image"; then
+    echo "    Converting super.img from sparse to raw for Cuttlefish crosvm composite disk..."
+    "$HOST_OUT/bin/simg2img" "$PRODUCT_OUT/super.img" "$PRODUCT_OUT/super.raw.img"
+    mv -f "$PRODUCT_OUT/super.raw.img" "$PRODUCT_OUT/super.img"
+fi
+
 if [[ "$CLEAN_VM_BOOT" == true ]]; then
     echo "    Wiping runtime overlays for clean factory boot..."
     rm -rf "$PRODUCT_OUT"/cuttlefish_assembly* \
            "$PRODUCT_OUT"/cuttlefish_runtime* \
+           "$HOME"/cuttlefish \
            "$HOME"/cuttlefish_runtime* \
-           /tmp/cf_avd_* 2>/dev/null || true
+           /tmp/cf_avd_* \
+           /tmp/cf_env_* 2>/dev/null || true
     EXTRA_FLAGS=("--noresume")
 else
     echo "    Preserving user data partition (--resume)..."
@@ -288,6 +329,23 @@ while true; do
     if [[ "$BOOT_STATUS" == "1" ]]; then
         break
     fi
+
+    # Check for dm-verity or kernel panic failure
+    if grep -q "dm-verity device corrupted" "$HOME/cuttlefish/instances/cvd-1/logs/kernel.log" 2>/dev/null; then
+        echo "" >&2
+        echo "[-] FATAL: Guest kernel detected corrupted dm-verity partition table." >&2
+        echo "    Check logs at $HOME/cuttlefish/instances/cvd-1/logs/kernel.log" >&2
+        "$HELPERS_DIR/stop_cuttlefish.sh" >/dev/null 2>&1 || true
+        exit 1
+    fi
+
+    if [[ "$VERBOSE" == true ]]; then
+        STAGE="$(grep -E "init: |Android Runtime|SurfaceFlinger|Starting phase" "$HOME/cuttlefish/instances/cvd-1/logs/kernel.log" 2>/dev/null | tail -n 1 || true)"
+        if [[ -n "$STAGE" ]]; then
+            printf "\r    [Boot Stage] %-70s" "${STAGE:0:70}"
+        fi
+    fi
+
     sleep 2
     adb connect 127.0.0.1:6520 >/dev/null 2>&1 || true
 done

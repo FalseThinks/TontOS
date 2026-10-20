@@ -47,25 +47,3 @@ impl Default for SyncWindowConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sync_window_default() {
-        let config = SyncWindowConfig::default();
-        assert_eq!(config.interval_secs, 1800);
-        assert_eq!(config.duration_secs, 60);
-    }
-
-    #[test]
-    fn test_serde_roundtrip() {
-        let info = BatteryInfo {
-            capacity_percent: 85,
-            status: BatteryStatus::Discharging,
-        };
-        let serialized = serde_json::to_string(&info).unwrap();
-        let deserialized: BatteryInfo = serde_json::from_str(&serialized).unwrap();
-        assert_eq!(info, deserialized);
-    }
-}

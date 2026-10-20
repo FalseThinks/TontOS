@@ -3,7 +3,7 @@ set -euo pipefail
 
 if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
     cat <<'EOF'
-Usage: scripts/patch_play_integrity.sh
+Usage: bin/helpers/patch_play_integrity.sh
 
 Unsupported. This tool does not change Android properties, device identity,
 Verified Boot state, or Play Integrity / CTS results.

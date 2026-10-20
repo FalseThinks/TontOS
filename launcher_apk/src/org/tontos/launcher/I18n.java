@@ -254,7 +254,45 @@ public final class I18n {
     public static final String KEY_STATE_ON = "state_on";
     public static final String KEY_STATE_OFF = "state_off";
     public static final String KEY_NFC_PAYMENTS = "nfc_payments";
+    public static final String KEY_CLOCK_FORMAT = "clock_format";
+    public static final String KEY_CLOCK_24H = "clock_24h";
+    public static final String KEY_CLOCK_12H = "clock_12h";
 
+    // Nested Submenu Keys
+    public static final String KEY_SUB_DISPLAY_STYLE = "sub_display_style";
+    public static final String KEY_SUB_DISPLAY_STYLE_DESC = "sub_display_style_desc";
+    public static final String KEY_SUB_DISPLAY_LOCALE = "sub_display_locale";
+    public static final String KEY_SUB_DISPLAY_LOCALE_DESC = "sub_display_locale_desc";
+    public static final String KEY_SUB_DISPLAY_LOCKSCREEN = "sub_display_lockscreen";
+    public static final String KEY_SUB_DISPLAY_LOCKSCREEN_DESC = "sub_display_lockscreen_desc";
+    public static final String KEY_SUB_DISPLAY_DETOX = "sub_display_detox";
+    public static final String KEY_SUB_DISPLAY_DETOX_DESC = "sub_display_detox_desc";
+
+    public static final String KEY_SUB_SOUND_VOLUMES = "sub_sound_volumes";
+    public static final String KEY_SUB_SOUND_VOLUMES_DESC = "sub_sound_volumes_desc";
+    public static final String KEY_SUB_SOUND_EQUALIZER = "sub_sound_equalizer";
+    public static final String KEY_SUB_SOUND_EQUALIZER_DESC = "sub_sound_equalizer_desc";
+
+    public static final String KEY_SUB_HOME_CONFIG = "sub_home_config";
+    public static final String KEY_SUB_HOME_CONFIG_DESC = "sub_home_config_desc";
+    public static final String KEY_SUB_HOME_PINNED = "sub_home_pinned";
+    public static final String KEY_SUB_HOME_PINNED_DESC = "sub_home_pinned_desc";
+    public static final String KEY_SUB_HOME_DRAWER_ALL = "sub_home_drawer_all";
+    public static final String KEY_SUB_HOME_DRAWER_ALL_DESC = "sub_home_drawer_all_desc";
+
+    public static final String KEY_SUB_CONN_FIREWALL = "sub_conn_firewall";
+    public static final String KEY_SUB_CONN_FIREWALL_DESC = "sub_conn_firewall_desc";
+    public static final String KEY_SUB_CONN_RADIOS = "sub_conn_radios";
+    public static final String KEY_SUB_CONN_RADIOS_DESC = "sub_conn_radios_desc";
+
+    public static final String KEY_SUB_SYS_INFO = "sub_sys_info";
+    public static final String KEY_SUB_SYS_INFO_DESC = "sub_sys_info_desc";
+    public static final String KEY_SUB_SYS_UPDATES = "sub_sys_updates";
+    public static final String KEY_SUB_SYS_UPDATES_DESC = "sub_sys_updates_desc";
+    public static final String KEY_SUB_SYS_BACKUP = "sub_sys_backup";
+    public static final String KEY_SUB_SYS_BACKUP_DESC = "sub_sys_backup_desc";
+    public static final String KEY_SUB_SYS_ADVANCED = "sub_sys_advanced";
+    public static final String KEY_SUB_SYS_ADVANCED_DESC = "sub_sys_advanced_desc";
 
     public static final String KEY_LOCKSCREEN_HEADER = "lockscreen_header";
     public static final String KEY_LOCKSCREEN_ENABLE = "lockscreen_enable";
@@ -394,6 +432,9 @@ public final class I18n {
     public static final String KEY_NFC_NOT_EVALUATED = "nfc_not_evaluated";
     public static final String KEY_NFC_NOT_VERIFIED = "nfc_not_verified";
     public static final String KEY_NFC_ACTIONS_PAYMENTS = "nfc_actions_payments";
+    public static final String KEY_NFC_SEC_SANDBOX = "nfc_sec_sandbox";
+    public static final String KEY_NFC_SANDBOX_HCE_TITLE = "nfc_sandbox_hce_title";
+    public static final String KEY_NFC_SANDBOX_HCE_DESC = "nfc_sandbox_hce_desc";
 
     // Battery Protection
     public static final String KEY_BATTERY_CTRL_NA = "battery_ctrl_na";
@@ -489,6 +530,39 @@ public final class I18n {
         en.put(KEY_FONT_NORMAL, "Normal (100%)");
         en.put(KEY_FONT_LARGE, "Large (115%)");
         en.put(KEY_FONT_XL, "Extra Large (130%)");
+        en.put(KEY_CLOCK_FORMAT, "Clock Format");
+        en.put(KEY_CLOCK_24H, "24-Hour (14:00)");
+        en.put(KEY_CLOCK_12H, "12-Hour (2:00 PM)");
+        en.put(KEY_SUB_DISPLAY_STYLE, "Display & Style");
+        en.put(KEY_SUB_DISPLAY_STYLE_DESC, "Theme, grayscale, brightness, timeout, font, clock & battery");
+        en.put(KEY_SUB_DISPLAY_LOCALE, "Language & Region");
+        en.put(KEY_SUB_DISPLAY_LOCALE_DESC, "System language and regional formats");
+        en.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Lock Screen");
+        en.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Clock style, lock theme, owner info & shortcuts");
+        en.put(KEY_SUB_DISPLAY_DETOX, "Digital Detox & Limits");
+        en.put(KEY_SUB_DISPLAY_DETOX_DESC, "Daily screen time limit and mindful budgeting");
+        en.put(KEY_SUB_SOUND_VOLUMES, "Volumes & Profiles");
+        en.put(KEY_SUB_SOUND_VOLUMES_DESC, "Audio streams, ringer profile & notification delivery");
+        en.put(KEY_SUB_SOUND_EQUALIZER, "Audio Equalizer");
+        en.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Sound profiles & 5-band frequency equalizer");
+        en.put(KEY_SUB_HOME_CONFIG, "Home Preferences");
+        en.put(KEY_SUB_HOME_CONFIG_DESC, "Screen app count, mindful launch delay & background policy");
+        en.put(KEY_SUB_HOME_PINNED, "Pinned Screen Apps");
+        en.put(KEY_SUB_HOME_PINNED_DESC, "Reorder and unpin main screen applications");
+        en.put(KEY_SUB_HOME_DRAWER_ALL, "All Applications (Drawer)");
+        en.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Browse drawer, pin to main screen & privacy sheets");
+        en.put(KEY_SUB_CONN_FIREWALL, "Network Firewall & Isolation");
+        en.put(KEY_SUB_CONN_FIREWALL_DESC, "Per-app internet access control and background restriction");
+        en.put(KEY_SUB_CONN_RADIOS, "Radios, Sync & DNS");
+        en.put(KEY_SUB_CONN_RADIOS_DESC, "Wi-Fi, Bluetooth, mobile data, batch sync & private DNS");
+        en.put(KEY_SUB_SYS_INFO, "Device Specifications");
+        en.put(KEY_SUB_SYS_INFO_DESC, "Hardware model, Android version, kernel & build ID");
+        en.put(KEY_SUB_SYS_UPDATES, "System Updates (OTA)");
+        en.put(KEY_SUB_SYS_UPDATES_DESC, "Release channels, update check & local package install");
+        en.put(KEY_SUB_SYS_BACKUP, "Cryptographic Backup");
+        en.put(KEY_SUB_SYS_BACKUP_DESC, "Create and restore verifiable encrypted device snapshots");
+        en.put(KEY_SUB_SYS_ADVANCED, "Advanced & Developer Tools");
+        en.put(KEY_SUB_SYS_ADVANCED_DESC, "Setup wizard, developer options & hardware tests");
         en.put(KEY_MEDIA_VOL, "Media Volume");
         en.put(KEY_RING_VOL, "Ring Volume");
         en.put(KEY_ALARM_VOL, "Alarm Volume");
@@ -803,6 +877,9 @@ public final class I18n {
         en.put(KEY_NFC_NOT_EVALUATED, "Not evaluated");
         en.put(KEY_NFC_NOT_VERIFIED, "Not verified by this app");
         en.put(KEY_NFC_ACTIONS_PAYMENTS, "NFC Payment Settings (HCE)");
+        en.put(KEY_NFC_SEC_SANDBOX, "=== ISOLATED SANDBOX / WORK PROFILE HCE ===");
+        en.put(KEY_NFC_SANDBOX_HCE_TITLE, "Cross-Profile HCE Routing");
+        en.put(KEY_NFC_SANDBOX_HCE_DESC, "Route NFC payment APDU events to banking apps in isolated work/sandbox profiles");
 
         // Battery Protection
         en.put(KEY_BATTERY_CTRL_NA, "100% · controls N/A");
@@ -889,6 +966,39 @@ public final class I18n {
         de.put(KEY_FONT_NORMAL, "Normal (100%)");
         de.put(KEY_FONT_LARGE, "Groß (115%)");
         de.put(KEY_FONT_XL, "Sehr groß (130%)");
+        de.put(KEY_CLOCK_FORMAT, "Uhrzeitformat");
+        de.put(KEY_CLOCK_24H, "24-Stunden (14:00)");
+        de.put(KEY_CLOCK_12H, "12-Stunden (2:00 PM)");
+        de.put(KEY_SUB_DISPLAY_STYLE, "Bildschirm & Stil");
+        de.put(KEY_SUB_DISPLAY_STYLE_DESC, "Thema, Graustufen, Helligkeit, Timeout, Schrift, Uhr & Akku");
+        de.put(KEY_SUB_DISPLAY_LOCALE, "Sprache & Region");
+        de.put(KEY_SUB_DISPLAY_LOCALE_DESC, "Systemsprache und regionale Formate");
+        de.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Sperrbildschirm");
+        de.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Uhrstil, Sperrthema, Besitzerinfo & Verknüpfungen");
+        de.put(KEY_SUB_DISPLAY_DETOX, "Digital Detox & Limits");
+        de.put(KEY_SUB_DISPLAY_DETOX_DESC, "Tägliches Bildschirmzeitlimit und Achtsamkeit");
+        de.put(KEY_SUB_SOUND_VOLUMES, "Lautstärke & Profile");
+        de.put(KEY_SUB_SOUND_VOLUMES_DESC, "Audioströme, Klingelprofil & Benachrichtigungszustellung");
+        de.put(KEY_SUB_SOUND_EQUALIZER, "Audio-Equalizer");
+        de.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Klangprofile & 5-Band-Frequenz-Equalizer");
+        de.put(KEY_SUB_HOME_CONFIG, "Startbildschirm-Einstellungen");
+        de.put(KEY_SUB_HOME_CONFIG_DESC, "App-Anzahl, Achtsamkeits-Verzögerung & Hintergrundrichtlinie");
+        de.put(KEY_SUB_HOME_PINNED, "Angeheftete Apps verwalten");
+        de.put(KEY_SUB_HOME_PINNED_DESC, "Angeheftete Apps neu anordnen und entfernen");
+        de.put(KEY_SUB_HOME_DRAWER_ALL, "Alle Anwendungen (Drawer)");
+        de.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Drawer durchsuchen, anheften & Datenschutz");
+        de.put(KEY_SUB_CONN_FIREWALL, "Netzwerk-Firewall & Isolation");
+        de.put(KEY_SUB_CONN_FIREWALL_DESC, "App-Netzwerkzugriff & Hintergrundbeschränkung");
+        de.put(KEY_SUB_CONN_RADIOS, "Funkverbindungen, Sync & DNS");
+        de.put(KEY_SUB_CONN_RADIOS_DESC, "WLAN, Bluetooth, mobile Daten, Batch-Sync & privates DNS");
+        de.put(KEY_SUB_SYS_INFO, "Gerätespezifikationen");
+        de.put(KEY_SUB_SYS_INFO_DESC, "Hardwaremodell, Android-Version, Kernel & Build-ID");
+        de.put(KEY_SUB_SYS_UPDATES, "System-Updates (OTA)");
+        de.put(KEY_SUB_SYS_UPDATES_DESC, "Update-Kanäle, Prüfung & lokale Installation");
+        de.put(KEY_SUB_SYS_BACKUP, "Kryptographisches Backup");
+        de.put(KEY_SUB_SYS_BACKUP_DESC, "Verschlüsselte Snapshots erstellen und wiederherstellen");
+        de.put(KEY_SUB_SYS_ADVANCED, "Entwickler- & Hardware-Tools");
+        de.put(KEY_SUB_SYS_ADVANCED_DESC, "Einrichtungsassistent, Entwickleroptionen & Tests");
         de.put(KEY_MEDIA_VOL, "Medienlautstärke");
         de.put(KEY_RING_VOL, "Klingeltonlautstärke");
         de.put(KEY_ALARM_VOL, "Weckerlautstärke");
@@ -1210,6 +1320,39 @@ public final class I18n {
         pl.put(KEY_FONT_NORMAL, "Standardowa (100%)");
         pl.put(KEY_FONT_LARGE, "Duża (115%)");
         pl.put(KEY_FONT_XL, "Bardzo duża (130%)");
+        pl.put(KEY_CLOCK_FORMAT, "Format zegara");
+        pl.put(KEY_CLOCK_24H, "24-godzinny (14:00)");
+        pl.put(KEY_CLOCK_12H, "12-godzinny (2:00 PM)");
+        pl.put(KEY_SUB_DISPLAY_STYLE, "Ekran i styl");
+        pl.put(KEY_SUB_DISPLAY_STYLE_DESC, "Motyw, skala szarości, jasność, wygaszanie, czcionka, zegar i bateria");
+        pl.put(KEY_SUB_DISPLAY_LOCALE, "Język i region");
+        pl.put(KEY_SUB_DISPLAY_LOCALE_DESC, "Język systemu i format regionalny");
+        pl.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Ekran blokady");
+        pl.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Styl zegara, motyw blokady, właściciel i skróty");
+        pl.put(KEY_SUB_DISPLAY_DETOX, "Cyfrowy detoks i limity");
+        pl.put(KEY_SUB_DISPLAY_DETOX_DESC, "Dzienny limit czasu przed ekranem");
+        pl.put(KEY_SUB_SOUND_VOLUMES, "Głośność i profile");
+        pl.put(KEY_SUB_SOUND_VOLUMES_DESC, "Strumienie audio, profil dzwonka i dostarczanie powiadomień");
+        pl.put(KEY_SUB_SOUND_EQUALIZER, "Korektor dźwięku");
+        pl.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Profile brzmienia i 5-pasmowy korektor częstotliwości");
+        pl.put(KEY_SUB_HOME_CONFIG, "Preferencje ekranu głównego");
+        pl.put(KEY_SUB_HOME_CONFIG_DESC, "Limit aplikacji, świadome opóźnienie i zasady tła");
+        pl.put(KEY_SUB_HOME_PINNED, "Zarządzaj przypiętymi aplikacjami");
+        pl.put(KEY_SUB_HOME_PINNED_DESC, "Zmień kolejność i odepnij aplikacje z ekranu");
+        pl.put(KEY_SUB_HOME_DRAWER_ALL, "Wszystkie aplikacje (Menu)");
+        pl.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Przeglądaj aplikacje, przypinaj i sprawdzaj prywatność");
+        pl.put(KEY_SUB_CONN_FIREWALL, "Zapora sieciowa i izolacja");
+        pl.put(KEY_SUB_CONN_FIREWALL_DESC, "Kontrola dostępu do sieci per aplikacja i blokada w tle");
+        pl.put(KEY_SUB_CONN_RADIOS, "Łączność, synchronizacja i DNS");
+        pl.put(KEY_SUB_CONN_RADIOS_DESC, "Wi-Fi, Bluetooth, dane komórkowe, synchronizacja i prywatny DNS");
+        pl.put(KEY_SUB_SYS_INFO, "Specyfikacja urządzenia");
+        pl.put(KEY_SUB_SYS_INFO_DESC, "Model sprzętu, wersja Androida, jądro i numer kompilacji");
+        pl.put(KEY_SUB_SYS_UPDATES, "Aktualizacje systemu (OTA)");
+        pl.put(KEY_SUB_SYS_UPDATES_DESC, "Kanały aktualizacji, sprawdzanie i instalacja lokalna");
+        pl.put(KEY_SUB_SYS_BACKUP, "Kopia kryptograficzna");
+        pl.put(KEY_SUB_SYS_BACKUP_DESC, "Tworzenie i przywracanie szyfrowanych kopii urządzenia");
+        pl.put(KEY_SUB_SYS_ADVANCED, "Narzędzia zaawansowane i programistyczne");
+        pl.put(KEY_SUB_SYS_ADVANCED_DESC, "Kreator konfiguracji, opcje programisty i testy");
         pl.put(KEY_MEDIA_VOL, "Głośność multimediów");
         pl.put(KEY_RING_VOL, "Głośność dzwonka");
         pl.put(KEY_ALARM_VOL, "Głośność budzika");
@@ -1531,6 +1674,39 @@ public final class I18n {
         es.put(KEY_FONT_NORMAL, "Normal (100%)");
         es.put(KEY_FONT_LARGE, "Grande (115%)");
         es.put(KEY_FONT_XL, "Muy grande (130%)");
+        es.put(KEY_CLOCK_FORMAT, "Formato de reloj");
+        es.put(KEY_CLOCK_24H, "24 Horas (14:00)");
+        es.put(KEY_CLOCK_12H, "12 Horas (2:00 PM)");
+        es.put(KEY_SUB_DISPLAY_STYLE, "Pantalla y estilo");
+        es.put(KEY_SUB_DISPLAY_STYLE_DESC, "Tema, monocromía, brillo, espera, fuente, reloj y batería");
+        es.put(KEY_SUB_DISPLAY_LOCALE, "Idioma y región");
+        es.put(KEY_SUB_DISPLAY_LOCALE_DESC, "Idioma del sistema y formato regional");
+        es.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Pantalla de bloqueo");
+        es.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Estilo de reloj, tema, propietario y accesos directos");
+        es.put(KEY_SUB_DISPLAY_DETOX, "Detox digital y límites");
+        es.put(KEY_SUB_DISPLAY_DETOX_DESC, "Límite diario de tiempo de pantalla y control reflexivo");
+        es.put(KEY_SUB_SOUND_VOLUMES, "Volumen y perfiles");
+        es.put(KEY_SUB_SOUND_VOLUMES_DESC, "Niveles de audio, perfil de timbre y entrega de alertas");
+        es.put(KEY_SUB_SOUND_EQUALIZER, "Ecualizador de audio");
+        es.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Perfiles de sonido y ecualizador de 5 bandas");
+        es.put(KEY_SUB_HOME_CONFIG, "Preferencias de inicio");
+        es.put(KEY_SUB_HOME_CONFIG_DESC, "Límite de apps, pausa reflexiva y segundo plano");
+        es.put(KEY_SUB_HOME_PINNED, "Gestionar apps en pantalla");
+        es.put(KEY_SUB_HOME_PINNED_DESC, "Reordenar y quitar aplicaciones fijadas en pantalla");
+        es.put(KEY_SUB_HOME_DRAWER_ALL, "Todas las aplicaciones (Cajón)");
+        es.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Explorar cajón, fijar a principal y ficha de privacidad");
+        es.put(KEY_SUB_CONN_FIREWALL, "Firewall y aislamiento de red");
+        es.put(KEY_SUB_CONN_FIREWALL_DESC, "Control de acceso a internet por app y bloqueo en segundo plano");
+        es.put(KEY_SUB_CONN_RADIOS, "Conectividad, sincronización y DNS");
+        es.put(KEY_SUB_CONN_RADIOS_DESC, "Wi-Fi, Bluetooth, datos móviles, sincronización y DNS privado");
+        es.put(KEY_SUB_SYS_INFO, "Información del dispositivo");
+        es.put(KEY_SUB_SYS_INFO_DESC, "Modelo, versión Android, kernel y número de compilación");
+        es.put(KEY_SUB_SYS_UPDATES, "Actualizaciones del sistema (OTA)");
+        es.put(KEY_SUB_SYS_UPDATES_DESC, "Canales de actualización, comprobación e instalación local");
+        es.put(KEY_SUB_SYS_BACKUP, "Copia de seguridad criptográfica");
+        es.put(KEY_SUB_SYS_BACKUP_DESC, "Crear y restaurar instantáneas cifradas verificables");
+        es.put(KEY_SUB_SYS_ADVANCED, "Herramientas y desarrollo");
+        es.put(KEY_SUB_SYS_ADVANCED_DESC, "Asistente de configuración, opciones de desarrollo y pruebas");
         es.put(KEY_MEDIA_VOL, "Volumen de medios");
         es.put(KEY_RING_VOL, "Volumen de llamada");
         es.put(KEY_ALARM_VOL, "Volumen de alarma");
@@ -1845,6 +2021,9 @@ public final class I18n {
         es.put(KEY_NFC_NOT_EVALUATED, "No evaluado");
         es.put(KEY_NFC_NOT_VERIFIED, "No verificado por esta app");
         es.put(KEY_NFC_ACTIONS_PAYMENTS, "Ajustes de pagos NFC (HCE)");
+        es.put(KEY_NFC_SEC_SANDBOX, "=== ENRUTAMIENTO SANDBOX / PERFIL AISLADO ===");
+        es.put(KEY_NFC_SANDBOX_HCE_TITLE, "Enrutamiento HCE entre perfiles");
+        es.put(KEY_NFC_SANDBOX_HCE_DESC, "Permite a apps bancarias en perfiles aislados o sandbox responder a pagos contactless NFC");
 
         // Battery Protection
         es.put(KEY_BATTERY_CTRL_NA, "100% · control no disp.");
@@ -3885,5 +4064,7 @@ public final class I18n {
             }
             res.updateConfiguration(config, res.getDisplayMetrics());
         }
+
+        LocaleManager.applySystemWideLocale(context, languageCode, regionCode);
     }
 }

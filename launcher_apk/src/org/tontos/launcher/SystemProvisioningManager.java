@@ -17,7 +17,6 @@ public final class SystemProvisioningManager {
     private static final String TAG = "SystemProvisioning";
 
     private static final String[] BLOAT_PACKAGES = {
-        "com.android.dialer",
         "com.android.carrierdefaultapp",
         "com.android.printspooler",
         "com.android.traceur",

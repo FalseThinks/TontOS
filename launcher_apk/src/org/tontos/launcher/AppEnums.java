@@ -207,6 +207,33 @@ enum SettingsSection {
 }
 
 /**
+ * Nested Sub-sections for Settings to eliminate visual clutter and group options cleanly.
+ */
+enum SettingsSubSection {
+    NONE,
+    // Section 1: DISPLAY
+    DISPLAY_STYLE,
+    DISPLAY_LOCALE,
+    DISPLAY_LOCKSCREEN,
+    DISPLAY_DETOX,
+    // Section 2: SOUND
+    SOUND_VOLUMES,
+    SOUND_EQUALIZER,
+    // Section 3: HOME & APPS
+    HOME_CONFIG,
+    HOME_PINNED,
+    HOME_DRAWER_ALL,
+    // Section 4: CONNECTIVITY
+    CONN_FIREWALL,
+    CONN_RADIOS,
+    // Section 5: SYSTEM
+    SYS_INFO,
+    SYS_UPDATES,
+    SYS_BACKUP,
+    SYS_ADVANCED
+}
+
+/**
  * Step enumeration for the First-Startup Install Wizard (OOBE).
  */
 enum WizardStep {
