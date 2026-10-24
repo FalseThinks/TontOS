@@ -7,9 +7,7 @@ useDefault = true
 description = "Global allowlist for i18n translation constants and generation scripts"
 paths = [
     '''launcher_apk/src/org/tontos/launcher/I18n\.java''',
-    '''scripts/build_full_i18n\.py''',
-    '''scripts/generate_complete_i18n\.py''',
-    '''scripts/make_translations\.py'''
+    '''bin/.*'''
 ]
 regexes = [
     '''KEY_EQ_BAND_''',

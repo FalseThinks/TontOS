@@ -68,6 +68,9 @@ public final class NfcPaymentSandboxManager {
         public final String deviceIntegrity = "Not evaluated";
         public final String strongIntegrity = "Not evaluated";
         public final String platformStatus = "Unavailable (no trusted attestation API integrated)";
+        public final String defaultSummary = "NFC on; attestation unavailable";
+        public final String verificationStatus = "Not verified by this app";
+        public final String isolationStatus = "isolation not verified";
 
         private AttestationStatus() {}
     }

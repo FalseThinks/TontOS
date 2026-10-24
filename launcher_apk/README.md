@@ -8,7 +8,7 @@ The Android launcher component for TontOS. Designed for low distraction, monospa
 ## Quick Build
 
 ```sh
-./scripts/build_launcher_apk.sh
+./bin/build_launcher_apk.sh
 ```
 
 Artifact: `launcher_apk/tontos-launcher.apk`

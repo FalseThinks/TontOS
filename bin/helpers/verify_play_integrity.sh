@@ -30,6 +30,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --help|-h)
             echo "Usage: $0 [--sandbox] [--user <id>] [-s <device-serial>]"
+            echo "  Read Android boot/build properties and report integrity readiness."
             echo "  --sandbox:    Inspect Play Integrity readiness within isolated Sandbox Profile (User 10+)"
             echo "  --user <id>:  Inspect Play Integrity and GMS state for specific user profile"
             echo "  -s <serial>:  Target ADB device serial"
@@ -90,6 +91,7 @@ print_property() {
 
 echo "=========================================================="
 echo "  TontOS Play Integrity & Attestation Diagnostic Engine"
+echo "  NOTE: Inspected values do not establish Play Integrity, CTS certification, or Verified Boot."
 echo "=========================================================="
 echo ""
 echo "--> [1] Android Boot & Build Properties (Platform Baseline):"
@@ -165,16 +167,17 @@ if [[ "$CHECK_SANDBOX" == true ]]; then
             echo "    [WARN] ACCESS_BACKGROUND_LOCATION: $LOC_OP"
         fi
 
-        # Play Integrity Verdict Readiness Summary
+        # Sandbox Profile Isolation Summary
         echo ""
-        echo "  Play Integrity Attestation Readiness Evaluation:"
-        echo "    * MEETS_BASIC_INTEGRITY:  ELIGIBLE (Unprivileged Sandbox DAC profile, unrooted execution)"
-        echo "    * MEETS_DEVICE_INTEGRITY: DEPENDS ON BOOTLOADER LOCK & CTS SIGNATURE"
-        echo "    * MEETS_STRONG_INTEGRITY: REQUIRES TEE / HARDWARE-BACKED STRONG-BOX ENCLAVE"
+        echo "  Profile Isolation & Attestation Notice:"
+        echo "    * Sandbox DAC Profile: Unprivileged multi-user boundary active"
+        echo "    * Online Attestation: Requires live Google Play Integrity API verification on target device"
+        echo "    * Hardware Enclave: Subject to SoC Keymint/TEE attestation support"
     fi
 fi
 
 echo ""
+echo "No integrity verdict or certification status was evaluated."
 echo "=========================================================="
 echo "  Report complete."
 echo "=========================================================="

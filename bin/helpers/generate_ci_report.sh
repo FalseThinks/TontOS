@@ -89,7 +89,7 @@ Test Execution Summary:
 | **Typography Monospace** | 100% of UI Activities & Dialogs | ✅ Verified | Strict \`Typeface.MONOSPACE\` across headers, chips & rows |
 | **Memory Leaks** | BroadcastReceivers & Listeners | ✅ Clean | Dynamic unregistration in \`onDestroy()\`; cached formatters |
 | **Compiler Warnings** | Rust (\`-D warnings\`) & Java 17 | ✅ 0 Warnings | Zero Clippy lints; zero javac deprecation warnings |
-| **Dead Code / Scratch** | \`scripts/\` directory | ✅ Purged | Unused generation scripts and temporary tools removed |
+| **Dead Code / Scratch** | \`bin/\` directory | ✅ Purged | Unused generation scripts and temporary tools removed |
 
 EOF
 

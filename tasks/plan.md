@@ -74,7 +74,7 @@ Current product slices:
 - [x] Task 17.3: Add FairEmail (`eu.faircode.email`) to default apps list and download/verify on emulator.
 
 ### Checkpoint: Complete Verification — 2026-10-10 local static PASS, E2E runner pending
-- [x] `./scripts/build_launcher_apk.sh && adb install -r launcher_apk/tontos-launcher.apk` succeeds.
+- [x] `./bin/build_launcher_apk.sh && adb install -r launcher_apk/tontos-launcher.apk` succeeds.
 - [x] `cargo test --workspace` passes cleanly (39+ tests green).
 - [x] Live UI verification on emulator and screenshot artifacts collected.
 

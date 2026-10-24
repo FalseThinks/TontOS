@@ -63,10 +63,10 @@
   - Acceptance: Unit files in `init/` with correct dependencies and restart policies.
   - Verify: Service file syntax check.
   - Files: `init/*.service`
-- [x] Task 8.2: Implement `scripts/make_gsi_rootfs.sh` packaging pipeline
+- [x] Task 8.2: Implement `bin/helpers/make_gsi_rootfs.sh` packaging pipeline
   - Acceptance: Script builds binaries and stages rootfs for sparse `system.img`.
-  - Verify: `./scripts/make_gsi_rootfs.sh --dry-run` succeeds.
-  - Files: `scripts/make_gsi_rootfs.sh`
+  - Verify: `./bin/helpers/make_gsi_rootfs.sh --dry-run` succeeds.
+  - Files: `bin/helpers/make_gsi_rootfs.sh`
 
 ## Phase 9: Connectivity Services & Full Customization Engine
 - [x] Task 9.1: Implement `crates/tont-settings` configuration & hardware toggle manager
@@ -94,7 +94,7 @@
 
 ## Phase 13: Retired GSI claim & Live Input/Mixer Integration
 - [x] Task 13.1 (retired): The historical `target/gsi/tontos-system.img` was a Linux ext4 bundle, not an Android GSI or valid fastboot image. The legacy-named script now builds a clearly labeled Linux rootfs archive and emits no system image.
-  - Verification: `scripts/make_gsi_rootfs.sh` builds `target/linux-rootfs/tontos-linux-rootfs.tar.gz`; archive metadata disclaims Android/GSI/flashability and contains no `build.prop`.
+  - Verification: `bin/helpers/make_gsi_rootfs.sh` builds `target/linux-rootfs/tontos-linux-rootfs.tar.gz`; archive metadata disclaims Android/GSI/flashability and contains no `build.prop`.
   - The old ignored files under `target/gsi/` are preserved locally but are not valid flashable Android artifacts.
 - [x] Task 13.2: Implement Linux evdev raw input parser and `AudioMixerController` in `crates/tont-input`
   - Acceptance: Non-blocking discovery across `/dev/input/event*`, Unix socket volume control, key state transitions.
@@ -171,7 +171,7 @@
   - Verification: Clean APK build (44KB), all tests passing, emulator screenshot verification.
 
 ## Checkpoint: Final Verification
-- [x] `./scripts/build_launcher_apk.sh && adb install -r launcher_apk/tontos-launcher.apk` succeeds.
+- [x] `./bin/build_launcher_apk.sh && adb install -r launcher_apk/tontos-launcher.apk` succeeds.
 - [x] `cargo test --workspace` passes cleanly (42/42 tests green).
 - [x] Live UI verification on emulator and screenshot artifacts captured.
 
@@ -191,7 +191,7 @@
 - [x] Task 19.4: Manifest Permissions & Localization
   - Acceptance: Permissions added to `AndroidManifest.xml`; keys translated into `es`, `en`, `de`, `pl` in `I18n.java`.
   - Verify: Build succeeds (160K APK) and labels render localized.
-  - Files: `launcher_apk/AndroidManifest.xml`, `launcher_apk/src/org/tontos/launcher/I18n.java`, `scripts/debloat_custom_rom.sh`
+  - Files: `launcher_apk/AndroidManifest.xml`, `launcher_apk/src/org/tontos/launcher/I18n.java`, `bin/helpers/debloat_custom_rom.sh`
 - [x] Task 19.5: Live Emulator Verification Across Themes
   - Acceptance: Verified on `emulator-5554` across AMOLED, Amber CRT, and E-Ink Paper.
   - Verify: Screenshots `shade_opened.png`, `shade_swipe.png`, `shade_dnd.png`, `shade_amber.png`, `shade_eink.png`, `shade_slate.png`.
@@ -202,14 +202,14 @@
 - [x] **Acceptance:** Disposable Arch Linux x86_64 VM boots systemd and a Wayland session; validate the Binder IPC devices used by Waydroid (this Arch baseline exposes `/dev/binderfs/anbox-*`), namespaces/cgroups, graphics/software fallback and bridge networking prerequisites explicitly.
 - [x] **Verification:** Provisioning and teardown leave the developer host unchanged; missing prerequisites are reported with machine-readable skip reasons only outside the designated runtime runner. **Local verify 2026-10-07:** `provision_acceptance_vm.sh --check-only` → `{"status":"skip",... "missing: qemu-system-x86_64" ...}` exit 0; `TONTOS_DESIGNATED_RUNNER=1 ... --check-only` → `{"status":"fail"}` exit 1; `cargo test -p tont-appd` 8 passed including `container_stop_failure_reports_session_already_stopped`.
 - **Dependencies:** None.
-- **Files likely touched:** `scripts/provision_acceptance_vm.sh` (hardened allowlist `VM_NAME`/`VIRSH_URI`), runtime test configuration.
+- **Files likely touched:** `bin/helpers/provision_acceptance_vm.sh` (hardened allowlist `VM_NAME`/`VIRSH_URI`), runtime test configuration.
 
 ### Task 20.2: Build a Linux host artifact, not a pseudo-GSI
 - [x] **Acceptance:** The Linux host rootfs and Waydroid Android images are separate artifacts; no Android `system.img`/GSI or Pixel/Verified Boot identity is claimed for the Linux image.
 - [x] **Verification:** Boot the host artifact in the disposable VM and check its OS identity, init system and Wayland session. **Local verify 2026-10-07:** `boot_host_artifact.sh --check-only` → `{"status":"pass","task":"20.2"}` with `check passed`; staging `target/linux-rootfs/tontos-linux-rootfs.tar.gz` verified, bootable kernel/systemd remains runner-side; `clang` linker check and overlay `target/` allowlist added.
 - **Current state:** The script builds an x86_64 GNU Linux rootfs staging archive successfully, but it is not a bootable host OS; the prior `target/gsi` outputs are retained locally and are not flashable Android images.
 - **Dependencies:** Task 20.1.
-- **Files likely touched:** `scripts/make_gsi_rootfs.sh` replacement or migration, image/provisioning configuration.
+- **Files likely touched:** `bin/helpers/make_gsi_rootfs.sh` replacement or migration, image/provisioning configuration.
 
 ### Task 20.3: Connect `tont-appd` to real Waydroid lifecycle
 - [x] **Acceptance:** Container startup runs with required privilege; Android session and UI run as the logged-in Wayland user; start/status/stop/launch failures are surfaced and do not report success.
@@ -232,7 +232,7 @@
 - [x] **Phase 22 — Battery and performance:** Measured repeatable idle/workload baselines on the host and guest; removed busy loops/no-op services; verified supported power controls and surfaced unsupported hardware.
   - Evidence: no claims emulator-battery; `CONSTRAINTS.md` battery pref-only bar.
 - [x] **Phase 23 — OTA and platform trust:** Separated host distribution updates from Waydroid guest updates; kept fake OTA generation disabled until an authenticated, architecture/rollback-checked updater exists; reported boot properties without claiming Verified Boot/Play Integrity/CTS certification.
-  - Evidence: `scripts/make_ota_package.sh:4-16` exit 1 zero-file, `patch_play_integrity.sh` exit 1, `verify_play_integrity.sh:22` no attestation, `BootloaderManager.java:10-12` read-only `ro.boot.flash.locked`.
+  - Evidence: `bin/helpers/make_ota_package.sh:4-16` exit 1 zero-file, `patch_play_integrity.sh` exit 1, `verify_play_integrity.sh:22` no attestation, `BootloaderManager.java:10-12` read-only `ro.boot.flash.locked`.
 - [x] **Phase 24 — Expand hardware support:** ARM64/device-family targets remain blocked with explicit kernel, Binder, graphics, input, network and power prerequisites plus dynamic representative-device tests.
   - Evidence: `tasks/todo.md:232` blocked + `SPEC-device-support.md` profile; no `tont-romctl`/`update_engine` until pilot device audited.
 

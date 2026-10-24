@@ -264,7 +264,7 @@ if ! has_compiled_images; then
     if [[ "$EXPLICIT_SKIP_BUILD" == true ]]; then
         echo "    You specified --skip-build, but Cuttlefish VM requires boot.img to boot." >&2
         echo "    Point to prebuilts with AOSP_DIR=<path> or compile once with:" >&2
-        echo "    ./scripts/clean_install_and_monitor.sh --build" >&2
+        echo "    ./bin/clean_install_and_monitor.sh --build" >&2
     else
         echo "    Run with --build to compile first." >&2
     fi

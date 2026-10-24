@@ -24,6 +24,8 @@ if [[ -x "$SEMGREP_BIN" ]]; then
         --exclude-rule java.android.security.exported_activity.exported_activity \
         --exclude-rule java.lang.security.audit.command-injection-process-builder.command-injection-process-builder \
         --exclude target \
+        --exclude out \
+        --exclude node_modules \
         --exclude tools \
         --exclude apps \
         --exclude .git \
@@ -46,7 +48,7 @@ echo "  2. Running Trivy Vulnerability & Secret Scanner..."
 echo "----------------------------------------------------------"
 if [[ -n "$TRIVY_BIN" ]]; then
     if "$TRIVY_BIN" fs \
-        --skip-dirs target,.git,tools,apps,.ccache \
+        --skip-dirs target,out,node_modules,.git,tools,apps,.ccache \
         --severity CRITICAL,HIGH \
         --exit-code 1 \
         .; then
@@ -60,7 +62,7 @@ elif [[ -n "$DOCKER_BIN" ]] && "$DOCKER_BIN" info >/dev/null 2>&1; then
         -v "$ROOT_DIR:/src:ro" \
         -v "$HOME/.cache/trivy:/root/.cache/" \
         aquasec/trivy:latest fs \
-        --skip-dirs target,.git,tools,apps,.ccache \
+        --skip-dirs target,out,node_modules,.git,tools,apps,.ccache \
         --severity CRITICAL,HIGH \
         --exit-code 1 \
         /src; then

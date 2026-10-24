@@ -90,7 +90,7 @@ if [ "$IS_DEVICE" = false ] && [ "$DRY_RUN" = false ]; then
     DEVICES_OUTPUT="$("${ADB_CMD[@]}" devices | grep -v "List of devices" | grep -w "device" || true)"
     if [ -z "$DEVICES_OUTPUT" ]; then
         echo "[-] Error: No active Android device or emulator detected via ADB."
-        echo "    Start an emulator with: ./scripts/run_emulator_tontos.sh"
+        echo "    Start an emulator with: ./bin/helpers/run_emulator_tontos.sh"
         echo "    Or run with --dry-run to validate debloat configuration."
         exit 1
     fi
