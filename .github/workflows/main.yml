@@ -111,6 +111,21 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Run Java Modular Tests with JaCoCo Coverage
+        run: |
+          mkdir -p target/test-classes target/jacoco-report
+          JAVA_TEST_FILES=$(find tests/java -name "*.java")
+          javac -d target/test-classes $JAVA_TEST_FILES
+          java -javaagent:tools/jacoco/jacocoagent.jar=destfile=target/jacoco.exec -cp target/test-classes org.tontos.tests.TestRunner
+          java -jar tools/jacoco/jacococli.jar report target/jacoco.exec --classfiles target/test-classes --sourcefiles tests/java --html target/jacoco-report --csv target/jacoco-report/jacoco.csv
+          awk -F',' 'NR>1 {inst_miss+=$4; inst_cov+=$5; line_miss+=$8; line_cov+=$9} END {total_inst=inst_miss+inst_cov; total_line=line_miss+line_cov; if (total_inst>0) printf "::notice title=JaCoCo Coverage::Instructions: %.1f%% (%d/%d), Lines: %.1f%% (%d/%d)\n", (inst_cov*100.0/total_inst), inst_cov, total_inst, (line_cov*100.0/total_line), line_cov, total_line}' target/jacoco-report/jacoco.csv
+
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: target/jacoco-report/
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:

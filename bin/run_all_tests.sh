@@ -13,24 +13,53 @@ FAILED=0
 
 # Step 1: Rust System Daemons (14 Crates)
 echo ""
-echo "--> [1/4] Running Rust Formatting & Workspace Tests..."
-if (cd "$ROOT_DIR" && cargo fmt --all -- --check && cargo test --workspace); then
-    echo "  [PASS] All Rust daemons & settings passed formatting & tests."
+echo "--> [1/4] Running Rust Formatting, Clippy & Workspace Tests..."
+if (cd "$ROOT_DIR" && \
+    cargo fmt --all -- --check && \
+    cargo clippy --workspace --all-targets -- -D warnings && \
+    cargo test --workspace); then
+    echo "  [PASS] All Rust daemons & settings passed formatting, clippy & tests."
 else
-    echo "  [FAIL] Rust workspace tests or formatting failed."
+    echo "  [FAIL] Rust workspace tests, clippy, or formatting failed."
     FAILED=1
 fi
 
 # Step 2: Java Modular Settings & Feature Validation Tests
 echo ""
-echo "--> [2/4] Running Java Modular Test Suite..."
-mkdir -p "$ROOT_DIR/target/test-classes"
+echo "--> [2/4] Running Java Modular Test Suite & JaCoCo Coverage..."
+mkdir -p "$ROOT_DIR/target/test-classes" "$ROOT_DIR/target/jacoco-report"
 JAVA_TEST_FILES=$(find "$ROOT_DIR/tests/java" -name "*.java")
-if javac -d "$ROOT_DIR/target/test-classes" $JAVA_TEST_FILES && \
-   java -cp "$ROOT_DIR/target/test-classes" org.tontos.tests.TestRunner; then
-    echo "  [PASS] Java modular test suites passed."
+JACOCO_AGENT="$ROOT_DIR/tools/jacoco/jacocoagent.jar"
+JACOCO_CLI="$ROOT_DIR/tools/jacoco/jacococli.jar"
+
+if javac -d "$ROOT_DIR/target/test-classes" $JAVA_TEST_FILES; then
+    if [[ -f "$JACOCO_AGENT" && -f "$JACOCO_CLI" ]]; then
+        if java -javaagent:"$JACOCO_AGENT=destfile=$ROOT_DIR/target/jacoco.exec" \
+             -cp "$ROOT_DIR/target/test-classes" org.tontos.tests.TestRunner; then
+            java -jar "$JACOCO_CLI" report "$ROOT_DIR/target/jacoco.exec" \
+                 --classfiles "$ROOT_DIR/target/test-classes" \
+                 --sourcefiles "$ROOT_DIR/tests/java" \
+                 --html "$ROOT_DIR/target/jacoco-report" \
+                 --csv "$ROOT_DIR/target/jacoco-report/jacoco.csv" > /dev/null 2>&1
+            
+            if [[ -f "$ROOT_DIR/target/jacoco-report/jacoco.csv" ]]; then
+                awk -F',' 'NR>1 {inst_miss+=$4; inst_cov+=$5; line_miss+=$8; line_cov+=$9} END {total_inst=inst_miss+inst_cov; total_line=line_miss+line_cov; if (total_inst>0) printf "  [JaCoCo Coverage] Instructions: %.1f%% (%d/%d) | Lines: %.1f%% (%d/%d)\n", (inst_cov*100.0/total_inst), inst_cov, total_inst, (line_cov*100.0/total_line), line_cov, total_line}' "$ROOT_DIR/target/jacoco-report/jacoco.csv"
+            fi
+            echo "  [PASS] Java modular test suites and JaCoCo coverage passed."
+        else
+            echo "  [FAIL] Java modular tests failed."
+            FAILED=1
+        fi
+    else
+        if java -cp "$ROOT_DIR/target/test-classes" org.tontos.tests.TestRunner; then
+            echo "  [PASS] Java modular test suites passed."
+        else
+            echo "  [FAIL] Java modular tests failed."
+            FAILED=1
+        fi
+    fi
 else
-    echo "  [FAIL] Java modular tests failed."
+    echo "  [FAIL] Compilation of Java test classes failed."
     FAILED=1
 fi
 

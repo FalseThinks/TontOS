@@ -86,6 +86,7 @@ impl Default for SoundConfig {
 }
 
 pub mod theme;
+pub use theme::ThemePreset;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DisplayConfig {
@@ -170,13 +171,12 @@ impl TontSettings {
     /// Set a custom ringtone path with audio file extension validation.
     pub fn set_custom_ringtone(&mut self, path: String) -> Result<(), SettingsError> {
         let p = Path::new(&path);
-        let ext = p
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or_default()
-            .to_lowercase();
+        let ext = p.extension().and_then(|e| e.to_str()).unwrap_or_default();
 
-        if !matches!(ext.as_str(), "ogg" | "wav" | "mp3" | "flac") {
+        if !["ogg", "wav", "mp3", "flac"]
+            .iter()
+            .any(|valid| ext.eq_ignore_ascii_case(valid))
+        {
             return Err(SettingsError::InvalidAudioPath(path));
         }
 

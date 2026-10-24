@@ -15,6 +15,8 @@
         <permission name="android.permission.BLUETOOTH_CONNECT" fixed="false"/>
         <permission name="android.permission.NFC" fixed="false"/>
         <permission name="android.permission.STATUS_BAR_SERVICE" fixed="false"/>
+        <permission name="android.permission.SYSTEM_ALERT_WINDOW" fixed="false"/>
+        <permission name="android.permission.RECEIVE_BOOT_COMPLETED" fixed="false"/>
         <permission name="android.permission.GRANT_RUNTIME_PERMISSIONS" fixed="false"/>
         <permission name="android.permission.REVOKE_RUNTIME_PERMISSIONS" fixed="false"/>
         <permission name="android.permission.MANAGE_APP_OPS_MODES" fixed="false"/>
@@ -93,7 +95,7 @@
     </exception>
 
     <!-- FairEmail -->
-    <exception package="eu.faircode.email" cert="e02067249f5a350e0ec703fe9df4dd682e0291a09f0c2e041050bbe7c064f5c9">
+    <exception package="eu.faircode.email" cert="platform">
         <permission name="android.permission.READ_CONTACTS" fixed="false"/>
         <permission name="android.permission.READ_CALENDAR" fixed="false"/>
         <permission name="android.permission.WRITE_CALENDAR" fixed="false"/>
@@ -118,7 +120,7 @@
     </exception>
 
     <!-- Organic Maps -->
-    <exception package="app.organicmaps" cert="e216fc386c327ec88d056026f1dea27be2bc3f9d7ee956e4361c4b64ec459fe9">
+    <exception package="app.organicmaps" cert="platform">
         <permission name="android.permission.ACCESS_FINE_LOCATION" fixed="false"/>
         <permission name="android.permission.ACCESS_COARSE_LOCATION" fixed="false"/>
         <permission name="android.permission.POST_NOTIFICATIONS" fixed="false"/>

@@ -33,6 +33,11 @@ PRODUCT_PACKAGES += \
     FossifyMusicPlayer \
     FossifyPhone
 
+# Excluir Dialer y Contacts nativos de AOSP en favor de la suite Fossify
+PRODUCT_PACKAGES_REMOVE += \
+    Dialer \
+    Contacts
+
 # Permisos por defecto para suite FOSS y TontOSLauncher
 PRODUCT_COPY_FILES += \
     vendor/tontos/products/default-permissions-tontos.xml:system/etc/default-permissions/default-permissions-tontos.xml \

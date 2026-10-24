@@ -312,6 +312,7 @@ echo "--> [5/5] Booting Cuttlefish VM & Launching Metrics Monitor..."
 cd "$PRODUCT_OUT"
 launch_cvd \
     --daemon \
+    --report_anonymous_usage_stats=n \
     --cpus=4 \
     --memory_mb=4096 \
     --start_webrtc=true \

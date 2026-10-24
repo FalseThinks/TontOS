@@ -1,0 +1,50 @@
+diff --git a/core/java/android/os/Build.java b/core/java/android/os/Build.java
+index 25912a0a5..4b272f76b 100644
+--- a/core/java/android/os/Build.java
++++ b/core/java/android/os/Build.java
+@@ -1724,6 +1724,14 @@ public class Build {
+      * partitions, so we might derive the fingerprint at runtime.
+      */
+     private static String deriveFingerprint() {
++        boolean spoof = SystemProperties.getBoolean("persist.sys.tontos.certified_spoof", true);
++        if (spoof) {
++            String customFinger = SystemProperties.get("persist.sys.tontos.spoof_fingerprint");
++            if (!TextUtils.isEmpty(customFinger)) {
++                return customFinger;
++            }
++            return "google/shiba/shiba:14/UQ1A.240205.004/11269730:user/release-keys";
++        }
+         String finger = SystemProperties.get("ro.build.fingerprint");
+         if (TextUtils.isEmpty(finger)) {
+             finger = getString("ro.product.brand") + '/' +
+@@ -1966,6 +1974,30 @@ public class Build {
+ 
+     @UnsupportedAppUsage
+     private static String getString(String property) {
++        boolean spoof = SystemProperties.getBoolean("persist.sys.tontos.certified_spoof", true);
++        if (spoof) {
++            switch (property) {
++                case "ro.build.type":
++                    return "user";
++                case "ro.build.tags":
++                    return "release-keys";
++                case "ro.product.brand":
++                case "ro.product.system.brand":
++                    return SystemProperties.get("persist.sys.tontos.spoof_brand", "google");
++                case "ro.product.manufacturer":
++                case "ro.product.system.manufacturer":
++                    return SystemProperties.get("persist.sys.tontos.spoof_manufacturer", "Google");
++                case "ro.product.model":
++                case "ro.product.system.model":
++                    return SystemProperties.get("persist.sys.tontos.spoof_model", "Pixel 8");
++                case "ro.product.device":
++                case "ro.product.system.device":
++                    return SystemProperties.get("persist.sys.tontos.spoof_device", "shiba");
++                case "ro.product.name":
++                case "ro.product.system.name":
++                    return SystemProperties.get("persist.sys.tontos.spoof_name", "shiba");
++            }
++        }
+         return SystemProperties.get(property, UNKNOWN);
+     }
+     /**

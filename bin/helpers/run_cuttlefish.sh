@@ -35,6 +35,7 @@ echo "[*] Launching Cuttlefish in daemon mode..."
 cd "$PRODUCT_OUT"
 launch_cvd \
     --daemon \
+    --report_anonymous_usage_stats=n \
     --cpus=4 \
     --memory_mb=4096 \
     --start_webrtc=true \

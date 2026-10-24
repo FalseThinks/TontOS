@@ -8,7 +8,9 @@
 [![Release](https://img.shields.io/badge/release-v0.0.2--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
 [![Rust](https://img.shields.io/badge/rust-1.99.0%20(2024%20Edition)-DEA584.svg?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![AOSP](https://img.shields.io/badge/AOSP-17.0.0__r1-3DDC84.svg?style=flat-square&logo=android&logoColor=white)](https://source.android.com/)
-[![Tests](https://img.shields.io/badge/tests-54%20passed-10B981.svg?style=flat-square)](crates/)
+[![Tests](https://img.shields.io/badge/tests-142%20passed-10B981.svg?style=flat-square)](tests/)
+[![Coverage](https://img.shields.io/badge/coverage-95.5%25%20JaCoCo-22C55E.svg?style=flat-square)](tests/java/)
+[![Clippy](https://img.shields.io/badge/clippy-0%20warnings-brightgreen.svg?style=flat-square)](crates/)
 [![Safety](https://img.shields.io/badge/unsafe_code-forbid-059669.svg?style=flat-square)](crates/)
 [![Docker Builder](https://img.shields.io/badge/docker-debian%20slim%20glibc-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](Dockerfile)
 [![License](https://img.shields.io/badge/license-Apache--2.0%20%7C%20MIT-gray.svg?style=flat-square)](LICENSE)
@@ -38,10 +40,13 @@
 ## Overview
 
 TontOS is an open-source mobile operating system engineered for digital detox, battery preservation, and minimal cognitive load:
-- **Zero Google Bloatware:** Built without Google Mobile Services (GMS), telemetry, or tracking daemons.
-- **100% Monospace Interface:** Pure typographic UI without colorful icons, widgets, or gamified animations.
+- **Zero Google Bloatware:** Built without proprietary Google Mobile Services (GMS), telemetry, or tracking daemons.
+- **100% Monospace Interface:** Pure typographic UI supporting 12 languages without colorful icons, widgets, or gamified animations.
 - **Low Memory Footprint:** Configured for low system RAM consumption (target $\le$ 500 MB idle) using AOSP low-RAM optimizations and strict process controls.
 - **Digital Detox Tools:** Intentional launch delays (mindful pause), daily screen-time budget, system-wide grayscale, and aggressive background app termination.
+- **Ultra Battery Saver:** Comprehensive radio duty-cycling, background Doze enforcement, and location/scan throttling.
+- **Privacy & Sandboxing:** Granular per-app network firewall and isolated secondary profile sandboxing for proprietary/Google dependencies.
+- **Custom Minimalist System Components:** Monospace drop-down notification shade and customizable lock screen replacing distracting stock AOSP counterparts.
 - **Preinstalled FOSS Essentials:** Lightweight open-source utilities (`org.fossify.*`, `eu.faircode.email`, `de.baumann.browser`).
 
 ---
@@ -78,11 +83,13 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 ### 2. Minimalist Interface & Digital Wellbeing
 * **Monospace UI & Display Pipeline:** Typographic launcher (< 2 MB footprint) with 4 low-power palettes (AMOLED `#000000`, Amber CRT, Slate, E-Ink) and SurfaceFlinger/KMS grayscale daltonizer integration.
 * **Intentional Friction:** Configurable launch delays (3s–10s) for non-whitelisted applications to break compulsive habits.
-* **Integrated AudioFX:** Native 5-band equalizer (60Hz–14kHz) with sound profiles.
+* **Custom Dropdown Shade & Lock Screen:** Dedicated monospace shade service (`UltraShadeActivity` / `TontOSShadeService`) and customizable lock screen (`LockScreenManager`) with swipe/double-tap gestures, owner info, and quiet notification delivery.
+* **Ultra Battery Saver & AudioFX:** Native 5-band equalizer (60Hz–14kHz), aggressive Doze enforcement, and radio duty-cycling.
 
 ### 3. AOSP Target & Low-RAM Constraints
 * **Low-RAM Profile (`ro.config.low_ram=true`):** Android Go framework profile capping dalvik heap growth to 128 MB and trimming background processes to $\le$ 4 cached apps (`ro.sys.fw.bg_apps_limit=4`).
 * **Background Task Termination:** Immediate termination of exited apps upon returning to the home screen, freeing RAM immediately unless whitelisted.
+* **Privacy Guard & Play Integrity Sandbox:** Granular per-app network firewall (`AppNetworkFirewall`) and isolated profile sandboxing (`SandboxManager`) for MicroG / Google-dependent banking & transport applications.
 * **Sanitized Execution:** Privileged system commands execute through [`SafeCommandExecutor.java`](launcher_apk/src/org/tontos/launcher/SafeCommandExecutor.java) with strict package regex validation.
 
 ---
@@ -91,6 +98,13 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 
 ```text
 .
+├── apps/                      # Prebuilt audited FOSS applications
+├── bin/                       # Automation scripts & entrypoints (symlinked as scripts/)
+│   ├── clean_install_and_monitor.sh # Master pipeline: swap -> test -> build -> boot -> monitor
+│   ├── docker_build_rom.sh    # Hermetic containerized ROM builder
+│   ├── run_all_tests.sh       # Unified test gate (Rust, Java JaCoCo, APK)
+│   ├── build_launcher_apk.sh  # Standalone launcher compiler & signer
+│   └── helpers/               # Specialized automation (host swap, GSI, sandbox, Cuttlefish)
 ├── crates/                    # Rust Workspace (14 System Daemons & Libraries)
 │   ├── tont-appd/             # Process supervision and cgroups v2 controls
 │   ├── tont-backup/           # Cryptographic backup and snapshot verification
@@ -106,15 +120,13 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 │   ├── tont-shell/            # Monospace shell interface
 │   ├── tont-syncd/            # Sync batching daemon
 │   └── tont-telephony/        # Cellular and radio state manager
-├── launcher_apk/              # System Launcher (Java 17, AOSP system_ext)
+├── docs/                      # Architecture specifications & component references
+├── init/                      # Systemd service unit files and early init configs
+├── launcher_apk/              # System Launcher (Java 17, AOSP system_ext priv-app)
+├── patches/                   # AOSP platform and framework diffs
 ├── platform/                  # AOSP BoardConfig, manifests, and product targets
-├── scripts/                   # Minimalist entrypoints & helpers
-│   ├── clean_install_and_monitor.sh # Master pipeline: swap -> test -> build -> boot -> monitor
-│   ├── docker_build_rom.sh    # Hermetic containerized ROM builder
-│   ├── run_all_tests.sh       # Unified test gate (Rust crates, Java contracts, APK)
-│   ├── build_launcher_apk.sh  # Standalone launcher compiler & signer
-│   └── helpers/               # Specialized automation (host swap, GSI, Cuttlefish, security)
-└── tests/                     # Test suites (Rust, Java, UI)
+├── tests/                     # Test suites (Rust workspace, Java modular, UI)
+└── tools/                     # Build & verification tooling (JaCoCo agent/CLI)
 ```
 
 ---
@@ -166,19 +178,20 @@ sudo ./scripts/helpers/setup_host_swap.sh setup
 sudo ./scripts/helpers/setup_host_swap.sh clean
 ```
 
-### 3. Build Launcher APK (Fast Iteration)
+### 4. Build Launcher APK (Fast Iteration)
 ```bash
 ./scripts/build_launcher_apk.sh
 adb install -r launcher_apk/tontos-launcher.apk
 adb shell cmd package set-home-activity org.tontos.launcher/.MainActivity
 ```
 
-### 4. Run System Test Suite
+### 5. Run System Test Suite (Unified Gate)
+Executes Rust formatting, Clippy, 97 Rust crate tests, 45 Java modular tests with JaCoCo bytecode coverage, and signs the launcher APK:
 ```bash
 ./scripts/run_all_tests.sh
 ```
 
-### 5. Hermetic Containerized ROM Build
+### 6. Hermetic Containerized ROM Build
 ```bash
 env BUILD_TARGET="systemimage" ./scripts/docker_build_rom.sh
 ```
@@ -231,12 +244,16 @@ adb shell cmd package set-home-activity org.tontos.launcher/.MainActivity
 
 ## Core Features
 
-1. **Four Low-Power Themes:** AMOLED Black (`#000000`), Amber CRT, Slate Midnight, and E-Ink Paper.
-2. **Minimalist App Drawer:** Fast alphabetical app search and privacy inspection on long-press.
-3. **Background Process Management:** Apps without background execution permission are terminated immediately upon returning home.
-4. **Mindful Launch Pause:** Configurable countdown timer (3s–10s) before opening non-essential apps.
-5. **Integrated AudioFX:** Built-in 5-band equalizer (60Hz–14kHz) with sound profiles.
-6. **Cryptographic Backup:** Monospace snapshot manager with SHA-256 verification and custom backup paths.
+1. **Four Low-Power Themes:** AMOLED Black (`#000000`), Amber CRT (`#FFB000`), Slate Midnight (`#1E293B`), and E-Ink Paper (`#FFFFFF`).
+2. **100% Monospace Typographic UI:** Pure monospace layout with zero raster bloat, supporting 12 international languages.
+3. **System-Wide Grayscale & Daltonizer:** Hardware/KMS monochromacy via `Settings.Secure` to eliminate visual dopamine hooks.
+4. **Mindful Launch Pause:** Configurable countdown timer (3s–10s) and breathing indicator before launching non-essential applications.
+5. **Ultra Battery Saver Mode:** Comprehensive radio duty-cycling, background Doze enforcement, and location/scan throttling.
+6. **Custom Minimalist Lock Screen & Dropdown Shade:** Complete replacement of stock AOSP notifications and lock screen with distraction-free monospace components.
+7. **Per-App Network Firewall:** Granular AppOps and iptables network permission gating per package.
+8. **MicroG & Sandboxed Google Services:** Unprivileged isolated profile support with Play Integrity compatibility shims.
+9. **Integrated AudioFX:** Native 5-band equalizer (60Hz–14kHz) with sound profiles.
+10. **Cryptographic Backup:** Monospace snapshot manager with SHA-256 verification and custom backup paths.
 
 ---
 

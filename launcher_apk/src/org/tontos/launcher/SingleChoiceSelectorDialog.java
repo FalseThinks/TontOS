@@ -120,11 +120,13 @@ public final class SingleChoiceSelectorDialog {
             root.setLayoutParams(rootLp);
         }
 
+        final float fontScale = GlobalSettingsBridge.getFontScale(context);
+
         // Header Title
         TextView header = new TextView(context);
         header.setText(title != null ? title.toUpperCase(java.util.Locale.ROOT) : I18n.get(I18n.KEY_SELECT_OPTION, langCode));
         header.setTextColor(tokens.accent);
-        header.setTextSize(screenWidthDp < 360 ? 15 : 17);
+        header.setTextSize((screenWidthDp < 360 ? 15 : 17) * fontScale);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setSingleLine(true);
         header.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -191,14 +193,14 @@ public final class SingleChoiceSelectorDialog {
             TextView indicator = new TextView(context);
             indicator.setText(isActive ? "[x] " : "[ ] ");
             indicator.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
-            indicator.setTextSize(13);
+            indicator.setTextSize(13 * fontScale);
             indicator.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
             itemRow.addView(indicator);
 
             TextView label = new TextView(context);
             label.setText(opt.label);
             label.setTextColor(isActive ? tokens.activeSelectionText : tokens.textPrimary);
-            label.setTextSize(13);
+            label.setTextSize(13 * fontScale);
             label.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
             label.setSingleLine(true);
             label.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -230,7 +232,7 @@ public final class SingleChoiceSelectorDialog {
         TextView closeBtn = new TextView(context);
         closeBtn.setText(I18n.get(I18n.KEY_CANCEL, langCode));
         closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(13);
+        closeBtn.setTextSize(13 * fontScale);
         closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         closeBtn.setGravity(Gravity.CENTER);
         closeBtn.setMinimumHeight(minHeightPx);

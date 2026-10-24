@@ -61,7 +61,6 @@ import java.util.Set;
 
 /**
  * TontOS AMOLED Detox Launcher Home Screen.
- * Demonstrates Strategy Pattern for Themes, Flyweight Color Tokens, and Algorithmic Cache.
  */
 public class MainActivity extends Activity {
 
@@ -403,7 +402,15 @@ public class MainActivity extends Activity {
         batteryView.setOnClickListener(shadeOpener);
         timeView.setOnClickListener(shadeOpener);
 
-        registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        try {
+            Intent serviceIntent = new Intent(this, TontOSShadeService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Throwable ignored) {}
+
         disableStatusBarExpansion();
         hideSystemUI();
     }
@@ -427,6 +434,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        try {
+            unregisterReceiver(batteryReceiver);
+        } catch (Exception ignored) {}
         if (handler != null && tickRunnable != null) {
             handler.removeCallbacks(tickRunnable);
         }
@@ -451,16 +461,21 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        try {
+            Intent batIntent = registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            if (batIntent != null) {
+                int level = batIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = batIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                if (level >= 0 && scale > 0) {
+                    batteryLevel = (level * 100) / scale;
+                }
+                int status = batIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING
+                        || status == BatteryManager.BATTERY_STATUS_FULL);
+                updateBatteryDisplay();
+            }
+        } catch (Throwable ignored) {}
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        if (!prefs.getBoolean(KEY_SETUP_COMPLETED, false)) {
-            startActivity(new Intent(this, SetupWizardActivity.class));
-            finish();
-            return;
-        }
-
-        disableStatusBarExpansion();
-        hideSystemUI();
-
         isDrawerView = false;
 
         String langCode = prefs.getString(KEY_SYSTEM_LANGUAGE, "en");
@@ -685,7 +700,8 @@ public class MainActivity extends Activity {
 
         for (ResolveInfo ri : activities) {
             String pkg = ri.activityInfo.packageName;
-            if (pkg.equals(getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")) {
+            if (pkg.equals(getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")
+                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")) {
                 continue;
             }
             String label = ri.loadLabel(pm).toString();
@@ -710,7 +726,7 @@ public class MainActivity extends Activity {
     }
 
     private void renderDrawerApps(final ThemeTokens tokens) {
-        rootLayout.setBackgroundColor(tokens.surface);
+        rootLayout.setBackgroundColor(tokens.bg);
         topSection.setVisibility(View.GONE);
         bottomBar.setVisibility(View.GONE);
 
@@ -876,22 +892,17 @@ public class MainActivity extends Activity {
         int homeLimit = prefs.getInt(KEY_HOME_APP_LIMIT, DEFAULT_HOME_APP_LIMIT);
         Set<String> pinned = prefs.getStringSet(KEY_PINNED_APPS, DEFAULT_PINNED_PACKAGES);
 
-        // Algorithmic optimization: Parse ordered list in O(M) time and resolve with O(1) hash map lookups
         String orderCsv = prefs.getString(KEY_PINNED_APPS_ORDER, null);
-        List<String> orderedPkgs = new ArrayList<>();
+        Set<String> orderedPkgs = new java.util.LinkedHashSet<>();
         if (orderCsv != null && !orderCsv.trim().isEmpty()) {
             for (String p : orderCsv.split(",")) {
                 String clean = p.trim();
-                if (pinned.contains(clean) && !orderedPkgs.contains(clean)) {
+                if (pinned.contains(clean)) {
                     orderedPkgs.add(clean);
                 }
             }
         }
-        for (String p : pinned) {
-            if (!orderedPkgs.contains(p)) {
-                orderedPkgs.add(p);
-            }
-        }
+        orderedPkgs.addAll(pinned);
 
         int shown = 0;
         for (String pkg : orderedPkgs) {
@@ -918,18 +929,6 @@ public class MainActivity extends Activity {
                 shown++;
             }
         }
-    }
-
-    private void addAppRow(String label, int textColor, View.OnClickListener listener) {
-        addAppRow(label, textColor, ThemeTokens.get(currentTheme()), listener);
-    }
-
-    private void addAppRow(String label, int textColor, ThemeTokens tokens, View.OnClickListener listener) {
-        addAppRow(appListContainer, label, textColor, tokens, listener);
-    }
-
-    private void addAppRow(LinearLayout parent, String label, int textColor, View.OnClickListener listener) {
-        addAppRow(parent, label, textColor, ThemeTokens.get(currentTheme()), listener);
     }
 
     private void addAppRow(LinearLayout parent, String label, int textColor, ThemeTokens tokens, View.OnClickListener listener) {
@@ -959,22 +958,27 @@ public class MainActivity extends Activity {
         parent.addView(btn);
     }
 
-    private Drawable createTouchFeedbackDrawable() {
-        return createTouchFeedbackDrawable(ThemeTokens.get(currentTheme()));
-    }
+    private String cachedTouchTheme = null;
+    private android.graphics.drawable.Drawable.ConstantState cachedTouchState = null;
 
     private Drawable createTouchFeedbackDrawable(ThemeTokens tokens) {
-        StateListDrawable states = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setShape(GradientDrawable.RECTANGLE);
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius(dpToPx(4));
+        String themeId = currentTheme().getId();
+        if (cachedTouchState == null || !themeId.equals(cachedTouchTheme)) {
+            StateListDrawable states = new StateListDrawable();
+            GradientDrawable pressed = new GradientDrawable();
+            pressed.setShape(GradientDrawable.RECTANGLE);
+            pressed.setColor(tokens.controlBgPressed);
+            pressed.setCornerRadius(dpToPx(4));
 
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-        states.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        states.addState(new int[]{android.R.attr.state_focused}, pressed);
-        states.addState(new int[]{}, normal);
-        return states;
+            ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
+            states.addState(new int[]{android.R.attr.state_pressed}, pressed);
+            states.addState(new int[]{android.R.attr.state_focused}, pressed);
+            states.addState(new int[]{}, normal);
+            cachedTouchState = states.getConstantState();
+            cachedTouchTheme = themeId;
+            return states;
+        }
+        return cachedTouchState != null ? cachedTouchState.newDrawable() : new ColorDrawable(Color.TRANSPARENT);
     }
 
     private int dpToPx(int dp) {

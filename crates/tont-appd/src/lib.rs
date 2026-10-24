@@ -84,11 +84,6 @@ impl CgroupFreezer {
     pub fn is_frozen(cgroup_dir: &Path) -> Result<bool, AppdError> {
         let events_file = validated_cgroup_file(cgroup_dir, "cgroup.events")?;
         let content = fs::read_to_string(events_file)?;
-        for line in content.lines() {
-            if line.trim() == "frozen 1" {
-                return Ok(true);
-            }
-        }
-        Ok(false)
+        Ok(content.lines().any(|line| line.trim() == "frozen 1"))
     }
 }

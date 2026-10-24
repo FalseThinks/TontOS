@@ -8,7 +8,7 @@ async fn main() {
     tracing::info!("Starting TontOS Radio Synchronization Daemon (tont-syncd)...");
 
     let config = SyncWindowConfig::default();
-    let mut scheduler = SyncScheduler::new(config.clone());
+    let mut scheduler = SyncScheduler::new(config);
     tracing::info!(
         "Batch window configured: 1 window every {}s lasting {}s",
         config.interval_secs,

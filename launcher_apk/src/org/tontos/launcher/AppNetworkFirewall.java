@@ -124,7 +124,7 @@ public final class AppNetworkFirewall {
             Log.w(TAG, "Could not resolve UID for pkg: " + pkg, t);
         }
 
-        if (uid >= 10000 && uid <= 199999) {
+        if (uid >= 10000 && uid <= 19999999) {
             executeIptables(uid, blocked);
         }
     }
@@ -140,28 +140,27 @@ public final class AppNetworkFirewall {
 
     /**
      * Configures kernel netfilter rules via iptables/ip6tables for UID isolation.
-     * AppOps path always applies. iptables requires root: on failure we log honestly
-     * instead of claiming the rule was applied.
+     * Operates with tokenized command arguments to prevent shell interpolation.
+     * Supports both primary user apps and secondary sandbox profiles (UID <= 19999999).
      */
     private static void executeIptables(int uid, boolean blocked) {
-        if (uid < 10000 || uid > 199999) return;
-        boolean rooted = SafeCommandExecutor.execute("su", "-c", "exit 0");
-        if (!rooted) {
-            Log.i(TAG, "iptables skipped for UID " + uid + ": no root, AppOps-only (blocked=" + blocked + ")");
-            return;
-        }
+        if (uid < 10000 || uid > 19999999) return;
+        String uidStr = String.valueOf(uid);
 
-        String script = String.format(Locale.ROOT,
-            "iptables -D OUTPUT -m owner --uid-owner %d -j REJECT 2>/dev/null; " +
-            "ip6tables -D OUTPUT -m owner --uid-owner %d -j REJECT 2>/dev/null; " +
-            (blocked ? "iptables -I OUTPUT -m owner --uid-owner %d -j REJECT; ip6tables -I OUTPUT -m owner --uid-owner %d -j REJECT;" : ""),
-            uid, uid, uid, uid);
+        // Delete existing rules first (cleanup)
+        SafeCommandExecutor.executePrivileged("iptables", "-D", "OUTPUT", "-m", "owner", "--uid-owner", uidStr, "-j", "REJECT");
+        SafeCommandExecutor.executePrivileged("ip6tables", "-D", "OUTPUT", "-m", "owner", "--uid-owner", uidStr, "-j", "REJECT");
 
-        boolean ok = SafeCommandExecutor.execute("su", "-c", script);
-        if (ok) {
-            Log.d(TAG, "Applied iptables rule for UID " + uid + " (blocked=" + blocked + ")");
+        if (blocked) {
+            boolean v4 = SafeCommandExecutor.executePrivileged("iptables", "-I", "OUTPUT", "-m", "owner", "--uid-owner", uidStr, "-j", "REJECT");
+            boolean v6 = SafeCommandExecutor.executePrivileged("ip6tables", "-I", "OUTPUT", "-m", "owner", "--uid-owner", uidStr, "-j", "REJECT");
+            if (v4 || v6) {
+                Log.d(TAG, "Applied iptables rule for UID " + uid + " (blocked=true)");
+            } else {
+                Log.w(TAG, "iptables rule failed for UID " + uid + " (blocked=true)");
+            }
         } else {
-            Log.w(TAG, "iptables rule failed for UID " + uid + " (blocked=" + blocked + ")");
+            Log.d(TAG, "Cleared iptables rules for UID " + uid + " (blocked=false)");
         }
     }
 
@@ -273,7 +272,8 @@ public final class AppNetworkFirewall {
         Map<String, AppEntry> appMap = new HashMap<>();
         for (ResolveInfo ri : activities) {
             String pkg = ri.activityInfo.packageName;
-            if (pkg.equals(activity.getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")) {
+            if (pkg.equals(activity.getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")
+                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")) {
                 continue;
             }
             if (!appMap.containsKey(pkg)) {

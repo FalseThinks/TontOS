@@ -27,6 +27,7 @@ public final class LockScreenManager {
     public static final String KEY_LOCK_OWNER_INFO = "pref_lock_owner_info";
     public static final String KEY_LOCK_SHORTCUT_LEFT = "pref_lock_shortcut_left";
     public static final String KEY_LOCK_SHORTCUT_RIGHT = "pref_lock_shortcut_right";
+    public static final String KEY_LOCK_NOTIF_MODE = "pref_lock_notif_mode";
 
     public static final String THEME_MATCH_ACTIVE = "MATCH_ACTIVE";
     public static final String DEFAULT_OWNER_INFO = "TontOS • Stay intentional";
@@ -105,8 +106,28 @@ public final class LockScreenManager {
 
     public static void setOwnerInfo(Context context, String info) {
         if (context == null) return;
+        String sanitized = info != null ? info.trim() : "";
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_LOCK_OWNER_INFO, info != null ? info.trim() : "").apply();
+            .edit().putString(KEY_LOCK_OWNER_INFO, sanitized).apply();
+        GlobalSettingsBridge.applyGlobalLockScreenOwnerInfo(context, sanitized);
+    }
+
+    public static LockNotificationMode getNotificationMode(Context context) {
+        if (context == null) return LockNotificationMode.DONT_SHOW;
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        String id = prefs.getString(KEY_LOCK_NOTIF_MODE, LockNotificationMode.DONT_SHOW.getId());
+        return LockNotificationMode.fromId(id);
+    }
+
+    public static void setNotificationMode(Context context, LockNotificationMode mode) {
+        if (context == null || mode == null) return;
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit().putString(KEY_LOCK_NOTIF_MODE, mode.getId()).apply();
+        GlobalSettingsBridge.applyGlobalLockScreenNotifications(context, mode);
+    }
+
+    public static float getFontScale(Context context) {
+        return GlobalSettingsBridge.getFontScale(context);
     }
 
     public static LockShortcut getLeftShortcut(Context context) {
@@ -161,43 +182,49 @@ public final class LockScreenManager {
                 UltraBatterySaverManager.toggleTorch(activity);
                 break;
             case CAMERA:
-                try {
-                    Intent camIntent = pm.getLaunchIntentForPackage("org.fossify.camera");
-                    if (camIntent == null) {
-                        camIntent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
-                    }
-                    camIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    activity.startActivity(camIntent);
-                } catch (Throwable t) {
-                    Log.w(TAG, "Failed to launch camera: " + t.getMessage());
-                }
+                launchApp(activity, "org.fossify.camera", new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA));
                 break;
             case PHONE:
-                try {
-                    Intent phoneIntent = pm.getLaunchIntentForPackage("org.fossify.phone");
-                    if (phoneIntent == null) {
-                        phoneIntent = new Intent(Intent.ACTION_DIAL);
-                    }
-                    phoneIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    activity.startActivity(phoneIntent);
-                } catch (Throwable t) {
-                    Log.w(TAG, "Failed to launch phone: " + t.getMessage());
-                }
+                launchApp(activity, "org.fossify.phone", new Intent(Intent.ACTION_DIAL));
                 break;
             case BROWSER:
-                try {
-                    Intent browserIntent = pm.getLaunchIntentForPackage("de.baumann.browser");
-                    if (browserIntent != null) {
-                        browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        activity.startActivity(browserIntent);
-                    }
-                } catch (Throwable t) {
-                    Log.w(TAG, "Failed to launch browser: " + t.getMessage());
-                }
+                launchApp(activity, "de.baumann.browser", null);
+                break;
+            case MESSAGES:
+                launchApp(activity, "org.fossify.messages", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING));
+                break;
+            case EMAIL:
+                launchApp(activity, "eu.faircode.email", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_EMAIL));
+                break;
+            case CALCULATOR:
+                launchApp(activity, "com.android.calculator2", null);
                 break;
             default:
                 break;
         }
+    }
+
+    private static void launchApp(Activity activity, String pkg, Intent fallback) {
+        try {
+            Intent intent = activity.getPackageManager().getLaunchIntentForPackage(pkg);
+            if (intent == null) intent = fallback;
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                activity.startActivity(intent);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed launching " + pkg + ": " + t.getMessage());
+        }
+    }
+
+    private static volatile boolean isDeviceLocked = false;
+
+    public static boolean isDeviceLocked() {
+        return isDeviceLocked;
+    }
+
+    public static void setDeviceUnlocked() {
+        isDeviceLocked = false;
     }
 
     /**
@@ -213,10 +240,13 @@ public final class LockScreenManager {
                 if (intent == null) return;
                 String action = intent.getAction();
                 if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+                    isDeviceLocked = true;
                     if (isLockScreenEnabled(appContext)) {
-                        Intent lockIntent = new Intent(appContext, LockScreenActivity.class);
-                        lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-                        appContext.startActivity(lockIntent);
+                        launchLockScreen(appContext);
+                    }
+                } else if (Intent.ACTION_SCREEN_ON.equals(action)) {
+                    if (isDeviceLocked && isLockScreenEnabled(appContext)) {
+                        launchLockScreen(appContext);
                     }
                 }
             }
@@ -224,7 +254,23 @@ public final class LockScreenManager {
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_OFF);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.setPriority(1000);
         appContext.registerReceiver(screenReceiver, filter);
         receiverRegistered = true;
+    }
+
+    private static void launchLockScreen(Context context) {
+        try {
+            Intent lockIntent = new Intent(context, LockScreenActivity.class);
+            lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_NO_ANIMATION
+                | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            context.startActivity(lockIntent);
+        } catch (Throwable t) {
+            Log.w(TAG, "Failed to launch LockScreenActivity: " + t.getMessage());
+        }
     }
 }

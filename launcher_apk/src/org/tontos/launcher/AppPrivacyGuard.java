@@ -313,194 +313,80 @@ public final class AppPrivacyGuard {
         permHeader.setPadding(0, (int) (4 * density), 0, (int) (8 * density));
         content.addView(permHeader);
 
-        // --- CATEGORÍA 1: RED / INTERNET ---
-        final boolean initialNetBlocked = AppNetworkFirewall.isAppNetworkBlocked(activity, pkg);
-        final TextView netToggleBtn = new TextView(activity);
-        addPrivacyToggleRow(
-            content,
-            activity,
-            tokens,
-            density,
-            I18n.get(I18n.KEY_PERM_NET_TITLE, langCode),
-            I18n.get(I18n.KEY_PERM_NET_DESC, langCode),
-            initialNetBlocked,
-            netToggleBtn,
-            blockedColor,
-            allowedColor,
-            blockedLabel,
-            allowedLabel,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean curr = AppNetworkFirewall.isAppNetworkBlocked(activity, pkg);
-                    boolean next = !curr;
-                    AppNetworkFirewall.setAppNetworkBlocked(activity, pkg, next);
-                    updateToggleBtnState(netToggleBtn, next, blockedLabel, allowedLabel, blockedColor, allowedColor);
-                }
+        interface PrivacyToggleHandler {
+            boolean isBlocked();
+            void setBlocked(boolean blocked);
+        }
+        class PrivacyCategoryItem {
+            final String titleKey;
+            final String descKey;
+            final String offLabel;
+            final PrivacyToggleHandler handler;
+            PrivacyCategoryItem(String titleKey, String descKey, String offLabel, PrivacyToggleHandler handler) {
+                this.titleKey = titleKey;
+                this.descKey = descKey;
+                this.offLabel = offLabel;
+                this.handler = handler;
             }
-        );
+        }
 
-        // --- CATEGORÍA 2: SENSORES & MOVIMIENTO ---
-        final boolean initialSensorsBlocked = isSensorsBlocked(activity, pkg);
-        final TextView sensorsToggleBtn = new TextView(activity);
-        addPrivacyToggleRow(
-            content,
-            activity,
-            tokens,
-            density,
-            I18n.get(I18n.KEY_PERM_SENSORS_TITLE, langCode),
-            I18n.get(I18n.KEY_PERM_SENSORS_DESC, langCode),
-            initialSensorsBlocked,
-            sensorsToggleBtn,
-            blockedColor,
-            allowedColor,
-            blockedLabel,
-            allowedLabel,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean curr = isSensorsBlocked(activity, pkg);
-                    boolean next = !curr;
-                    setSensorsBlocked(activity, pkg, next);
-                    updateToggleBtnState(sensorsToggleBtn, next, blockedLabel, allowedLabel, blockedColor, allowedColor);
-                }
-            }
-        );
+        PrivacyCategoryItem[] items = new PrivacyCategoryItem[] {
+            new PrivacyCategoryItem(I18n.KEY_PERM_NET_TITLE, I18n.KEY_PERM_NET_DESC, blockedLabel, new PrivacyToggleHandler() {
+                public boolean isBlocked() { return AppNetworkFirewall.isAppNetworkBlocked(activity, pkg); }
+                public void setBlocked(boolean b) { AppNetworkFirewall.setAppNetworkBlocked(activity, pkg, b); }
+            }),
+            new PrivacyCategoryItem(I18n.KEY_PERM_SENSORS_TITLE, I18n.KEY_PERM_SENSORS_DESC, blockedLabel, new PrivacyToggleHandler() {
+                public boolean isBlocked() { return isSensorsBlocked(activity, pkg); }
+                public void setBlocked(boolean b) { setSensorsBlocked(activity, pkg, b); }
+            }),
+            new PrivacyCategoryItem(I18n.KEY_PERM_CAM_MIC_TITLE, I18n.KEY_PERM_CAM_MIC_DESC, blockedLabel, new PrivacyToggleHandler() {
+                public boolean isBlocked() { return isCameraMicBlocked(activity, pkg); }
+                public void setBlocked(boolean b) { setCameraMicBlocked(activity, pkg, b); }
+            }),
+            new PrivacyCategoryItem(I18n.KEY_PERM_LOC_TITLE, I18n.KEY_PERM_LOC_DESC, blockedLabel, new PrivacyToggleHandler() {
+                public boolean isBlocked() { return isLocationBlocked(activity, pkg); }
+                public void setBlocked(boolean b) { setLocationBlocked(activity, pkg, b); }
+            }),
+            new PrivacyCategoryItem(I18n.KEY_PERM_STORAGE_TITLE, I18n.KEY_PERM_STORAGE_DESC, blockedLabel, new PrivacyToggleHandler() {
+                public boolean isBlocked() { return isStorageBlocked(activity, pkg); }
+                public void setBlocked(boolean b) { setStorageBlocked(activity, pkg, b); }
+            }),
+            new PrivacyCategoryItem(I18n.KEY_PERM_CONTACTS_TITLE, I18n.KEY_PERM_CONTACTS_DESC, blockedLabel, new PrivacyToggleHandler() {
+                public boolean isBlocked() { return isContactsBlocked(activity, pkg); }
+                public void setBlocked(boolean b) { setContactsBlocked(activity, pkg, b); }
+            }),
+            new PrivacyCategoryItem(I18n.KEY_PERM_BG_TITLE, I18n.KEY_PERM_BG_DESC, restrictedLabel, new PrivacyToggleHandler() {
+                public boolean isBlocked() { return isBgRestricted(activity, pkg); }
+                public void setBlocked(boolean b) { setBgRestricted(activity, pkg, b); }
+            }),
+        };
 
-        // --- CATEGORÍA 3: CÁMARA & MICRÓFONO ---
-        final boolean initialCamMicBlocked = isCameraMicBlocked(activity, pkg);
-        final TextView camMicToggleBtn = new TextView(activity);
-        addPrivacyToggleRow(
-            content,
-            activity,
-            tokens,
-            density,
-            I18n.get(I18n.KEY_PERM_CAM_MIC_TITLE, langCode),
-            I18n.get(I18n.KEY_PERM_CAM_MIC_DESC, langCode),
-            initialCamMicBlocked,
-            camMicToggleBtn,
-            blockedColor,
-            allowedColor,
-            blockedLabel,
-            allowedLabel,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean curr = isCameraMicBlocked(activity, pkg);
-                    boolean next = !curr;
-                    setCameraMicBlocked(activity, pkg, next);
-                    updateToggleBtnState(camMicToggleBtn, next, blockedLabel, allowedLabel, blockedColor, allowedColor);
+        for (final PrivacyCategoryItem item : items) {
+            final boolean initialBlocked = item.handler.isBlocked();
+            final TextView toggleBtn = new TextView(activity);
+            addPrivacyToggleRow(
+                content,
+                activity,
+                tokens,
+                density,
+                I18n.get(item.titleKey, langCode),
+                I18n.get(item.descKey, langCode),
+                initialBlocked,
+                toggleBtn,
+                blockedColor,
+                allowedColor,
+                item.offLabel,
+                allowedLabel,
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        boolean next = !item.handler.isBlocked();
+                        item.handler.setBlocked(next);
+                        updateToggleBtnState(toggleBtn, next, item.offLabel, allowedLabel, blockedColor, allowedColor);
+                    }
                 }
-            }
-        );
-
-        // --- CATEGORÍA 4: UBICACIÓN & GPS ---
-        final boolean initialLocBlocked = isLocationBlocked(activity, pkg);
-        final TextView locToggleBtn = new TextView(activity);
-        addPrivacyToggleRow(
-            content,
-            activity,
-            tokens,
-            density,
-            I18n.get(I18n.KEY_PERM_LOC_TITLE, langCode),
-            I18n.get(I18n.KEY_PERM_LOC_DESC, langCode),
-            initialLocBlocked,
-            locToggleBtn,
-            blockedColor,
-            allowedColor,
-            blockedLabel,
-            allowedLabel,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean curr = isLocationBlocked(activity, pkg);
-                    boolean next = !curr;
-                    setLocationBlocked(activity, pkg, next);
-                    updateToggleBtnState(locToggleBtn, next, blockedLabel, allowedLabel, blockedColor, allowedColor);
-                }
-            }
-        );
-
-        // --- CATEGORÍA 5: ALMACENAMIENTO & ARCHIVOS ---
-        final boolean initialStorageBlocked = isStorageBlocked(activity, pkg);
-        final TextView storageToggleBtn = new TextView(activity);
-        addPrivacyToggleRow(
-            content,
-            activity,
-            tokens,
-            density,
-            I18n.get(I18n.KEY_PERM_STORAGE_TITLE, langCode),
-            I18n.get(I18n.KEY_PERM_STORAGE_DESC, langCode),
-            initialStorageBlocked,
-            storageToggleBtn,
-            blockedColor,
-            allowedColor,
-            blockedLabel,
-            allowedLabel,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean curr = isStorageBlocked(activity, pkg);
-                    boolean next = !curr;
-                    setStorageBlocked(activity, pkg, next);
-                    updateToggleBtnState(storageToggleBtn, next, blockedLabel, allowedLabel, blockedColor, allowedColor);
-                }
-            }
-        );
-
-        // --- CATEGORÍA 6: CONTACTOS & LLAMADAS ---
-        final boolean initialContactsBlocked = isContactsBlocked(activity, pkg);
-        final TextView contactsToggleBtn = new TextView(activity);
-        addPrivacyToggleRow(
-            content,
-            activity,
-            tokens,
-            density,
-            I18n.get(I18n.KEY_PERM_CONTACTS_TITLE, langCode),
-            I18n.get(I18n.KEY_PERM_CONTACTS_DESC, langCode),
-            initialContactsBlocked,
-            contactsToggleBtn,
-            blockedColor,
-            allowedColor,
-            blockedLabel,
-            allowedLabel,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean curr = isContactsBlocked(activity, pkg);
-                    boolean next = !curr;
-                    setContactsBlocked(activity, pkg, next);
-                    updateToggleBtnState(contactsToggleBtn, next, blockedLabel, allowedLabel, blockedColor, allowedColor);
-                }
-            }
-        );
-
-        // --- CATEGORÍA 7: SEGUNDO PLANO ---
-        final boolean initialBgRestricted = isBgRestricted(activity, pkg);
-        final TextView bgToggleBtn = new TextView(activity);
-        addPrivacyToggleRow(
-            content,
-            activity,
-            tokens,
-            density,
-            I18n.get(I18n.KEY_PERM_BG_TITLE, langCode),
-            I18n.get(I18n.KEY_PERM_BG_DESC, langCode),
-            initialBgRestricted,
-            bgToggleBtn,
-            blockedColor,
-            allowedColor,
-            restrictedLabel,
-            allowedLabel,
-            new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean curr = isBgRestricted(activity, pkg);
-                    boolean next = !curr;
-                    setBgRestricted(activity, pkg, next);
-                    updateToggleBtnState(bgToggleBtn, next, restrictedLabel, allowedLabel, blockedColor, allowedColor);
-                }
-            }
-        );
+            );
+        }
 
         // Dynamic Line Divider
         View actDivider = new View(activity);
@@ -654,21 +540,6 @@ public final class AppPrivacyGuard {
         container.addView(row);
     }
 
-    private static void addPrivacyToggleRow(
-        LinearLayout container,
-        Activity activity,
-        ThemeTokens tokens,
-        float density,
-        String title,
-        String subtitle,
-        boolean isRestricted,
-        final TextView toggleBtn,
-        int blockedColor,
-        int allowedColor,
-        View.OnClickListener onClick
-    ) {
-        addPrivacyToggleRow(container, activity, tokens, density, title, subtitle, isRestricted, toggleBtn, blockedColor, allowedColor, "BLOCKED", "ALLOWED", onClick);
-    }
 
     private static void updateToggleBtnState(TextView btn, boolean isRestricted, String restrictedText, String allowedText, int blockedColor, int allowedColor) {
         btn.setText(isRestricted ? "[ " + restrictedText + " ]" : "[ " + allowedText + " ]");
@@ -820,7 +691,8 @@ public final class AppPrivacyGuard {
         Map<String, AppNetworkFirewall.AppEntry> appMap = new HashMap<>();
         for (ResolveInfo ri : activities) {
             String pkg = ri.activityInfo.packageName;
-            if (pkg.equals(activity.getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")) {
+            if (pkg.equals(activity.getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")
+                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")) {
                 continue;
             }
             if (!appMap.containsKey(pkg)) {

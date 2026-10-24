@@ -1,0 +1,26 @@
+diff --git a/current/Android.bp b/current/Android.bp
+index 8b0a239..88085a3 100644
+--- a/current/Android.bp
++++ b/current/Android.bp
+@@ -8,11 +8,12 @@ package {
+ 
+ apex_contributions_defaults {
+     name: "webapp-module-sdk.contributions",
+-    contents: ["prebuilt_framework-webapp"],
++    contents: [],
+ }
+ 
+ prebuilt_bootclasspath_fragment {
+     name: "com.android.webapp-bootclasspath-fragment",
++    enabled: false,
+     visibility: ["//visibility:public"],
+     apex_available: ["com.android.webapp"],
+     licenses: ["webapp-module-sdk_Android-Apache-2.0"],
+@@ -38,6 +39,7 @@ prebuilt_bootclasspath_fragment {
+ 
+ java_sdk_library_import {
+     name: "framework-webapp",
++    enabled: false,
+     visibility: ["//visibility:public"],
+     apex_available: ["com.android.webapp"],
+     licenses: ["webapp-module-sdk_Android-Apache-2.0"],

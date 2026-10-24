@@ -1,0 +1,49 @@
+diff --git a/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java b/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java
+index a835071..ab54572 100644
+--- a/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java
++++ b/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java
+@@ -192,11 +192,41 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
+         }
+         ComponentName candidate = !roleHolderPaymentServices.isEmpty()
+                 ? roleHolderPaymentServices.get(0) : null;
++        int targetUserId = userId;
++        if (candidate == null && android.os.SystemProperties.getBoolean("persist.sys.nfc_sandbox_hce", false)) {
++            UserManager um = mContext.getSystemService(UserManager.class);
++            if (um != null) {
++                for (UserHandle profile : um.getEnabledProfiles()) {
++                    int pId = profile.getIdentifier();
++                    if (pId == userId) continue;
++                    List<ApduServiceInfo> pInfos = mServiceCache.getInstalledServices(pId);
++                    for (int i = 0; i < pInfos.size(); i++) {
++                        ApduServiceInfo pInfo = pInfos.get(i);
++                        ComponentName cn = pInfo.getComponent();
++                        if (cn.getPackageName().equals(defaultWalletHolderPackageName)) {
++                            List<String> pAids = pInfo.getAids();
++                            for (int j = 0; j < pAids.size(); j++) {
++                                String aid = pAids.get(j);
++                                if (pInfo.getCategoryForAid(aid).equals(CardEmulation.CATEGORY_PAYMENT)) {
++                                    candidate = cn;
++                                    targetUserId = pId;
++                                    Log.i(TAG, "onWalletRoleHolderChanged: Found cross-profile HCE service "
++                                            + cn + " in user profile " + pId);
++                                    break;
++                                }
++                            }
++                        }
++                        if (candidate != null) break;
++                    }
++                    if (candidate != null) break;
++                }
++            }
++        }
+         if (!Objects.equals(candidate, mDefaultWalletHolderPaymentService) ||
+-                userId != mUserIdDefaultWalletHolder) {
++                targetUserId != mUserIdDefaultWalletHolder) {
+             mDefaultWalletHolderPaymentService = candidate;
+-            mUserIdDefaultWalletHolder = userId;
+-            mCallback.onPreferredPaymentServiceChanged(new ComponentNameAndUser(userId, candidate));
++            mUserIdDefaultWalletHolder = targetUserId;
++            mCallback.onPreferredPaymentServiceChanged(new ComponentNameAndUser(targetUserId, candidate));
+             return true;
+         }
+         return false;

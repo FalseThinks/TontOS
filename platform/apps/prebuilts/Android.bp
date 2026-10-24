@@ -1,9 +1,7 @@
 android_app_import {
     name: "OrganicMaps",
     apk: "app.organicmaps.apk",
-    preprocessed: true,
-    skip_preprocessed_apk_checks: true,
-    presigned: true,
+    certificate: "platform",
     dex_preopt: {
         enabled: false,
     },
@@ -24,9 +22,7 @@ android_app_import {
 android_app_import {
     name: "FairEmail",
     apk: "eu.faircode.email.apk",
-    preprocessed: true,
-    skip_preprocessed_apk_checks: true,
-    presigned: true,
+    certificate: "platform",
     dex_preopt: {
         enabled: false,
     },
@@ -74,6 +70,7 @@ android_app_import {
     dex_preopt: {
         enabled: false,
     },
+    overrides: ["Contacts"],
     product_specific: true,
 }
 
@@ -129,5 +126,6 @@ android_app_import {
     dex_preopt: {
         enabled: false,
     },
+    overrides: ["Dialer"],
     product_specific: true,
 }

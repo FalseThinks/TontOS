@@ -1,0 +1,13 @@
+diff --git a/bootstrap/bootstrap.go b/bootstrap/bootstrap.go
+index fda878a..abd63d9 100644
+--- a/bootstrap/bootstrap.go
++++ b/bootstrap/bootstrap.go
+@@ -171,7 +171,7 @@ var (
+ 			Command: `cd "$$(dirname "$builder")" && ` +
+ 				`BUILDER="$$PWD/$$(basename "$builder")" && ` +
+ 				`cd / && ` +
+-				`env -i $env "$$BUILDER" ` +
++				`env -i GOMEMLIMIT=7GiB GOGC=15 $env "$$BUILDER" ` +
+ 				`    --top "$$TOP" ` +
+ 				`    --soong_out "$soongOutDir" ` +
+ 				`    --out "$outDir" ` +

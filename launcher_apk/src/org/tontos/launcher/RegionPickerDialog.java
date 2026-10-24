@@ -74,12 +74,13 @@ public final class RegionPickerDialog {
             tempLang = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE).getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
         } catch (Throwable ignored) {}
         final String langCode = tempLang;
+        final float fontScale = GlobalSettingsBridge.getFontScale(context);
 
         // Header Title
         TextView header = new TextView(context);
         header.setText(I18n.get(I18n.KEY_SELECT_REGION, langCode).toUpperCase(Locale.ROOT));
         header.setTextColor(tokens.accent);
-        header.setTextSize(18);
+        header.setTextSize(18 * fontScale);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         root.addView(header);
 
@@ -98,7 +99,7 @@ public final class RegionPickerDialog {
         searchBar.setHint(I18n.get(I18n.KEY_SEARCH_REGION, langCode));
         searchBar.setHintTextColor(tokens.textMuted);
         searchBar.setTextColor(tokens.textPrimary);
-        searchBar.setTextSize(14);
+        searchBar.setTextSize(14 * fontScale);
         searchBar.setTypeface(Typeface.MONOSPACE);
         searchBar.setSingleLine(true);
         searchBar.setGravity(Gravity.CENTER_VERTICAL);
@@ -120,7 +121,7 @@ public final class RegionPickerDialog {
         // Badge
         final TextView countBadge = new TextView(context);
         countBadge.setTextColor(tokens.textMuted);
-        countBadge.setTextSize(11);
+        countBadge.setTextSize(11 * fontScale);
         countBadge.setTypeface(Typeface.MONOSPACE);
         countBadge.setPadding(0, 0, 0, (int) (8 * density));
         root.addView(countBadge);
@@ -141,7 +142,7 @@ public final class RegionPickerDialog {
         final TextView closeBtn = new TextView(context);
         closeBtn.setText(I18n.get(I18n.KEY_CANCEL, langCode));
         closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(13);
+        closeBtn.setTextSize(13 * fontScale);
         closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         closeBtn.setGravity(Gravity.CENTER);
         closeBtn.setMinHeight(minTouchHeight);
@@ -272,17 +273,19 @@ public final class RegionPickerDialog {
         sld.addState(new int[]{}, normal);
         row.setBackground(sld);
 
+        final float fontScale = GlobalSettingsBridge.getFontScale(context);
+
         TextView indicator = new TextView(context);
         indicator.setText(isActive ? "[x] " : "[ ] ");
         indicator.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
-        indicator.setTextSize(13);
+        indicator.setTextSize(13 * fontScale);
         indicator.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
         row.addView(indicator);
 
         TextView nameView = new TextView(context);
         nameView.setText(item.getDisplayName());
         nameView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textPrimary);
-        nameView.setTextSize(13);
+        nameView.setTextSize(13 * fontScale);
         nameView.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
         LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
         nameView.setLayoutParams(nameLp);
@@ -291,7 +294,7 @@ public final class RegionPickerDialog {
         TextView codeView = new TextView(context);
         codeView.setText("[" + item.getCode() + "]");
         codeView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
-        codeView.setTextSize(11);
+        codeView.setTextSize(11 * fontScale);
         codeView.setTypeface(Typeface.MONOSPACE);
         row.addView(codeView);
 

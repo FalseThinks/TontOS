@@ -87,8 +87,8 @@ fn test_sync_window_custom_values() {
     assert_eq!(config.interval_secs, 900);
     assert_eq!(config.duration_secs, 30);
 
-    let clone = config.clone();
-    assert_eq!(config, clone);
+    let copied = config;
+    assert_eq!(config, copied);
 }
 
 #[test]

@@ -1,5 +1,4 @@
-//! TontOS Common Core Definitions
-//! Minimal, zero-overhead shared types for power, process, and sync states.
+//! Shared core types for power, process, and sync states.
 
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +18,7 @@ pub enum BatteryStatus {
     Unknown,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct BatteryInfo {
     pub capacity_percent: u8,
     pub status: BatteryStatus,
@@ -32,7 +31,7 @@ pub enum AppLifecycleState {
     Frozen,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SyncWindowConfig {
     pub interval_secs: u64,
     pub duration_secs: u64,

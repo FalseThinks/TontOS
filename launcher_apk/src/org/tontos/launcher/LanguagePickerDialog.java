@@ -93,12 +93,13 @@ public final class LanguagePickerDialog {
         }
 
         final String langCode = currentItem != null ? currentItem.getTag() : "en";
+        final float fontScale = GlobalSettingsBridge.getFontScale(activity);
 
         // 1. Header: SELECT SYSTEM LANGUAGE
         TextView header = new TextView(activity);
         header.setText(I18n.get(I18n.KEY_SELECT_LANGUAGE, langCode).toUpperCase(Locale.ROOT));
         header.setTextColor(tokens.accent);
-        header.setTextSize(screenWidthDp < 360 ? 15 : 16);
+        header.setTextSize((screenWidthDp < 360 ? 15 : 16) * fontScale);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setSingleLine(true);
         header.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -118,7 +119,7 @@ public final class LanguagePickerDialog {
         searchBar.setHint(I18n.get(I18n.KEY_SEARCH_LANGUAGE, langCode));
         searchBar.setHintTextColor(tokens.textMuted);
         searchBar.setTextColor(tokens.textPrimary);
-        searchBar.setTextSize(13);
+        searchBar.setTextSize(13 * fontScale);
         searchBar.setTypeface(Typeface.MONOSPACE);
         searchBar.setSingleLine(true);
         searchBar.setMinHeight(dpToPx(activity, 44));
@@ -142,7 +143,7 @@ public final class LanguagePickerDialog {
         // Count badge
         final TextView countBadge = new TextView(activity);
         countBadge.setTextColor(tokens.textMuted);
-        countBadge.setTextSize(11);
+        countBadge.setTextSize(11 * fontScale);
         countBadge.setTypeface(Typeface.MONOSPACE);
         countBadge.setSingleLine(true);
         countBadge.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -165,7 +166,7 @@ public final class LanguagePickerDialog {
         TextView closeBtn = new TextView(activity);
         closeBtn.setText(I18n.get(I18n.KEY_CANCEL, langCode));
         closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(13);
+        closeBtn.setTextSize(13 * fontScale);
         closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         closeBtn.setGravity(Gravity.CENTER);
         closeBtn.setMinHeight(dpToPx(activity, MIN_TOUCH_TARGET_DP));
@@ -318,11 +319,13 @@ public final class LanguagePickerDialog {
         rowLp.setMargins(0, dpToPx(context, 2), 0, dpToPx(context, 2));
         row.setLayoutParams(rowLp);
 
+        final float fontScale = GlobalSettingsBridge.getFontScale(context);
+
         // Active indicator: [x] or [ ]
         TextView indicator = new TextView(context);
         indicator.setText(isActive ? "[x] " : "[ ] ");
         indicator.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
-        indicator.setTextSize(13);
+        indicator.setTextSize(13 * fontScale);
         indicator.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
         row.addView(indicator);
 
@@ -330,7 +333,7 @@ public final class LanguagePickerDialog {
         TextView nameView = new TextView(context);
         nameView.setText(item.getDisplayName());
         nameView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textPrimary);
-        nameView.setTextSize(13);
+        nameView.setTextSize(13 * fontScale);
         nameView.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
         nameView.setSingleLine(true);
         nameView.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -342,7 +345,7 @@ public final class LanguagePickerDialog {
         TextView tagView = new TextView(context);
         tagView.setText("[" + item.getTag() + "]");
         tagView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
-        tagView.setTextSize(11);
+        tagView.setTextSize(11 * fontScale);
         tagView.setTypeface(Typeface.MONOSPACE);
         tagView.setSingleLine(true);
         tagView.setPadding(dpToPx(context, 8), 0, 0, 0);

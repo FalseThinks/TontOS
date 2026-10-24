@@ -1,6 +1,7 @@
 package org.tontos.launcher;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.PermissionInfo;
 import android.os.Process;
@@ -212,8 +213,11 @@ public final class SystemProvisioningManager {
                     SafeCommandExecutor.executePrivileged("cmd", "package", "set-home-activity", "org.tontos.launcher/.MainActivity");
                     SafeCommandExecutor.executePrivileged("cmd", "role", "add-role-holder", "android.app.role.HOME", "org.tontos.launcher", "1");
 
-                    // 4. Set FOSS dialer as default phone app if present
-                    SafeCommandExecutor.executePrivileged("cmd", "role", "add-role-holder", "android.app.role.DIALER", "org.fossify.phone", "1");
+                    // 4. Set FOSS dialer as default phone app and disable legacy AOSP dialer/contacts
+                    SafeCommandExecutor.executePrivileged("cmd", "role", "set-bypassing-role-qualification", "true");
+                    SafeCommandExecutor.executePrivileged("cmd", "role", "add-role-holder", "--user", "0", "android.app.role.DIALER", "org.fossify.phone", "1");
+                    SafeCommandExecutor.executePrivileged("pm", "disable-user", "--user", "0", "com.android.dialer");
+                    SafeCommandExecutor.executePrivileged("pm", "disable-user", "--user", "0", "com.android.contacts");
 
                     // 5. Disable SystemUI notification shade and peek expansion
                     SafeCommandExecutor.executePrivileged("cmd", "statusbar", "send-disable-flag",
@@ -233,6 +237,35 @@ public final class SystemProvisioningManager {
                         android.provider.Settings.Global.putInt(appContext.getContentResolver(), android.provider.Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 1);
                     } catch (Throwable ignored) {}
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "development_settings_enabled", "1");
+
+                    // 9. ROM-Wide Lock Screen: Completely disable stock AOSP keyguard service so TontOS LockScreenActivity is sole lock screen
+                    SafeCommandExecutor.executePrivileged("settings", "put", "secure", "lockscreen.disabled", "1");
+                    SafeCommandExecutor.executePrivileged("locksettings", "set-disabled", "--user", "0", "true");
+                    SafeCommandExecutor.executePrivileged("cmd", "deviceidle", "whitelist", "+org.tontos.launcher");
+                    SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "RUN_IN_BACKGROUND", "allow");
+                    SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "SYSTEM_ALERT_WINDOW", "allow");
+                    LockScreenManager.registerScreenReceiver(appContext);
+
+                    // 10. Performance First: 0ms window animations system-wide
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "window_animation_scale", "0");
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "transition_animation_scale", "0");
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "animator_duration_scale", "0");
+
+                    // 11. Ultra Battery Saving: Disable background scanning and enforce aggressive Doze sleep (30s)
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "wifi_scan_always_enabled", "0");
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "ble_scan_always_enabled", "0");
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "device_idle_constants",
+                        "inactive_to=30000,sensing_to=0,locating_to=0,location_accuracy=20.0,motion_inactive_to=0,idle_after_inactive_to=0,idle_pending_to=60000,max_idle_pending_to=120000,idle_pending_factor=2.0,idle_to=1800000,max_idle_to=21600000,idle_factor=2.0,min_time_to_alarm=3600000");
+
+                    // 12. Start System-Wide Top Edge Gesture & Lockscreen Core Service
+                    try {
+                        Intent serviceIntent = new Intent(appContext, TontOSShadeService.class);
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            appContext.startForegroundService(serviceIntent);
+                        } else {
+                            appContext.startService(serviceIntent);
+                        }
+                    } catch (Throwable ignored) {}
 
                     Log.i(TAG, "Initial TontOS system provisioning, debloat and hardening completed successfully.");
                 } catch (Throwable t) {

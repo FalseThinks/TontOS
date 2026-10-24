@@ -58,15 +58,11 @@ ensure_memory_and_swap() {
     total_swap_kb=$(grep SwapTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
     local required_swap_kb=$(( MIN_SWAP_REQUIRED_GB * 1024 * 1024 ))
 
-    # AOSP Baklava requires generous virtual memory during heavy R8 & LLVM link phases.
+    # AOSP Baklava requires generous virtual memory during heavy R8, Kotlinc & LLVM link phases.
     if (( total_swap_kb < required_swap_kb )); then
         echo "[+] Active swap ($(( total_swap_kb / 1024 )) MB) is below recommended ($(( required_swap_kb / 1024 )) MB) for $PROFILE_LABEL."
         echo "[+] Auto-configuring tiered NVMe swap to prevent systemd-oomd SIGKILL..."
-        if command -v sudo >/dev/null 2>&1; then
-            sudo "$SCRIPT_DIR/helpers/setup_host_swap.sh" setup
-        else
-            echo "[!] Warning: sudo unavailable. Build may run into memory pressure."
-        fi
+        "$SCRIPT_DIR/helpers/setup_host_swap.sh" setup
     fi
 }
 
@@ -86,9 +82,9 @@ run_container() {
 
     local aosp_mount=()
     if [[ -d "$AOSP_DIR" ]] && [[ "$AOSP_DIR" != "$ROOT_DIR"* ]]; then
-        aosp_mount=("-v" "$AOSP_DIR:/home/tontos/aosp" "-v" "$OUT_DIR:/home/tontos/aosp/out")
+        aosp_mount=("-v" "$AOSP_DIR:/home/tontos/aosp" "-v" "$AOSP_DIR:$AOSP_DIR" "-v" "$OUT_DIR:/home/tontos/aosp/out" "-v" "$ROOT_DIR:$ROOT_DIR")
     else
-        aosp_mount=("-v" "$OUT_DIR:/workspace/out")
+        aosp_mount=("-v" "$OUT_DIR:/workspace/out" "-v" "$ROOT_DIR:$ROOT_DIR")
     fi
 
     local host_sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-$HOME/Android/Sdk}}"
@@ -110,6 +106,9 @@ run_container() {
         -e GOMAXPROCS="$GOMAXPROCS_VAL" \
         -e MALLOC_ARENA_MAX="$MALLOC_ARENA_MAX_VAL" \
         -e _JAVA_OPTIONS="-Xmx$JAVA_XMX" \
+        -e JAVA_OPTS="-Xmx$JAVA_XMX" \
+        -e GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx$JAVA_XMX" \
+        -e KOTLIN_OPTS="-J-Xmx$JAVA_XMX" \
         -e USE_CCACHE=1 \
         -e CCACHE_DIR=/workspace/.ccache \
         -v "$ROOT_DIR:/workspace" \
@@ -223,13 +222,26 @@ case "$ACTION" in
             run_container /bin/bash -c "cargo test --workspace"
             exit 0
         fi
+        if [[ -d "$AOSP_DIR/vendor/tontos" ]]; then
+            echo "[+] Syncing latest platform makefiles, blueprints and APKs to AOSP vendor tree..."
+            mkdir -p "$AOSP_DIR/vendor/tontos/products" "$AOSP_DIR/vendor/tontos/apps/prebuilts"
+            cp -f "$ROOT_DIR/platform/products/"*.mk "$AOSP_DIR/vendor/tontos/products/" 2>/dev/null || true
+            cp -f "$ROOT_DIR/platform/apps/prebuilts/Android.bp" "$AOSP_DIR/vendor/tontos/apps/prebuilts/" 2>/dev/null || true
+            if [[ -d "$ROOT_DIR/apps" ]]; then
+                cp -f "$ROOT_DIR/apps/"*.apk "$AOSP_DIR/vendor/tontos/apps/prebuilts/" 2>/dev/null || true
+            fi
+            cp -f "$ROOT_DIR/launcher_apk/tontos-launcher.apk" "$AOSP_DIR/vendor/tontos/apps/" 2>/dev/null || true
+        fi
         LUNCH_COMBO="${LUNCH_COMBO:-tontos_cf_x86_64-trunk_staging-userdebug}"
         echo "[+] Launching parallel AOSP compilation inside container (-j$BUILD_JOBS)..."
         run_container /bin/bash -c "
             export GOMAXPROCS=$GOMAXPROCS_VAL && export MALLOC_ARENA_MAX=$MALLOC_ARENA_MAX_VAL &&
             export _JAVA_OPTIONS=\"-Xmx$JAVA_XMX\" &&
+            export JAVA_OPTS=\"-Xmx$JAVA_XMX\" &&
+            export GRADLE_OPTS=\"-Dorg.gradle.jvmargs=-Xmx$JAVA_XMX\" &&
+            export KOTLIN_OPTS=\"-J-Xmx$JAVA_XMX\" &&
             ccache -M 50G &&
-            cd /home/tontos/aosp 2>/dev/null || cd /workspace/.build/aosp &&
+            if [ -d /home/tontos/aosp ]; then cd /home/tontos/aosp; else cd /workspace/.build/aosp; fi &&
             source build/envsetup.sh &&
             lunch $LUNCH_COMBO &&
             m -j$BUILD_JOBS $BUILD_TARGET

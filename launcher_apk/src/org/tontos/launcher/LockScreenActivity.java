@@ -109,14 +109,15 @@ public class LockScreenActivity extends Activity {
 
         buildLockUI();
         setupGestureDetector();
-        setupBatteryReceiver();
 
         handler = new Handler(Looper.getMainLooper());
         tickRunnable = new Runnable() {
             @Override
             public void run() {
                 updateTimeAndStats();
-                long delay = (clockStyle == LockClockStyle.TERMINAL_RETRO) ? 1000L : 15000L;
+                long delay = (clockStyle == LockClockStyle.TERMINAL_RETRO)
+                    ? 1000L
+                    : Math.max(1000L, 60000L - (System.currentTimeMillis() % 60000L));
                 handler.postDelayed(this, delay);
             }
         };
@@ -141,6 +142,7 @@ public class LockScreenActivity extends Activity {
         curLangCode = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("system_language", "en");
         buildLockUI();
         updateTimeAndStats();
+        setupBatteryReceiver();
         if (handler != null && tickRunnable != null) {
             handler.removeCallbacks(tickRunnable);
             handler.post(tickRunnable);
@@ -150,6 +152,12 @@ public class LockScreenActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (batteryReceiver != null) {
+            try {
+                unregisterReceiver(batteryReceiver);
+            } catch (Throwable ignored) {}
+            batteryReceiver = null;
+        }
         if (handler != null && tickRunnable != null) {
             handler.removeCallbacks(tickRunnable);
         }
@@ -167,6 +175,7 @@ public class LockScreenActivity extends Activity {
     }
 
     private void unlockDevice() {
+        LockScreenManager.setDeviceUnlocked();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
             if (km != null) {
@@ -205,10 +214,11 @@ public class LockScreenActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        unlockDevice();
+        // Intentionally ignore back press on lock screen to prevent unauthorized bypass
     }
 
     private void setupBatteryReceiver() {
+        if (batteryReceiver != null) return;
         batteryReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -225,7 +235,20 @@ public class LockScreenActivity extends Activity {
             }
         };
         IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-        registerReceiver(batteryReceiver, filter);
+        try {
+            Intent bat = registerReceiver(batteryReceiver, filter);
+            if (bat != null) {
+                int level = bat.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = bat.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                int status = bat.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                if (level >= 0 && scale > 0) {
+                    batteryLevel = (level * 100) / scale;
+                }
+                isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                              status == BatteryManager.BATTERY_STATUS_FULL);
+                updateBatteryDisplay();
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void buildLockUI() {
@@ -239,9 +262,11 @@ public class LockScreenActivity extends Activity {
         headerRow.setOrientation(LinearLayout.HORIZONTAL);
         headerRow.setGravity(Gravity.CENTER_VERTICAL);
 
+        final float fontScale = LockScreenManager.getFontScale(this);
+
         headerTitle = new TextView(this);
         headerTitle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        headerTitle.setTextSize(13);
+        headerTitle.setTextSize(13 * fontScale);
         headerTitle.setTextColor(tokens.accent);
         headerTitle.setText(getThemeLockHeader(tokens));
         LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
@@ -249,7 +274,7 @@ public class LockScreenActivity extends Activity {
 
         batteryView = new TextView(this);
         batteryView.setTypeface(Typeface.MONOSPACE, Typeface.NORMAL);
-        batteryView.setTextSize(13);
+        batteryView.setTextSize(13 * fontScale);
         batteryView.setTextColor(tokens.textMuted);
         batteryView.setVisibility(LockScreenManager.isShowBattery(this) ? View.VISIBLE : View.GONE);
         headerRow.addView(batteryView);
@@ -283,7 +308,7 @@ public class LockScreenActivity extends Activity {
 
         dateView = new TextView(this);
         dateView.setTypeface(Typeface.MONOSPACE, Typeface.NORMAL);
-        dateView.setTextSize(14);
+        dateView.setTextSize(14 * fontScale);
         dateView.setTextColor(tokens.textMuted);
         dateView.setGravity(Gravity.CENTER);
         dateView.setPadding(0, dpToPx(8), 0, dpToPx(16));
@@ -291,7 +316,7 @@ public class LockScreenActivity extends Activity {
 
         detoxView = new TextView(this);
         detoxView.setTypeface(Typeface.MONOSPACE, Typeface.NORMAL);
-        detoxView.setTextSize(13);
+        detoxView.setTextSize(13 * fontScale);
         detoxView.setTextColor(tokens.accent);
         detoxView.setGravity(Gravity.CENTER);
         detoxView.setPadding(0, 0, 0, dpToPx(12));
@@ -300,7 +325,7 @@ public class LockScreenActivity extends Activity {
 
         ownerView = new TextView(this);
         ownerView.setTypeface(Typeface.MONOSPACE, Typeface.ITALIC);
-        ownerView.setTextSize(13);
+        ownerView.setTextSize(13 * fontScale);
         ownerView.setTextColor(tokens.textPrimary);
         ownerView.setGravity(Gravity.CENTER);
         String ownerInfo = LockScreenManager.getOwnerInfo(this);
@@ -370,9 +395,10 @@ public class LockScreenActivity extends Activity {
         bottomDock.addView(leftShortcutBtn);
 
         // Center Unlock Bar
+        final float fontScale = LockScreenManager.getFontScale(this);
         unlockBtn = new TextView(this);
         unlockBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        unlockBtn.setTextSize(12);
+        unlockBtn.setTextSize(12 * fontScale);
         unlockBtn.setTextColor(tokens.navAccent);
         unlockBtn.setText(I18n.get(I18n.KEY_LOCK_UNLOCK_HINT, curLangCode));
         unlockBtn.setGravity(Gravity.CENTER);
@@ -400,9 +426,10 @@ public class LockScreenActivity extends Activity {
     }
 
     private TextView createShortcutButton(LockShortcut shortcut) {
+        final float fontScale = LockScreenManager.getFontScale(this);
         TextView btn = new TextView(this);
         btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        btn.setTextSize(12);
+        btn.setTextSize(12 * fontScale);
         btn.setGravity(Gravity.CENTER);
         btn.setMinimumHeight(dpToPx(MIN_TOUCH_TARGET_DP));
         btn.setPadding(dpToPx(12), dpToPx(8), dpToPx(12), dpToPx(8));
@@ -432,8 +459,14 @@ public class LockScreenActivity extends Activity {
                 return I18n.get(I18n.KEY_LOCK_ACTION_CAMERA, curLangCode);
             case PHONE:
                 return I18n.get(I18n.KEY_LOCK_ACTION_PHONE, curLangCode);
+            case MESSAGES:
+                return I18n.get(I18n.KEY_LOCK_ACTION_MESSAGES, curLangCode);
             case BROWSER:
                 return I18n.get(I18n.KEY_LOCK_ACTION_BROWSER, curLangCode);
+            case EMAIL:
+                return I18n.get(I18n.KEY_LOCK_ACTION_EMAIL, curLangCode);
+            case CALCULATOR:
+                return I18n.get(I18n.KEY_LOCK_ACTION_CALCULATOR, curLangCode);
             default:
                 return "";
         }
@@ -448,21 +481,24 @@ public class LockScreenActivity extends Activity {
 
     private void updateTimeAndStats() {
         now.setTime(System.currentTimeMillis());
+        final float fontScale = LockScreenManager.getFontScale(this);
 
         // Update Clock Views based on Strategy
         switch (clockStyle) {
             case VERTICAL_STACKED:
-                clockMain.setTextSize(68);
+                clockMain.setVisibility(View.VISIBLE);
+                clockMain.setTextSize(68 * fontScale);
                 clockMain.setTextColor(tokens.accent);
                 clockMain.setText(timeFormatHour.format(now));
                 clockSub.setVisibility(View.VISIBLE);
-                clockSub.setTextSize(68);
+                clockSub.setTextSize(68 * fontScale);
                 clockSub.setTextColor(tokens.accent);
                 clockSub.setText(timeFormatMin.format(now));
                 break;
 
             case TERMINAL_RETRO:
-                clockMain.setTextSize(22);
+                clockMain.setVisibility(View.VISIBLE);
+                clockMain.setTextSize(20 * fontScale);
                 clockMain.setTextColor(tokens.accent);
                 clockSub.setVisibility(View.GONE);
                 String termText = "> sys.time: " + timeFormatSec.format(now) + "\n" +
@@ -472,26 +508,42 @@ public class LockScreenActivity extends Activity {
                 break;
 
             case COMPACT_SINGLE:
-                clockMain.setTextSize(28);
+                clockMain.setVisibility(View.VISIBLE);
+                clockMain.setTextSize(26 * fontScale);
                 clockMain.setTextColor(tokens.textPrimary);
                 clockSub.setVisibility(View.GONE);
                 clockMain.setText(timeFormat24.format(now) + " · " + dateFormatFull.format(now));
                 break;
 
             case BIG_MONOSPACE:
-                clockMain.setTextSize(74);
+                clockMain.setVisibility(View.VISIBLE);
+                clockMain.setTextSize(74 * fontScale);
                 clockMain.setTextColor(tokens.accent);
                 clockSub.setVisibility(View.GONE);
                 clockMain.setText(timeFormat24.format(now));
                 break;
 
+            case MINIMAL_DATE_ONLY:
+                clockMain.setVisibility(View.VISIBLE);
+                clockMain.setTextSize(22 * fontScale);
+                clockMain.setTextColor(tokens.textPrimary);
+                clockSub.setVisibility(View.GONE);
+                clockMain.setText(dateFormatFull.format(now));
+                break;
+
+            case CLOCK_OFF:
+                clockMain.setVisibility(View.GONE);
+                clockSub.setVisibility(View.GONE);
+                break;
+
             case THEME_DEFAULT:
             default:
+                clockMain.setVisibility(View.VISIBLE);
                 if (tokens.isLight) { // E-Ink
-                    clockMain.setTextSize(72);
+                    clockMain.setTextSize(72 * fontScale);
                     clockMain.setTextColor(Color.BLACK);
                 } else {
-                    clockMain.setTextSize(64);
+                    clockMain.setTextSize(64 * fontScale);
                     clockMain.setTextColor(tokens.accent);
                 }
                 clockSub.setVisibility(View.GONE);
@@ -500,7 +552,10 @@ public class LockScreenActivity extends Activity {
         }
 
         // Date Display
-        if (clockStyle == LockClockStyle.COMPACT_SINGLE || clockStyle == LockClockStyle.TERMINAL_RETRO) {
+        if (clockStyle == LockClockStyle.COMPACT_SINGLE ||
+            clockStyle == LockClockStyle.TERMINAL_RETRO ||
+            clockStyle == LockClockStyle.MINIMAL_DATE_ONLY ||
+            clockStyle == LockClockStyle.CLOCK_OFF) {
             dateView.setVisibility(View.GONE);
         } else {
             dateView.setVisibility(View.VISIBLE);

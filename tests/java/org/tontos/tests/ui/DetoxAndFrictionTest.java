@@ -22,15 +22,29 @@ public class DetoxAndFrictionTest {
         });
 
         TestAssert.runTest("Lock Screen Clock Styles & Shortcuts Contract", () -> {
-            String[] clockStyles = {"THEME_DEFAULT", "ANALOG_MINIMAL", "DIGITAL_LARGE", "BINARY_DOTS"};
+            String[] clockStyles = {
+                "THEME_DEFAULT", "BIG_MONOSPACE", "VERTICAL_STACKED", "TERMINAL_RETRO",
+                "COMPACT_SINGLE", "MINIMAL_DATE_ONLY", "CLOCK_OFF"
+            };
             Set<String> clockSet = new HashSet<>(Arrays.asList(clockStyles));
-            TestAssert.assertEquals(4, clockSet.size(), "Clock styles count");
+            TestAssert.assertEquals(7, clockSet.size(), "Clock styles count");
             TestAssert.assertTrue(clockSet.contains("THEME_DEFAULT"), "Default clock style");
+            TestAssert.assertTrue(clockSet.contains("MINIMAL_DATE_ONLY"), "Minimal date only clock style");
+            TestAssert.assertTrue(clockSet.contains("CLOCK_OFF"), "Clock hidden style");
 
-            String[] allowedShortcuts = {"NONE", "TORCH", "CAMERA", "PHONE", "CALCULATOR"};
+            String[] allowedShortcuts = {
+                "NONE", "TORCH", "CAMERA", "PHONE", "MESSAGES", "BROWSER", "EMAIL", "CALCULATOR"
+            };
             List<String> shortcutList = Arrays.asList(allowedShortcuts);
+            TestAssert.assertEquals(8, shortcutList.size(), "Lock screen shortcuts count");
             TestAssert.assertTrue(shortcutList.contains("TORCH"), "Torch shortcut");
             TestAssert.assertTrue(shortcutList.contains("CAMERA"), "Camera shortcut");
+            TestAssert.assertTrue(shortcutList.contains("MESSAGES"), "Messages shortcut");
+            TestAssert.assertTrue(shortcutList.contains("EMAIL"), "Email shortcut");
+            TestAssert.assertTrue(shortcutList.contains("CALCULATOR"), "Calculator shortcut");
+
+            String[] notifModes = {"DONT_SHOW", "HIDE_SENSITIVE", "SHOW_ALL"};
+            TestAssert.assertEquals(3, notifModes.length, "Lock notification modes");
         });
 
         TestAssert.runTest("Digital Detox Screen Time Formatting", () -> {

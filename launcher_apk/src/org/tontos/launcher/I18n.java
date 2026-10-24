@@ -8,9 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Universal Internationalization & UI Localization Engine for TontOS.
- * Provides instant in-memory translations for all UI keys across all supported languages,
- * and updates Android runtime Resources configuration on demand.
+ * In-memory translations and runtime locale manager for TontOS.
  */
 public final class I18n {
 
@@ -218,6 +216,20 @@ public final class I18n {
     public static final String KEY_DESELECT_ALL = "deselect_all";
     public static final String KEY_APPLY = "apply";
     public static final String KEY_CONFIRM = "confirm";
+    public static final String KEY_SANDBOX_HEADER = "sandbox_header";
+    public static final String KEY_SANDBOX_TITLE = "sandbox_title";
+    public static final String KEY_SANDBOX_DESC = "sandbox_desc";
+    public static final String KEY_SANDBOX_STATUS_NOT_CREATED = "sandbox_status_not_created";
+    public static final String KEY_SANDBOX_STATUS_RUNNING = "sandbox_status_running";
+    public static final String KEY_SANDBOX_STATUS_PAUSED = "sandbox_status_paused";
+    public static final String KEY_SANDBOX_CREATE_BTN = "sandbox_create_btn";
+    public static final String KEY_SANDBOX_START_BTN = "sandbox_start_btn";
+    public static final String KEY_SANDBOX_PAUSE_BTN = "sandbox_pause_btn";
+    public static final String KEY_SANDBOX_DESTROY_BTN = "sandbox_destroy_btn";
+    public static final String KEY_SANDBOX_SHIELD_BTN = "sandbox_shield_btn";
+    public static final String KEY_SANDBOX_SHIELD_SUCCESS = "sandbox_shield_success";
+    public static final String KEY_SANDBOX_CONFIRM_DESTROY = "sandbox_confirm_destroy";
+    public static final String KEY_SANDBOX_EXPLANATION = "sandbox_explanation";
     public static final String KEY_BATTERY_PROTECTION = "battery_protection";
     public static final String KEY_BATTERY_100 = "battery_100";
     public static final String KEY_BATTERY_80 = "battery_80";
@@ -302,6 +314,12 @@ public final class I18n {
     public static final String KEY_LOCK_CLOCK_STACKED = "lock_clock_stacked";
     public static final String KEY_LOCK_CLOCK_TERMINAL = "lock_clock_terminal";
     public static final String KEY_LOCK_CLOCK_COMPACT = "lock_clock_compact";
+    public static final String KEY_LOCK_CLOCK_DATE_ONLY = "lock_clock_date_only";
+    public static final String KEY_LOCK_CLOCK_OFF = "lock_clock_off";
+    public static final String KEY_LOCK_NOTIF_MODE = "lock_notif_mode";
+    public static final String KEY_LOCK_NOTIF_NONE = "lock_notif_none";
+    public static final String KEY_LOCK_NOTIF_HIDE_CONTENT = "lock_notif_hide_content";
+    public static final String KEY_LOCK_NOTIF_SHOW_ALL = "lock_notif_show_all";
     public static final String KEY_LOCK_THEME_OVERRIDE = "lock_theme_override";
     public static final String KEY_LOCK_THEME_MATCH = "lock_theme_match";
     public static final String KEY_LOCK_SHOW_DETOX = "lock_show_detox";
@@ -314,6 +332,9 @@ public final class I18n {
     public static final String KEY_LOCK_ACTION_CAMERA = "lock_action_camera";
     public static final String KEY_LOCK_ACTION_PHONE = "lock_action_phone";
     public static final String KEY_LOCK_ACTION_BROWSER = "lock_action_browser";
+    public static final String KEY_LOCK_ACTION_MESSAGES = "lock_action_messages";
+    public static final String KEY_LOCK_ACTION_EMAIL = "lock_action_email";
+    public static final String KEY_LOCK_ACTION_CALCULATOR = "lock_action_calculator";
     public static final String KEY_LOCK_ACTION_NONE = "lock_action_none";
     public static final String KEY_LOCK_UNLOCK_HINT = "lock_unlock_hint";
     public static final String KEY_LOCK_TEST_BTN = "lock_test_btn";
@@ -483,6 +504,20 @@ public final class I18n {
         en.put(KEY_DESELECT_ALL, "[ DESELECT ALL ]");
         en.put(KEY_APPLY, "[ APPLY ]");
         en.put(KEY_CONFIRM, "[ CONFIRM ]");
+        en.put(KEY_SANDBOX_HEADER, "=== ISOLATED SANDBOX PROFILE ===");
+        en.put(KEY_SANDBOX_TITLE, "Isolated Sandbox Profile (GMS / Apps)");
+        en.put(KEY_SANDBOX_DESC, "DAC-isolated secondary user profile with Zero-RAM freeze mode");
+        en.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NOT CREATED ]");
+        en.put(KEY_SANDBOX_STATUS_RUNNING, "[ RUNNING (ACTIVE) ]");
+        en.put(KEY_SANDBOX_STATUS_PAUSED, "[ PAUSED (0 MB RAM) ]");
+        en.put(KEY_SANDBOX_CREATE_BTN, "[ CREATE SANDBOX PROFILE ]");
+        en.put(KEY_SANDBOX_START_BTN, "[ START SANDBOX ]");
+        en.put(KEY_SANDBOX_PAUSE_BTN, "[ PAUSE SANDBOX (0 MB RAM) ]");
+        en.put(KEY_SANDBOX_DESTROY_BTN, "[ DESTROY SANDBOX ]");
+        en.put(KEY_SANDBOX_SHIELD_BTN, "[ APPLY TELEMETRY SHIELD ]");
+        en.put(KEY_SANDBOX_SHIELD_SUCCESS, "Telemetry Shield applied via AppOps!");
+        en.put(KEY_SANDBOX_CONFIRM_DESTROY, "Are you sure you want to permanently delete the Sandbox profile and all its apps?");
+        en.put(KEY_SANDBOX_EXPLANATION, "The Sandbox runs inside a dedicated Android User (User 10). It cannot access User 0 contacts, SMS, photos, or storage. When paused, it consumes 0 MB of RAM.");
 
         en.put(KEY_SETTINGS, "[ SETTINGS ]");
         en.put(KEY_ALL_APPS, "[ ALL APPS ]");
@@ -747,6 +782,12 @@ public final class I18n {
         en.put(KEY_LOCK_CLOCK_STACKED, "Vertical Stacked (HH / MM)");
         en.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal Retro [HH:mm:ss]");
         en.put(KEY_LOCK_CLOCK_COMPACT, "Compact Single Line");
+        en.put(KEY_LOCK_CLOCK_DATE_ONLY, "Minimal Date Only (Detox)");
+        en.put(KEY_LOCK_CLOCK_OFF, "Clock Hidden (Zero Distraction)");
+        en.put(KEY_LOCK_NOTIF_MODE, "Lock Screen Notifications");
+        en.put(KEY_LOCK_NOTIF_NONE, "Do not show (Pure Detox)");
+        en.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Hide sensitive content");
+        en.put(KEY_LOCK_NOTIF_SHOW_ALL, "Show all notifications");
         en.put(KEY_LOCK_THEME_OVERRIDE, "Lock Screen Theme Style");
         en.put(KEY_LOCK_THEME_MATCH, "Match Active Theme");
         en.put(KEY_LOCK_SHOW_DETOX, "Show Detox Screen Time Bar");
@@ -759,6 +800,9 @@ public final class I18n {
         en.put(KEY_LOCK_ACTION_CAMERA, "[ CAMERA ]");
         en.put(KEY_LOCK_ACTION_PHONE, "[ PHONE ]");
         en.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        en.put(KEY_LOCK_ACTION_MESSAGES, "[ MESSAGES ]");
+        en.put(KEY_LOCK_ACTION_EMAIL, "[ EMAIL ]");
+        en.put(KEY_LOCK_ACTION_CALCULATOR, "[ CALCULATOR ]");
         en.put(KEY_LOCK_ACTION_NONE, "None / Disabled");
         en.put(KEY_LOCK_UNLOCK_HINT, "[ ^ SWIPE OR TAP TO UNLOCK ]");
         en.put(KEY_LOCK_TEST_BTN, "Test Lock Screen Now");
@@ -919,6 +963,20 @@ public final class I18n {
         de.put(KEY_DESELECT_ALL, "[ ALLE ABWÄHLEN ]");
         de.put(KEY_APPLY, "[ ANWENDEN ]");
         de.put(KEY_CONFIRM, "[ BESTÄTIGEN ]");
+        de.put(KEY_SANDBOX_HEADER, "=== ISOLIERTES SANDBOX-PROFIL ===");
+        de.put(KEY_SANDBOX_TITLE, "Isoliertes Sandbox-Profil (GMS / Apps)");
+        de.put(KEY_SANDBOX_DESC, "DAC-isoliertes Benutzerprofil mit Null-RAM-Pause");
+        de.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NICHT ERSTELLT ]");
+        de.put(KEY_SANDBOX_STATUS_RUNNING, "[ AKTIV (LÄUFT) ]");
+        de.put(KEY_SANDBOX_STATUS_PAUSED, "[ PAUSIERT (0 MB RAM) ]");
+        de.put(KEY_SANDBOX_CREATE_BTN, "[ SANDBOX-PROFIL ERSTELLEN ]");
+        de.put(KEY_SANDBOX_START_BTN, "[ SANDBOX STARTEN ]");
+        de.put(KEY_SANDBOX_PAUSE_BTN, "[ SANDBOX PAUSIEREN (0 MB RAM) ]");
+        de.put(KEY_SANDBOX_DESTROY_BTN, "[ SANDBOX LÖSCHEN ]");
+        de.put(KEY_SANDBOX_SHIELD_BTN, "[ TELEMETRIE-SCHILD AKTIVIEREN ]");
+        de.put(KEY_SANDBOX_SHIELD_SUCCESS, "Telemetrie-Schild via AppOps angewendet!");
+        de.put(KEY_SANDBOX_CONFIRM_DESTROY, "Möchten Sie das Sandbox-Profil und alle darin enthaltenen Apps wirklich dauerhaft löschen?");
+        de.put(KEY_SANDBOX_EXPLANATION, "Die Sandbox läuft in einem getrennten Benutzer (User 10). Sie hat keinen Zugriff auf Kontakte, SMS oder Speicher von User 0. Bei Pause verbraucht sie 0 MB RAM.");
 
         de.put(KEY_SETTINGS, "[ EINSTELLUNGEN ]");
         de.put(KEY_ALL_APPS, "[ ALLE APPS ]");
@@ -1183,6 +1241,12 @@ public final class I18n {
         de.put(KEY_LOCK_CLOCK_STACKED, "Vertikal gestapelt (HH / MM)");
         de.put(KEY_LOCK_CLOCK_TERMINAL, "Retro-Terminal [HH:mm:ss]");
         de.put(KEY_LOCK_CLOCK_COMPACT, "Kompakt einzeilig");
+        de.put(KEY_LOCK_CLOCK_DATE_ONLY, "Nur Datum (Detox)");
+        de.put(KEY_LOCK_CLOCK_OFF, "Uhr ausgeblendet (Keine Ablenkung)");
+        de.put(KEY_LOCK_NOTIF_MODE, "Sperrbildschirm-Benachrichtigungen");
+        de.put(KEY_LOCK_NOTIF_NONE, "Nicht anzeigen (Reines Detox)");
+        de.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Sensiblen Inhalt ausblenden");
+        de.put(KEY_LOCK_NOTIF_SHOW_ALL, "Alle Benachrichtigungen anzeigen");
         de.put(KEY_LOCK_THEME_OVERRIDE, "Sperrbildschirm-Design");
         de.put(KEY_LOCK_THEME_MATCH, "Wie aktives Design");
         de.put(KEY_LOCK_SHOW_DETOX, "Detox-Balken anzeigen");
@@ -1195,6 +1259,9 @@ public final class I18n {
         de.put(KEY_LOCK_ACTION_CAMERA, "[ KAMERA ]");
         de.put(KEY_LOCK_ACTION_PHONE, "[ TELEFON ]");
         de.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        de.put(KEY_LOCK_ACTION_MESSAGES, "[ NACHRICHTEN ]");
+        de.put(KEY_LOCK_ACTION_EMAIL, "[ E-MAIL ]");
+        de.put(KEY_LOCK_ACTION_CALCULATOR, "[ RECHNER ]");
         de.put(KEY_LOCK_ACTION_NONE, "Keine / Deaktiviert");
         de.put(KEY_LOCK_UNLOCK_HINT, "[ ^ WISCHEN ODER TIPPEN ZUM ENTSPERREN ]");
         de.put(KEY_LOCK_TEST_BTN, "Sperrbildschirm jetzt testen");
@@ -1273,6 +1340,20 @@ public final class I18n {
         pl.put(KEY_DESELECT_ALL, "[ OZNACZ WSZYSTKIE ]");
         pl.put(KEY_APPLY, "[ ZASTOSUJ ]");
         pl.put(KEY_CONFIRM, "[ POTWIERDŹ ]");
+        pl.put(KEY_SANDBOX_HEADER, "=== IZOLOWANY PROFIL SANDBOX ===");
+        pl.put(KEY_SANDBOX_TITLE, "Izolowany profil Sandbox (GMS / Aplikacje)");
+        pl.put(KEY_SANDBOX_DESC, "Izolowany profil DAC z trybem pauzy Zero-RAM");
+        pl.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NIEUTWORZONY ]");
+        pl.put(KEY_SANDBOX_STATUS_RUNNING, "[ AKTYWNY (DZIAŁA) ]");
+        pl.put(KEY_SANDBOX_STATUS_PAUSED, "[ WSTRZYMANY (0 MB RAM) ]");
+        pl.put(KEY_SANDBOX_CREATE_BTN, "[ UTWÓRZ PROFIL SANDBOX ]");
+        pl.put(KEY_SANDBOX_START_BTN, "[ URUCHOM SANDBOX ]");
+        pl.put(KEY_SANDBOX_PAUSE_BTN, "[ ZAPAUZUJ (0 MB RAM) ]");
+        pl.put(KEY_SANDBOX_DESTROY_BTN, "[ USUŃ SANDBOX ]");
+        pl.put(KEY_SANDBOX_SHIELD_BTN, "[ TARCZA TELEMETRII ]");
+        pl.put(KEY_SANDBOX_SHIELD_SUCCESS, "Tarcza telemetryczna wdrożona przez AppOps!");
+        pl.put(KEY_SANDBOX_CONFIRM_DESTROY, "Czy na pewno chcesz trwale usunąć profil Sandbox i wszystkie jego aplikacje?");
+        pl.put(KEY_SANDBOX_EXPLANATION, "Sandbox działa w dedykowanym profilu (User 10). Nie ma dostępu do kontaktów, SMS ani pamięci User 0. Po zapauzowaniu zużywa 0 MB RAM.");
 
         pl.put(KEY_SETTINGS, "[ USTAWIENIA ]");
         pl.put(KEY_ALL_APPS, "[ WSZYSTKIE APLIKACJE ]");
@@ -1537,6 +1618,12 @@ public final class I18n {
         pl.put(KEY_LOCK_CLOCK_STACKED, "Pionowy stos (HH / MM)");
         pl.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal retro [HH:mm:ss]");
         pl.put(KEY_LOCK_CLOCK_COMPACT, "Kompaktowy pojedynczy wiersz");
+        pl.put(KEY_LOCK_CLOCK_DATE_ONLY, "Tylko data (Detox)");
+        pl.put(KEY_LOCK_CLOCK_OFF, "Zegar ukryty (Zero rozpraszaczy)");
+        pl.put(KEY_LOCK_NOTIF_MODE, "Powiadomienia na ekranie blokady");
+        pl.put(KEY_LOCK_NOTIF_NONE, "Nie pokazuj (Czysty Detox)");
+        pl.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Ukryj treść wrażliwą");
+        pl.put(KEY_LOCK_NOTIF_SHOW_ALL, "Pokaż wszystkie");
         pl.put(KEY_LOCK_THEME_OVERRIDE, "Motyw ekranu blokady");
         pl.put(KEY_LOCK_THEME_MATCH, "Zgodny z aktywnym motywem");
         pl.put(KEY_LOCK_SHOW_DETOX, "Pokaż pasek detoxu na blokadzie");
@@ -1549,6 +1636,9 @@ public final class I18n {
         pl.put(KEY_LOCK_ACTION_CAMERA, "[ APARAT ]");
         pl.put(KEY_LOCK_ACTION_PHONE, "[ TELEFON ]");
         pl.put(KEY_LOCK_ACTION_BROWSER, "[ PRZEGLĄDARKA ]");
+        pl.put(KEY_LOCK_ACTION_MESSAGES, "[ WIADOMOŚCI ]");
+        pl.put(KEY_LOCK_ACTION_EMAIL, "[ POCZTA ]");
+        pl.put(KEY_LOCK_ACTION_CALCULATOR, "[ KALKULATOR ]");
         pl.put(KEY_LOCK_ACTION_NONE, "Brak / Wyłączony");
         pl.put(KEY_LOCK_UNLOCK_HINT, "[ ^ PRZESUŃ LUB DOTKNIJ BY ODBLOKOWAĆ ]");
         pl.put(KEY_LOCK_TEST_BTN, "Przetestuj ekran blokady teraz");
@@ -1627,6 +1717,20 @@ public final class I18n {
         es.put(KEY_DESELECT_ALL, "[ DESMARCAR TODOS ]");
         es.put(KEY_APPLY, "[ APLICAR ]");
         es.put(KEY_CONFIRM, "[ CONFIRMAR ]");
+        es.put(KEY_SANDBOX_HEADER, "=== PERFIL SANDBOX AISLADO ===");
+        es.put(KEY_SANDBOX_TITLE, "Perfil Sandbox Aislado (GMS / Apps)");
+        es.put(KEY_SANDBOX_DESC, "Perfil secundario aislado por DAC con congelación Zero-RAM");
+        es.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NO CREADO ]");
+        es.put(KEY_SANDBOX_STATUS_RUNNING, "[ ACTIVO (EN EJECUCIÓN) ]");
+        es.put(KEY_SANDBOX_STATUS_PAUSED, "[ EN PAUSA (0 MB RAM) ]");
+        es.put(KEY_SANDBOX_CREATE_BTN, "[ CREAR PERFIL SANDBOX ]");
+        es.put(KEY_SANDBOX_START_BTN, "[ INICIAR SANDBOX ]");
+        es.put(KEY_SANDBOX_PAUSE_BTN, "[ PAUSAR SANDBOX (0 MB RAM) ]");
+        es.put(KEY_SANDBOX_DESTROY_BTN, "[ ELIMINAR SANDBOX ]");
+        es.put(KEY_SANDBOX_SHIELD_BTN, "[ APLICAR ESCUDO DE TELEMETRÍA ]");
+        es.put(KEY_SANDBOX_SHIELD_SUCCESS, "¡Escudo de telemetría aplicado mediante AppOps!");
+        es.put(KEY_SANDBOX_CONFIRM_DESTROY, "¿Estás seguro de que deseas eliminar permanentemente el Sandbox y todas sus apps?");
+        es.put(KEY_SANDBOX_EXPLANATION, "El Sandbox corre en un usuario dedicado (User 10). No tiene acceso a contactos, SMS ni fotos de User 0. Al pausarlo, libera el 100% de la RAM consumida.");
 
         es.put(KEY_SETTINGS, "[ AJUSTES ]");
         es.put(KEY_ALL_APPS, "[ TODAS LAS APPS ]");
@@ -1891,6 +1995,12 @@ public final class I18n {
         es.put(KEY_LOCK_CLOCK_STACKED, "Apilado vertical (HH / MM)");
         es.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal retro [HH:mm:ss]");
         es.put(KEY_LOCK_CLOCK_COMPACT, "Compacto una línea");
+        es.put(KEY_LOCK_CLOCK_DATE_ONLY, "Solo fecha (Detox)");
+        es.put(KEY_LOCK_CLOCK_OFF, "Oculto (Cero distracción)");
+        es.put(KEY_LOCK_NOTIF_MODE, "Notificaciones en pantalla de bloqueo");
+        es.put(KEY_LOCK_NOTIF_NONE, "No mostrar (Detox puro)");
+        es.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Ocultar contenido sensible");
+        es.put(KEY_LOCK_NOTIF_SHOW_ALL, "Mostrar todas");
         es.put(KEY_LOCK_THEME_OVERRIDE, "Tema de pantalla de bloqueo");
         es.put(KEY_LOCK_THEME_MATCH, "Sincronizado con tema activo");
         es.put(KEY_LOCK_SHOW_DETOX, "Mostrar barra de detox en bloqueo");
@@ -1903,6 +2013,9 @@ public final class I18n {
         es.put(KEY_LOCK_ACTION_CAMERA, "[ CÁMARA ]");
         es.put(KEY_LOCK_ACTION_PHONE, "[ TELÉFONO ]");
         es.put(KEY_LOCK_ACTION_BROWSER, "[ NAVEGADOR ]");
+        es.put(KEY_LOCK_ACTION_MESSAGES, "[ MENSAJES ]");
+        es.put(KEY_LOCK_ACTION_EMAIL, "[ CORREO ]");
+        es.put(KEY_LOCK_ACTION_CALCULATOR, "[ CALCULADORA ]");
         es.put(KEY_LOCK_ACTION_NONE, "Ninguno / Desactivado");
         es.put(KEY_LOCK_UNLOCK_HINT, "[ ^ DESLIZA O TOCA PARA DESBLOQUEAR ]");
         es.put(KEY_LOCK_TEST_BTN, "Probar pantalla de bloqueo ahora");
@@ -4008,15 +4121,19 @@ public final class I18n {
             String base = langCode.contains("-") ? langCode.substring(0, langCode.indexOf('-')) : langCode;
             base = base.toLowerCase(Locale.ROOT);
             Map<String, String> langMap = TRANSLATIONS.get(base);
-            if (langMap != null && langMap.containsKey(key)) {
+            if (langMap != null) {
                 String val = langMap.get(key);
-                return val != null ? val.replace("\\n", "\n") : key;
+                if (val != null) {
+                    return val.indexOf('\\') >= 0 ? val.replace("\\n", "\n") : val;
+                }
             }
         }
         Map<String, String> en = TRANSLATIONS.get("en");
-        if (en != null && en.containsKey(key)) {
+        if (en != null) {
             String val = en.get(key);
-            return val != null ? val.replace("\\n", "\n") : key;
+            if (val != null) {
+                return val.indexOf('\\') >= 0 ? val.replace("\\n", "\n") : val;
+            }
         }
         return key;
     }

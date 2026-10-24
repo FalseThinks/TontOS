@@ -2,8 +2,7 @@
 use std::path::Path;
 use tont_settings::TontSettings;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     tracing_subscriber::fmt::init();
     tracing::info!("Starting TontOS Settings & Customization Daemon (tont-settings)...");
 

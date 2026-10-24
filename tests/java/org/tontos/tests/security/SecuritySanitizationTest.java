@@ -80,5 +80,16 @@ public class SecuritySanitizationTest {
                 TestAssert.assertFalse(token.isEmpty(), "Token cannot be empty");
             }
         });
+
+        TestAssert.runTest("Cryptographic Truststore - eMudhra Compromised CA Revocation (CVE-2026-91403)", () -> {
+            String[] revokedHashes = {"869fbf79.0", "b74d2bd5.0", "dbff3a01.0", "f459871d.0"};
+            java.io.File caDir = new java.io.File("/home/paproka/aosp/tontos/system/ca-certificates/files");
+            if (caDir.exists()) {
+                for (String revoked : revokedHashes) {
+                    java.io.File cert = new java.io.File(caDir, revoked);
+                    TestAssert.assertFalse(cert.exists(), "Compromised eMudhra CA must not exist in truststore: " + revoked);
+                }
+            }
+        });
     }
 }

@@ -433,10 +433,6 @@ version = "0.0.2"
 dependencies = [
  "rustix",
  "thiserror",
- "tokio",
- "tont-common",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -462,16 +458,12 @@ version = "0.0.2"
 dependencies = [
  "serde",
  "serde_json",
- "thiserror",
 ]
 
 [[package]]
 name = "tont-compositor"
 version = "0.0.2"
 dependencies = [
- "thiserror",
- "tokio",
- "tont-common",
  "tracing",
  "tracing-subscriber",
 ]
@@ -482,8 +474,6 @@ version = "0.0.2"
 dependencies = [
  "libc",
  "rustix",
- "tokio",
- "tont-common",
  "tracing",
  "tracing-subscriber",
 ]
@@ -561,7 +551,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "tokio",
  "tont-common",
  "tracing",
  "tracing-subscriber",

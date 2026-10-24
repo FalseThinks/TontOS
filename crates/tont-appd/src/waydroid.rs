@@ -79,6 +79,7 @@ impl CommandRunner for SystemCommandRunner {
             .stderr(Stdio::piped())
             .spawn()?;
 
+        let child_pid = child.id();
         let (tx, rx) = mpsc::channel();
         std::thread::spawn(move || {
             let out = child.wait_with_output();
@@ -93,10 +94,15 @@ impl CommandRunner for SystemCommandRunner {
                 stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
             }),
             Ok(Err(e)) => Err(e),
-            Err(mpsc::RecvTimeoutError::Timeout) => Err(io::Error::new(
-                io::ErrorKind::TimedOut,
-                format!("{program} timed out after {}s", timeout.as_secs()),
-            )),
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                if let Some(pid) = rustix::process::Pid::from_raw(child_pid as i32) {
+                    let _ = rustix::process::kill_process(pid, rustix::process::Signal::Kill);
+                }
+                Err(io::Error::new(
+                    io::ErrorKind::TimedOut,
+                    format!("{program} timed out after {}s", timeout.as_secs()),
+                ))
+            }
             Err(mpsc::RecvTimeoutError::Disconnected) => {
                 Err(io::Error::other("runner thread disconnected"))
             }
@@ -105,7 +111,7 @@ impl CommandRunner for SystemCommandRunner {
 }
 
 pub struct WaydroidController<R = SystemCommandRunner> {
-    runner: R,
+    pub runner: R,
 }
 
 impl WaydroidController<SystemCommandRunner> {
@@ -191,28 +197,29 @@ impl<R: CommandRunner> WaydroidController<R> {
         args: &[&str],
         timeout: Duration,
     ) -> Result<String, WaydroidError> {
-        let command = std::iter::once(program)
-            .chain(args.iter().copied())
-            .collect::<Vec<_>>()
-            .join(" ");
         let output = self
             .runner
             .run_with_timeout(program, args, timeout)
             .map_err(|source| {
+                let command = std::iter::once(program)
+                    .chain(args.iter().copied())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 if source.kind() == io::ErrorKind::TimedOut {
                     WaydroidError::CommandTimeout {
-                        command: command.clone(),
+                        command,
                         timeout_secs: timeout.as_secs(),
                     }
                 } else {
-                    WaydroidError::CommandIo {
-                        command: command.clone(),
-                        source,
-                    }
+                    WaydroidError::CommandIo { command, source }
                 }
             })?;
 
         if !output.success {
+            let command = std::iter::once(program)
+                .chain(args.iter().copied())
+                .collect::<Vec<_>>()
+                .join(" ");
             return Err(WaydroidError::CommandFailed {
                 command,
                 status: output.status,
@@ -221,197 +228,5 @@ impl<R: CommandRunner> WaydroidController<R> {
         }
 
         Ok(output.stdout)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::collections::VecDeque;
-
-    #[derive(Default)]
-    struct FakeRunner {
-        calls: Vec<(String, Vec<String>)>,
-        results: VecDeque<io::Result<CommandOutput>>,
-    }
-
-    impl FakeRunner {
-        fn returning(outputs: impl IntoIterator<Item = CommandOutput>) -> Self {
-            Self {
-                calls: Vec::new(),
-                results: outputs.into_iter().map(Ok).collect(),
-            }
-        }
-
-        fn output(stdout: &str) -> CommandOutput {
-            CommandOutput {
-                success: true,
-                status: Some(0),
-                stdout: stdout.to_owned(),
-                stderr: String::new(),
-            }
-        }
-    }
-
-    impl CommandRunner for FakeRunner {
-        fn run(&mut self, program: &str, args: &[&str]) -> io::Result<CommandOutput> {
-            self.calls.push((
-                program.to_owned(),
-                args.iter().map(|arg| (*arg).to_owned()).collect(),
-            ));
-            self.results
-                .pop_front()
-                .expect("unexpected command invocation")
-        }
-    }
-
-    #[test]
-    fn status_returns_real_command_output() {
-        let runner =
-            FakeRunner::returning([FakeRunner::output("Session: RUNNING\nContainer: RUNNING\n")]);
-        let mut controller = WaydroidController::with_runner(runner);
-
-        assert_eq!(
-            controller.status().unwrap(),
-            "Session: RUNNING\nContainer: RUNNING\n"
-        );
-        assert_eq!(
-            controller.runner.calls,
-            [("waydroid".to_owned(), vec!["status".to_owned()])]
-        );
-    }
-
-    #[test]
-    fn start_and_stop_run_commands_in_order() {
-        let runner = FakeRunner::returning([
-            FakeRunner::output(""),
-            FakeRunner::output(""),
-            FakeRunner::output(""),
-            FakeRunner::output(""),
-        ]);
-        let mut controller = WaydroidController::with_runner(runner);
-
-        controller.start_session().unwrap();
-        controller.stop_session().unwrap();
-
-        assert_eq!(
-            controller.runner.calls,
-            [
-                (
-                    "systemctl".to_owned(),
-                    vec!["start".to_owned(), "waydroid-container.service".to_owned()]
-                ),
-                (
-                    "waydroid".to_owned(),
-                    vec!["session".to_owned(), "start".to_owned()]
-                ),
-                (
-                    "waydroid".to_owned(),
-                    vec!["session".to_owned(), "stop".to_owned()]
-                ),
-                (
-                    "systemctl".to_owned(),
-                    vec!["stop".to_owned(), "waydroid-container.service".to_owned()]
-                ),
-            ]
-        );
-    }
-
-    #[test]
-    fn launch_validates_package_before_running_command() {
-        let runner = FakeRunner::returning([FakeRunner::output("")]);
-        let mut controller = WaydroidController::with_runner(runner);
-
-        controller.launch_app("org.fdroid.fdroid").unwrap();
-        assert_eq!(
-            controller.runner.calls,
-            [(
-                "waydroid".to_owned(),
-                vec![
-                    "app".to_owned(),
-                    "launch".to_owned(),
-                    "org.fdroid.fdroid".to_owned()
-                ]
-            )]
-        );
-
-        assert!(matches!(
-            controller.launch_app("org.example;touch /bad"),
-            Err(WaydroidError::InvalidPackageName(_))
-        ));
-        assert_eq!(controller.runner.calls.len(), 1);
-    }
-
-    #[test]
-    fn command_failure_includes_status_and_stderr_and_stops_sequence() {
-        let failed = CommandOutput {
-            success: false,
-            status: Some(5),
-            stdout: String::new(),
-            stderr: "permission denied\n".to_owned(),
-        };
-        let runner = FakeRunner::returning([failed]);
-        let mut controller = WaydroidController::with_runner(runner);
-
-        let error = controller.start_session().unwrap_err();
-        assert_eq!(
-            error.to_string(),
-            "systemctl start waydroid-container.service failed with status Some(5): permission denied"
-        );
-        assert_eq!(controller.runner.calls.len(), 1);
-    }
-
-    #[test]
-    fn container_stop_failure_reports_session_already_stopped() {
-        let failed = CommandOutput {
-            success: false,
-            status: Some(1),
-            stdout: String::new(),
-            stderr: "Access denied\n".to_owned(),
-        };
-        let runner = FakeRunner::returning([FakeRunner::output(""), failed]);
-        let mut controller = WaydroidController::with_runner(runner);
-
-        let error = controller.stop_session().unwrap_err();
-        assert_eq!(
-            error.to_string(),
-            "Partial Waydroid stop: the session stopped, but stopping the container service failed: systemctl stop waydroid-container.service failed with status Some(1): Access denied"
-        );
-        assert!(matches!(
-            error,
-            WaydroidError::PartialStop {
-                source: ref cause
-            } if matches!(**cause, WaydroidError::CommandFailed { .. })
-        ));
-        assert_eq!(
-            controller.runner.calls,
-            [
-                (
-                    "waydroid".to_owned(),
-                    vec!["session".to_owned(), "stop".to_owned()]
-                ),
-                (
-                    "systemctl".to_owned(),
-                    vec!["stop".to_owned(), "waydroid-container.service".to_owned()]
-                )
-            ]
-        );
-    }
-
-    #[test]
-    fn command_spawn_errors_are_returned() {
-        let runner = FakeRunner {
-            calls: Vec::new(),
-            results: VecDeque::from([Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "command not found",
-            ))]),
-        };
-        let mut controller = WaydroidController::with_runner(runner);
-
-        assert!(matches!(
-            controller.status(),
-            Err(WaydroidError::CommandIo { .. })
-        ));
     }
 }

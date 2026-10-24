@@ -10,7 +10,7 @@ export PATH="/usr/bin:/usr/local/bin:/usr/local/sbin:$PATH"
 export GIT_SSL_CAINFO=/etc/ssl/certs/ca-certificates.crt
 export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 BRANCH="$(python3 -c "import json;print(json.load(open('$ROOT/platform/manifests/pinned.json'))['branch'])")"
 DIR="${AOSP_TREE:-$HOME/aosp/tontos}"
 echo "branch=$BRANCH dir=$DIR"
@@ -43,3 +43,6 @@ d=json.load(open(p)); d['manifest_rev']=rev
 json.dump(d,open(p,'w'),indent=2); open(p,'a').write('\n')
 EOF
 echo "PIN updated in platform/manifests/pinned.json"
+
+# Automatically apply TontOS kernel/framework patches and sync vendor tree
+"$ROOT/bin/helpers/apply_aosp_patches.sh" "$DIR"
