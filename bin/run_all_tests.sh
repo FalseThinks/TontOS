@@ -13,7 +13,7 @@ FAILED=0
 
 # Step 1: Rust System Daemons (14 Crates)
 echo ""
-echo "--> [1/4] Running Rust Formatting, Clippy & Workspace Tests..."
+echo "--> [1/5] Running Rust Formatting, Clippy & Workspace Tests..."
 if (cd "$ROOT_DIR" && \
     cargo fmt --all -- --check && \
     cargo clippy --workspace --all-targets -- -D warnings && \
@@ -26,7 +26,7 @@ fi
 
 # Step 2: Java Modular Settings & Feature Validation Tests
 echo ""
-echo "--> [2/4] Running Java Modular Test Suite & JaCoCo Coverage..."
+echo "--> [2/5] Running Java Modular Test Suite & JaCoCo Coverage..."
 mkdir -p "$ROOT_DIR/target/test-classes" "$ROOT_DIR/target/jacoco-report"
 JAVA_TEST_FILES=$(find "$ROOT_DIR/tests/java" -name "*.java")
 JACOCO_AGENT="$ROOT_DIR/tools/jacoco/jacocoagent.jar"
@@ -65,7 +65,7 @@ fi
 
 # Step 3: Android Launcher APK Compilation & Signing Gate
 echo ""
-echo "--> [3/4] Compiling & Verifying TontOS Launcher APK..."
+echo "--> [3/5] Compiling & Verifying TontOS Launcher APK..."
 if "$ROOT_DIR/bin/build_launcher_apk.sh"; then
     echo "  [PASS] Launcher APK compiled and signed cleanly."
 else
@@ -75,7 +75,7 @@ fi
 
 # Step 4: Shell Scripts & System Configurations Hygiene
 echo ""
-echo "--> [4/4] Verifying Shell Scripts & Permissions Hygiene..."
+echo "--> [4/5] Verifying Shell Scripts & Permissions Hygiene..."
 for script in "$ROOT_DIR/bin"/*.sh "$ROOT_DIR/bin/helpers"/*.sh "$ROOT_DIR/bin/windows"/*.sh; do
     if [[ -f "$script" ]]; then
         if bash -n "$script"; then
@@ -89,6 +89,16 @@ done
 
 if [[ -f "$ROOT_DIR/platform/products/default-permissions-tontos.xml" ]]; then
     echo "  [PASS] Shell scripts and permission definitions verified."
+fi
+
+# Step 5: Security Auditing (Semgrep SAST & Trivy Scanner)
+echo ""
+echo "--> [5/5] Running Security Audits (Semgrep SAST & Trivy Vulnerability Scan)..."
+if "$ROOT_DIR/bin/helpers/run_security_audit.sh"; then
+    echo "  [PASS] Semgrep SAST and Trivy security audits passed with 0 findings."
+else
+    echo "  [FAIL] Security audit detected vulnerabilities or policy violations."
+    FAILED=1
 fi
 
 echo ""

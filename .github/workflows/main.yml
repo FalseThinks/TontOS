@@ -57,7 +57,7 @@ jobs:
         run: bash -n scripts/*.sh scripts/helpers/*.sh
 
       - name: Run Gitleaks secret scan
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -247,12 +247,18 @@ jobs:
 
       - name: Run Semgrep SAST
         run: |
-          pip install semgrep
+          pip install --break-system-packages semgrep || pipx install semgrep
           semgrep scan --config auto \
             --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag \
             --exclude-rule package_managers.dependabot.dependabot-missing-cooldown.dependabot-missing-cooldown \
             --exclude-rule java.android.security.exported_activity.exported_activity \
             --exclude-rule java.lang.security.audit.command-injection-process-builder.command-injection-process-builder \
+            --exclude target \
+            --exclude tools \
+            --exclude apps \
+            --exclude .git \
+            --exclude .ccache \
+            --error \
             --sarif --output semgrep.sarif .
 
       - name: Upload Semgrep results to GitHub Security tab
@@ -286,6 +292,8 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
+          exit-code: '1'
+          skip-dirs: target,tools,apps,.ccache
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4

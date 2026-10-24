@@ -306,7 +306,9 @@ pub fn sha256_file(path: &Path) -> Result<(String, u64), RomctlError> {
         total_size += n as u64;
     }
 
-    Ok((format!("{:x}", h.finalize()), total_size))
+    let hash = h.finalize();
+    let hex = hash.iter().map(|b| format!("{b:02x}")).collect::<String>();
+    Ok((hex, total_size))
 }
 
 /// Verifies artifact integrity against cryptographic manifest.

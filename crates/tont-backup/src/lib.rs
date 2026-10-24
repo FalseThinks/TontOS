@@ -47,7 +47,9 @@ impl BackupPackage {
         let json = serde_json::to_vec(payload)?;
         let mut hasher = Sha256::new();
         hasher.update(&json);
-        Ok(format!("{:x}", hasher.finalize()))
+        let hash = hasher.finalize();
+        let hex = hash.iter().map(|b| format!("{b:02x}")).collect::<String>();
+        Ok(hex)
     }
 
     /// Create a new verified backup package.
