@@ -1,6 +1,3 @@
-<div align="center">
-
-<div style="text-align: center;">
 ```text
 ████████╗ ██████╗ ███╗   ██╗████████╗ ██████╗ ███████╗
 ╚══██╔══╝██╔═══██╗████╗  ██║╚══██╔══╝██╔═══██╗██╔════╝
@@ -9,7 +6,8 @@
    ██║   ╚██████╔╝██║ ╚████║   ██║   ╚██████╔╝███████║
    ╚═╝    ╚═════╝ ╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚══════╝
 ```
-</div>
+
+<div align="center">
     
 **Minimalist AOSP Distribution · Rust System Daemons · Low-Distraction Interface**
 
