@@ -1,7 +1,14 @@
-# TontOS
-
 <div align="center">
-
+    
+```text
+████████╗ ██████╗ ███╗   ██╗████████╗ ██████╗ ███████╗
+╚══██╔══╝██╔═══██╗████╗  ██║╚══██╔══╝██╔═══██╗██╔════╝
+   ██║   ██║   ██║██╔██╗ ██║   ██║   ██║   ██║███████╗
+   ██║   ██║   ██║██║╚██╗██║   ██║   ██║   ██║╚════██║
+   ██║   ╚██████╔╝██║ ╚████║   ██║   ╚██████╔╝███████║
+   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚══════╝
+```
+    
 **Minimalist AOSP Distribution · Rust System Daemons · Low-Distraction Interface**
 
 [![Main Workflow](https://img.shields.io/github/actions/workflow/status/FalseThinks/TontOS/main.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white)](https://github.com/FalseThinks/TontOS/actions/workflows/main.yml)
