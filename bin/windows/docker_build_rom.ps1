@@ -156,7 +156,7 @@ switch ($Action) {
         docker run --rm `
             -v "${dockerWorkspace}:/workspace" `
             -w "/workspace" `
-            $ImageName ./scripts/build_launcher_apk.sh
+            $ImageName ./bin/build_launcher_apk.sh
         exit 0
     }
     "build" {

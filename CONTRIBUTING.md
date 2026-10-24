@@ -30,7 +30,7 @@ TontOS is dual-licensed under **Apache License 2.0** and **MIT License**.
 - **Rust Toolchain:** Stable with `clippy` and `rustfmt`.
 - **Java:** OpenJDK 17 (`javac 17`).
 - **Android SDK:** Platform 34 and Build-Tools 36.0.0.
-- **Docker:** Required for full containerized AOSP compilation (`./scripts/docker_build_rom.sh`).
+- **Docker:** Required for full containerized AOSP compilation (`./bin/docker_build_rom.sh`).
 
 ---
 
@@ -45,10 +45,10 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 
 # 2. Launcher compilation and APK signature
-./scripts/build_launcher_apk.sh
+./bin/build_launcher_apk.sh
 
 # 3. Shell script hygiene & JSON syntax
-bash -n scripts/*.sh
+bash -n bin/*.sh
 jq empty platform/manifests/pinned.json tests/ui/package.json
 ```
 

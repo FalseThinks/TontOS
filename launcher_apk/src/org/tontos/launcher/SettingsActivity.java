@@ -2057,6 +2057,7 @@ public class SettingsActivity extends Activity {
         addInfoRow(I18n.get(I18n.KEY_CHIPSET_PLATFORM, curLangCode), Build.HARDWARE + " (" + Build.BOARD + ")", tokens);
         addInfoRow(I18n.get(I18n.KEY_KERNEL_VERSION, curLangCode), formatCleanKernelVersion(System.getProperty("os.version")), tokens);
         addInfoRow(I18n.get(I18n.KEY_BUILD_ID, curLangCode), Build.DISPLAY != null ? Build.DISPLAY : Build.ID, tokens);
+        addInfoRow(I18n.get(I18n.KEY_BOOTLOADER_LOCK_STATUS, curLangCode), BootloaderManager.getStatusDisplay(curLangCode), tokens);
     }
 
     private void buildSysUpdatesSubSection(final ThemeTokens tokens, final String curLangCode) {

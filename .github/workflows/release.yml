@@ -87,11 +87,11 @@ jobs:
         if: steps.check_tag.outputs.EXISTS == 'false'
         env:
           OUTPUT_APK: tontos-launcher.apk
-        run: ./scripts/build_launcher_apk.sh
+        run: ./bin/build_launcher_apk.sh
 
       - name: Generate Executive Summary
         if: steps.check_tag.outputs.EXISTS == 'false'
-        run: ./scripts/generate_ci_report.sh RELEASE_AUDIT.md
+        run: ./bin/generate_ci_report.sh RELEASE_AUDIT.md
 
       - name: Publish GitHub Release
         if: steps.check_tag.outputs.EXISTS == 'false'

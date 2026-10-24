@@ -41,7 +41,7 @@ Current repository checks:
 cargo fmt --all -- --check
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
-./scripts/build_launcher_apk.sh
+./bin/build_launcher_apk.sh
 ```
 
 After Android product integration, run the selected AOSP test targets and the

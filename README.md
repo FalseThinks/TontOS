@@ -12,7 +12,7 @@
 **Minimalist AOSP Distribution · Rust System Daemons · Low-Distraction Interface**
 
 [![Main Workflow](https://img.shields.io/github/actions/workflow/status/FalseThinks/TontOS/main.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white)](https://github.com/FalseThinks/TontOS/actions/workflows/main.yml)
-[![Release](https://img.shields.io/badge/release-v0.0.2--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
+[![Release](https://img.shields.io/badge/release-v0.0.3--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
 [![Rust](https://img.shields.io/badge/rust-1.99.0%20(2024%20Edition)-DEA584.svg?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![AOSP](https://img.shields.io/badge/AOSP-17.0.0__r1-3DDC84.svg?style=flat-square&logo=android&logoColor=white)](https://source.android.com/)
 [![Tests](https://img.shields.io/badge/tests-142%20passed-10B981.svg?style=flat-square)](tests/)
@@ -74,7 +74,7 @@ TontOS is an open-source mobile operating system engineered for digital detox, b
 | **Full AOSP ROM Compilation** | 8+ Cores recommended | 16 GB + 16–32 GB Swap/zRAM | 150 GB (NVMe SSD) | Linux (Arch, Debian, Ubuntu) or Docker |
 
 > [!NOTE]
-> When compiling full AOSP on host machines with 16 GB of physical RAM, Soong and Ninja require tiered swap (zRAM + NVMe swapfile) or limiting parallel threads via `--jobs=4` to prevent OOM termination. Alternatively, use `./scripts/clean_install_and_monitor.sh --docker` or `./scripts/helpers/setup_host_swap.sh setup` automatically.
+> When compiling full AOSP on host machines with 16 GB of physical RAM, Soong and Ninja require tiered swap (zRAM + NVMe swapfile) or limiting parallel threads via `--jobs=4` to prevent OOM termination. Alternatively, use `./bin/clean_install_and_monitor.sh --docker` or `./bin/helpers/setup_host_swap.sh setup` automatically.
 
 ---
 
@@ -106,7 +106,7 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 ```text
 .
 ├── apps/                      # Prebuilt audited FOSS applications
-├── bin/                       # Automation scripts & entrypoints (symlinked as scripts/)
+├── bin/                       # Automation scripts & pipeline entrypoints
 │   ├── clean_install_and_monitor.sh # Master pipeline: swap -> test -> build -> boot -> monitor
 │   ├── docker_build_rom.sh    # Hermetic containerized ROM builder
 │   ├── run_all_tests.sh       # Unified test gate (Rust, Java JaCoCo, APK)
@@ -144,50 +144,50 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 Hermetic build environment: all dependencies (Rust, Java 17, AOSP, Repo, CCache) run in an isolated Debian container with caches (`.ccache/`) and artifacts (`out/`) preserved inside the repository:
 ```bash
 # Build AOSP ROM inside Docker:
-./scripts/docker_build_rom.sh --build
+./bin/docker_build_rom.sh --build
 
 # Run test suite inside Docker:
-./scripts/docker_build_rom.sh --test
+./bin/docker_build_rom.sh --test
 
 # Build launcher APK inside Docker:
-./scripts/docker_build_rom.sh --apk
+./bin/docker_build_rom.sh --apk
 
 # Interactive container shell:
-./scripts/docker_build_rom.sh --shell
+./bin/docker_build_rom.sh --shell
 
 # Clean internal caches and output:
-./scripts/docker_build_rom.sh --clean
+./bin/docker_build_rom.sh --clean
 ```
 
 ### 2. Unified Clean Install & Monitor (Orchestrator)
 Orchestrates memory preflight, workspace testing, optional AOSP compile (host or `--docker`), Cuttlefish boot, and live RAM monitoring:
 ```bash
 # Boot existing build with live performance monitoring:
-./scripts/clean_install_and_monitor.sh
+./bin/clean_install_and_monitor.sh
 
 # Complete cycle in Docker (zero host toolchain or swap changes):
-./scripts/clean_install_and_monitor.sh --docker
+./bin/clean_install_and_monitor.sh --docker
 
 # Local host build (incremental):
-./scripts/clean_install_and_monitor.sh --build
+./bin/clean_install_and_monitor.sh --build
 ```
 
 ### 3. Automated Host Memory & Swap Setup (Linux - Optional for Host Builds)
 Prepares host memory before heavy host-native AOSP builds (auto-detects Btrfs vs Ext4, configures tiered zRAM + 32GB NVMe swapfile, and applies kernel sysctl):
 ```bash
 # Check memory & swap status:
-./scripts/helpers/setup_host_swap.sh status
+./bin/helpers/setup_host_swap.sh status
 
 # Configure and activate:
-sudo ./scripts/helpers/setup_host_swap.sh setup
+sudo ./bin/helpers/setup_host_swap.sh setup
 
 # Clean/reclaim disk space (swapoff & delete /swapfile_aosp):
-sudo ./scripts/helpers/setup_host_swap.sh clean
+sudo ./bin/helpers/setup_host_swap.sh clean
 ```
 
 ### 4. Build Launcher APK (Fast Iteration)
 ```bash
-./scripts/build_launcher_apk.sh
+./bin/build_launcher_apk.sh
 adb install -r launcher_apk/tontos-launcher.apk
 adb shell cmd package set-home-activity org.tontos.launcher/.MainActivity
 ```
@@ -195,12 +195,12 @@ adb shell cmd package set-home-activity org.tontos.launcher/.MainActivity
 ### 5. Run System Test Suite (Unified Gate)
 Executes Rust formatting, Clippy, 97 Rust crate tests, 45 Java modular tests with JaCoCo bytecode coverage, and signs the launcher APK:
 ```bash
-./scripts/run_all_tests.sh
+./bin/run_all_tests.sh
 ```
 
 ### 6. Hermetic Containerized ROM Build
 ```bash
-env BUILD_TARGET="systemimage" ./scripts/docker_build_rom.sh
+env BUILD_TARGET="systemimage" ./bin/docker_build_rom.sh
 ```
 
 ---
@@ -230,17 +230,17 @@ Deploy the compiled TontOS system image to any Treble-compliant Android smartpho
 Boot a clean factory-state Cuttlefish instance on Linux with hardware KVM acceleration:
 ```bash
 # Automated launch with real-time memory and log monitoring:
-./scripts/clean_install_and_monitor.sh
+./bin/clean_install_and_monitor.sh
 
 # Or provision and flash clean standard Android AVD emulator:
-./scripts/helpers/flash_virtual_device.sh --wipe-data --cold-boot
+./bin/helpers/flash_virtual_device.sh --wipe-data --cold-boot
 ```
 
 ### Method 3: Standalone Launcher Deployment (Any Stock Android 10+)
 Install the TontOS digital detox interface onto your daily personal smartphone without flashing partitions:
 ```bash
 # Build and sign the APK:
-./scripts/build_launcher_apk.sh
+./bin/build_launcher_apk.sh
 
 # Sideload and assign default home role:
 adb install -r launcher_apk/tontos-launcher.apk

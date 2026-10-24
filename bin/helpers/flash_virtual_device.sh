@@ -77,12 +77,12 @@ echo "[+] Virtual device online and boot completed."
 
 # 2. Build TontOS Launcher APK
 echo "[*] Building TontOS Launcher APK..."
-./scripts/build_launcher_apk.sh > /dev/null
+./bin/build_launcher_apk.sh > /dev/null
 echo "[+] TontOS Launcher APK built."
 
 # 3. Aggressive Debloat
 echo "[*] Running custom ROM debloater & telemetry purge..."
-./scripts/debloat_custom_rom.sh --sweep || true
+./bin/helpers/debloat_custom_rom.sh --sweep || true
 
 # 4. Install TontOS Suite
 echo "[*] Installing TontOS Launcher..."
@@ -110,7 +110,7 @@ adb shell cmd statusbar send-disable-flag statusbar-expansion quick-settings not
 
 # 7. Deploy Rust Micro-Daemons
 echo "[*] Deploying TontOS Rust binaries..."
-./scripts/run_emulator_tontos.sh || true
+./bin/helpers/run_emulator_tontos.sh || true
 
 # 8. Start TontOS Launcher
 echo "[*] Starting TontOS Launcher..."

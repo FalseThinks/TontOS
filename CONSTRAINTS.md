@@ -5,7 +5,7 @@ Contrato vigente. Todo agente/PR debe respetarlo. Debilitarlo exige aprobación 
 ## 1. Claims honestos (sin medición no hay claim)
 - No afirmar ahorro batería, mejora rendimiento, OTA funcional, Verified Boot / CTS / Play Integrity sin evidencia medida en hardware soportado.
 - Temas visuales ≠ ahorro energía. Release-channel abre páginas release, no es updater.
-- `scripts/make_ota_package.sh` fail-closed hasta updater firmado y compatible.
+- `bin/helpers/make_ota_package.sh` fail-closed hasta updater firmado y compatible.
 
 ## 2. Batería pref-only
 - Límites carga / bypass solo si guest expone interfaz verificada; si no, reportar unsupported.
@@ -16,7 +16,7 @@ Contrato vigente. Todo agente/PR debe respetarlo. Debilitarlo exige aprobación 
 - `apps/*.apk` con excepción `!apps/*.apk` en `.gitignore` (solo APKs curados en `apps/`).
 
 ## 4. Alcance docs-sync
-- Sincronizar docs sin tocar producto: prohibido editar `crates/`, `launcher_apk/`, `scripts/` en tareas docs-only.
+- Sincronizar docs sin tocar producto: prohibido editar `crates/`, `launcher_apk/`, `bin/` en tareas docs-only.
 - No `git add` / commit / push sin pedido explícito.
 
 ## 5. Seguridad Android (OWASP MASVS/MASWE)

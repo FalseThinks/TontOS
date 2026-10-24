@@ -21,6 +21,6 @@ Checkout SIEMPRE fuera del repo (`~/aosp/tontos`), aquí solo metadata pineada.
 Recrear misma revisión:
 
 ```sh
-./scripts/aosp_preflight.sh
-./scripts/sync_aosp.sh
+./bin/helpers/aosp_preflight.sh
+./bin/helpers/sync_aosp.sh
 ```

@@ -119,7 +119,7 @@ To build and sign the launcher APK without compiling the full AOSP tree:
 
 ```sh
 # Requires JDK 17 and Android SDK build-tools
-./scripts/build_launcher_apk.sh
+./bin/build_launcher_apk.sh
 ```
 
 Output APK is generated at `launcher_apk/tontos-launcher.apk` signed with v2/v3 signature schemes.

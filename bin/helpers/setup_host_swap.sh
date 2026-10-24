@@ -269,7 +269,7 @@ case "$ACTION" in
         persist_settings
         ;;
     help|--help|-h)
-        echo "Usage: ./scripts/helpers/setup_host_swap.sh [COMMAND] [OPTIONS]"
+        echo "Usage: ./bin/helpers/setup_host_swap.sh [COMMAND] [OPTIONS]"
         echo "Commands:"
         echo "  setup [--persist]      Configure and activate zRAM + 32GB swapfile + sysctl"
         echo "  status                 Display current memory, swap, zram, and sysctl tables"
