@@ -19,9 +19,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 /**
- * Factory and builder utility for consistent, monospace tactile UI rows in TontOS Settings.
- * Encapsulates view hierarchy creation, density calculations, touch feedback drawables,
- * and high-contrast theme styling.
+ * UI row factory and styling utility for TontOS Settings.
  */
 public final class SettingsRowFactory {
 
@@ -31,6 +29,10 @@ public final class SettingsRowFactory {
 
     private SettingsRowFactory() {}
 
+    public static float getFontScale(Context context) {
+        return GlobalSettingsBridge.getFontScale(context);
+    }
+
     public static void addBackHeader(
         Context context,
         LinearLayout container,
@@ -38,10 +40,11 @@ public final class SettingsRowFactory {
         String langCode,
         View.OnClickListener onBack
     ) {
+        float scale = getFontScale(context);
         TextView backBtn = new TextView(context);
         backBtn.setText(I18n.get(I18n.KEY_BACK_TO_SETTINGS, langCode));
         backBtn.setTextColor(tokens.navAccent);
-        backBtn.setTextSize(14);
+        backBtn.setTextSize(14 * scale);
         backBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         backBtn.setBackground(createTouchFeedbackDrawable(context, tokens));
         backBtn.setPadding(0, 0, 0, dpToPx(context, 14));
@@ -57,6 +60,7 @@ public final class SettingsRowFactory {
         View.OnClickListener listener,
         ThemeTokens tokens
     ) {
+        float scale = getFontScale(context);
         LinearLayout card = new LinearLayout(context);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(0, dpToPx(context, 16), 0, dpToPx(context, 16));
@@ -71,7 +75,7 @@ public final class SettingsRowFactory {
         TextView t = new TextView(context);
         t.setText(title);
         t.setTextColor(tokens.textPrimary);
-        t.setTextSize(15);
+        t.setTextSize(15 * scale);
         t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
         t.setLayoutParams(lp);
@@ -80,7 +84,7 @@ public final class SettingsRowFactory {
         TextView arrow = new TextView(context);
         arrow.setText("-->");
         arrow.setTextColor(tokens.navAccent);
-        arrow.setTextSize(15);
+        arrow.setTextSize(15 * scale);
         arrow.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         row.addView(arrow);
 
@@ -89,7 +93,7 @@ public final class SettingsRowFactory {
         TextView s = new TextView(context);
         s.setText(subtitle);
         s.setTextColor(tokens.textMuted);
-        s.setTextSize(12);
+        s.setTextSize(12 * scale);
         s.setTypeface(Typeface.MONOSPACE);
         s.setPadding(0, dpToPx(context, 4), 0, 0);
         card.addView(s);
@@ -107,6 +111,7 @@ public final class SettingsRowFactory {
         final SettingsActivity.OnSliderChangedListener listener,
         ThemeTokens tokens
     ) {
+        float scale = getFontScale(context);
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(0, dpToPx(context, 12), 0, dpToPx(context, 12));
@@ -118,7 +123,7 @@ public final class SettingsRowFactory {
         final TextView labelView = new TextView(context);
         labelView.setText(label + ": " + currentVal + "%");
         labelView.setTextColor(tokens.textPrimary);
-        labelView.setTextSize(14);
+        labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
         labelContainer.addView(labelView);
 
@@ -165,6 +170,7 @@ public final class SettingsRowFactory {
         ThemeTokens tokens
     ) {
         float density = context.getResources().getDisplayMetrics().density;
+        float scale = getFontScale(context);
         int minTargetPx = (int) (MIN_TOUCH_TARGET_HEIGHT_DP * density + 0.5f);
 
         LinearLayout row = new LinearLayout(context);
@@ -181,7 +187,7 @@ public final class SettingsRowFactory {
         TextView labelView = new TextView(context);
         labelView.setText(label);
         labelView.setTextColor(tokens.textPrimary);
-        labelView.setTextSize(14);
+        labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
         labelContainer.addView(labelView);
 
@@ -197,24 +203,13 @@ public final class SettingsRowFactory {
         actionBtn.setText(btnText);
         int btnColor = isPositive ? tokens.navAccent : (tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555"));
         actionBtn.setTextColor(btnColor);
-        actionBtn.setTextSize(13);
+        actionBtn.setTextSize(13 * scale);
         actionBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         actionBtn.setGravity(Gravity.CENTER);
         actionBtn.setMinHeight(minTargetPx);
         actionBtn.setMinimumHeight(minTargetPx);
         actionBtn.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        actionBtn.setBackground(sld);
+        actionBtn.setBackground(createTouchFeedbackDrawable(context, tokens));
 
         actionBtn.setClickable(true);
         actionBtn.setFocusable(true);
@@ -234,6 +229,7 @@ public final class SettingsRowFactory {
         ThemeTokens tokens
     ) {
         float density = context.getResources().getDisplayMetrics().density;
+        float scale = getFontScale(context);
         int minTargetPx = (int) (MIN_TOUCH_TARGET_HEIGHT_DP * density + 0.5f);
 
         LinearLayout row = new LinearLayout(context);
@@ -250,7 +246,7 @@ public final class SettingsRowFactory {
         TextView labelView = new TextView(context);
         labelView.setText(label);
         labelView.setTextColor(tokens.textPrimary);
-        labelView.setTextSize(14);
+        labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
         labelContainer.addView(labelView);
 
@@ -263,33 +259,18 @@ public final class SettingsRowFactory {
         TextView actionBtn = new TextView(context);
         actionBtn.setText("[ " + buttonText + " ]");
         actionBtn.setTextColor(buttonTextColor != 0 ? buttonTextColor : tokens.navAccent);
-        actionBtn.setTextSize(13);
+        actionBtn.setTextSize(13 * scale);
         actionBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         actionBtn.setGravity(Gravity.CENTER);
         actionBtn.setMinHeight(minTargetPx);
         actionBtn.setMinimumHeight(minTargetPx);
         actionBtn.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        actionBtn.setBackground(sld);
+        actionBtn.setBackground(createTouchFeedbackDrawable(context, tokens));
 
         actionBtn.setClickable(true);
         actionBtn.setFocusable(true);
         actionBtn.setOnClickListener(listener);
         row.addView(actionBtn);
-
-        row.setClickable(true);
-        row.setFocusable(true);
-        row.setOnClickListener(listener);
 
         container.addView(row);
     }
@@ -308,6 +289,8 @@ public final class SettingsRowFactory {
         int padH = (int) (6 * density + 0.5f);
         int padV = (int) (6 * density + 0.5f);
 
+        float scale = getFontScale(context);
+
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(0, (int) (6 * density), 0, (int) (6 * density));
@@ -320,7 +303,7 @@ public final class SettingsRowFactory {
         TextView labelView = new TextView(context);
         labelView.setText(label);
         labelView.setTextColor(tokens.textMuted);
-        labelView.setTextSize(13);
+        labelView.setTextSize(13 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
         labelView.setSingleLine(true);
         labelView.setEllipsize(TextUtils.TruncateAt.END);
@@ -340,7 +323,7 @@ public final class SettingsRowFactory {
         TextView triggerBtn = new TextView(context);
         triggerBtn.setText("[ " + cleanVal + (enabled ? "  ▼ ]" : " ]"));
         triggerBtn.setTextColor(enabled ? tokens.textPrimary : tokens.textMuted);
-        triggerBtn.setTextSize(13);
+        triggerBtn.setTextSize(13 * scale);
         triggerBtn.setTypeface(Typeface.MONOSPACE, enabled ? Typeface.BOLD : Typeface.NORMAL);
         triggerBtn.setSingleLine(true);
         triggerBtn.setEllipsize(TextUtils.TruncateAt.END);
@@ -348,18 +331,7 @@ public final class SettingsRowFactory {
         triggerBtn.setMinHeight(minHeightPx);
         triggerBtn.setMinimumHeight(minHeightPx);
         triggerBtn.setPadding(padH, padV, padH, padV);
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        triggerBtn.setBackground(sld);
+        triggerBtn.setBackground(createTouchFeedbackDrawable(context, tokens));
 
         triggerBtn.setClickable(true);
         triggerBtn.setFocusable(true);
@@ -376,6 +348,7 @@ public final class SettingsRowFactory {
         String value,
         ThemeTokens tokens
     ) {
+        float scale = getFontScale(context);
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(0, dpToPx(context, 6), 0, dpToPx(context, 8));
@@ -387,7 +360,7 @@ public final class SettingsRowFactory {
         TextView k = new TextView(context);
         k.setText(key);
         k.setTextColor(tokens.textMuted);
-        k.setTextSize(11);
+        k.setTextSize(11 * scale);
         k.setTypeface(Typeface.MONOSPACE);
         labelContainer.addView(k);
 
@@ -400,7 +373,7 @@ public final class SettingsRowFactory {
         TextView v = new TextView(context);
         v.setText(value != null ? value : "Unknown");
         v.setTextColor(tokens.textPrimary);
-        v.setTextSize(13);
+        v.setTextSize(13 * scale);
         v.setTypeface(Typeface.MONOSPACE);
         v.setPadding(0, dpToPx(context, 2), 0, dpToPx(context, 4));
         row.addView(v);
@@ -429,6 +402,7 @@ public final class SettingsRowFactory {
         ThemeTokens tokens
     ) {
         float density = context.getResources().getDisplayMetrics().density;
+        float scale = getFontScale(context);
         int minHeightPx = (int) (MIN_TOUCH_TARGET_HEIGHT_DP * density);
         int minWidthPx = (int) (MIN_TOUCH_TARGET_WIDTH_DP * density);
         int marginPx = (int) (BUTTON_MARGIN_DP * density);
@@ -436,7 +410,7 @@ public final class SettingsRowFactory {
         TextView btn = new TextView(context);
         btn.setText(text);
         btn.setTextColor(textColor != 0 ? textColor : tokens.navAccent);
-        btn.setTextSize(12);
+        btn.setTextSize(12 * scale);
         btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         btn.setGravity(Gravity.CENTER);
         btn.setMinHeight(minHeightPx);

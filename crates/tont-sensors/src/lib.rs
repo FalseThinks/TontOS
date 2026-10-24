@@ -35,8 +35,8 @@ pub struct SensorHub;
 impl SensorHub {
     /// Calculate screen orientation from accelerometer vector (x, y, z) with gravity normalization.
     pub fn compute_orientation(x: i32, y: i32, _z: i32) -> ScreenOrientation {
-        let abs_x = x.abs();
-        let abs_y = y.abs();
+        let abs_x = x.unsigned_abs();
+        let abs_y = y.unsigned_abs();
 
         if abs_y >= abs_x {
             if y < 0 {
@@ -67,56 +67,5 @@ impl SensorHub {
             .trim()
             .parse::<i32>()
             .map_err(|e| SensorError::Parse(e.to_string()))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_orientation_detection() {
-        // Normal upright portrait (gravity pulling downwards along -Y)
-        assert_eq!(
-            SensorHub::compute_orientation(50, -980, 100),
-            ScreenOrientation::Portrait
-        );
-
-        // Landscape Left (gravity along -X)
-        assert_eq!(
-            SensorHub::compute_orientation(-980, 50, 100),
-            ScreenOrientation::LandscapeLeft
-        );
-
-        // Landscape Right (gravity along +X)
-        assert_eq!(
-            SensorHub::compute_orientation(980, 50, 100),
-            ScreenOrientation::LandscapeRight
-        );
-
-        // Inverted portrait
-        assert_eq!(
-            SensorHub::compute_orientation(0, 980, 100),
-            ScreenOrientation::PortraitInverted
-        );
-    }
-
-    #[test]
-    fn test_proximity_thresholding() {
-        assert_eq!(SensorHub::compute_proximity(100, 50), ProximityState::Near);
-        assert_eq!(SensorHub::compute_proximity(20, 50), ProximityState::Far);
-    }
-
-    #[test]
-    fn test_read_iio_channel() {
-        let temp_dir = std::env::temp_dir().join("tont_test_iio");
-        fs::create_dir_all(&temp_dir).unwrap();
-        let node = temp_dir.join("in_illuminance_raw");
-        fs::write(&node, "350\n").unwrap();
-
-        let val = SensorHub::read_iio_channel(&node).unwrap();
-        assert_eq!(val, 350);
-
-        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

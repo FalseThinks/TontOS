@@ -54,17 +54,27 @@ The TontOS workspace (`crates/`) contains 14 specialized Rust crates built with 
 - **Purpose:** Host tool executing deterministic AOSP platform builds and verifying generated image archives (`super.img`, `system.img`, `boot.img`).
 - **Core Design Principles:**
   - **No Uncontrolled Shell Executions:** Arguments are passed as explicit `&[&str]` arrays to `std::process::Command`, preventing command-injection attacks.
-  - **Zero-Allocation SHA-256 Streaming:** The `sha256_file()` function employs a `BufReader` with a 16 MiB internal buffer (`16 * 1024 * 1024` bytes) and `io::copy` into a `sha2::Sha256` digest. It verifies 18+ GB sparse images in ~20 MB of resident memory (RSS).
+  - **Zero-Allocation SHA-256 Streaming:** The `sha256_file()` function employs a fixed 64 KiB stack buffer (`[0u8; 64 * 1024]`) and streaming `sha2::Sha256` updates. It verifies large images with zero heap allocations on the hash loop and negligible RSS footprint.
   - **Failsafe Verification:** Rejects unverified artifacts with explicit `RomctlError::IntegrityMismatch`.
 
 ```rust
 // Streaming verification example from tont-romctl
-pub fn sha256_file(path: &Path) -> Result<String, RomctlError> {
-    let file = fs::File::open(path)?;
-    let mut reader = io::BufReader::with_capacity(16 * 1024 * 1024, file);
-    let mut hasher = Sha256::new();
-    io::copy(&mut reader, &mut hasher)?;
-    Ok(format!("{:x}", hasher.finalize()))
+pub fn sha256_file(path: &Path) -> Result<(String, u64), RomctlError> {
+    let mut f = File::open(path)?;
+    let mut h = Sha256::new();
+    let mut buf = [0u8; 64 * 1024];
+    let mut total_size = 0u64;
+
+    loop {
+        let n = f.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        h.update(&buf[..n]);
+        total_size += n as u64;
+    }
+
+    Ok((format!("{:x}", h.finalize()), total_size))
 }
 ```
 

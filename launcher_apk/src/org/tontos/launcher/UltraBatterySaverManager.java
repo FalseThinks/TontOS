@@ -38,7 +38,6 @@ public final class UltraBatterySaverManager {
         FAILED
     }
 
-    private static final int CAMERA_PERMISSION_REQUEST = 761;
     private static final int BLUETOOTH_PERMISSION_REQUEST = 762;
 
     private static CameraManager torchCameraManager;
@@ -321,15 +320,6 @@ public final class UltraBatterySaverManager {
         return manager;
     }
 
-    public static void releaseTorchCallback() {
-        if (torchCameraManager != null) {
-            try { torchCameraManager.unregisterTorchCallback(TORCH_CALLBACK); } catch (RuntimeException ignored) {}
-            torchCameraManager = null;
-            torchCameraId = null;
-            torchState = ToggleState.UNKNOWN;
-        }
-    }
-
     public static ToggleState getNfcState(Context context) {
         try {
             NfcAdapter a = NfcAdapter.getDefaultAdapter(context);
@@ -415,6 +405,42 @@ public final class UltraBatterySaverManager {
                 return ActionResult.FAILED;
             }
         }
+    }
+
+    public static boolean isUltraBatterySaverEnabled(Context context) {
+        if (context == null) return false;
+        try {
+            return Settings.Global.getInt(context.getContentResolver(), "low_power", 0) == 1;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    public static void setUltraBatterySaver(final Context context, final boolean enable) {
+        if (context == null) return;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", enable ? "1" : "0");
+                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", enable ? "1" : "0");
+                    if (enable) {
+                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "window_animation_scale", "0");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "transition_animation_scale", "0");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "animator_duration_scale", "0");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "wifi_scan_always_enabled", "0");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "ble_scan_always_enabled", "0");
+                        GrayscaleManager.setGrayscaleEnabled(context, true);
+                        GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15);
+                        GlobalSettingsBridge.applyGlobalBrightness(context, 20);
+                    } else {
+                        GrayscaleManager.setGrayscaleEnabled(context, false);
+                        GlobalSettingsBridge.applyGlobalScreenTimeout(context, 30);
+                        GlobalSettingsBridge.applyGlobalBrightness(context, 50);
+                    }
+                } catch (Throwable ignored) {}
+            }
+        }).start();
     }
 
     private static ToggleState toState(boolean enabled) {

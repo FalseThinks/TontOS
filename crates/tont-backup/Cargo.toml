@@ -12,7 +12,7 @@ tont-shell = { path = "../tont-shell" }
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-sha2 = "0.10"
+sha2.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

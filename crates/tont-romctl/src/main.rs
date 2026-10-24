@@ -35,8 +35,6 @@ fn run() -> Result<(), RomctlError> {
 
     match (group.as_str(), cmd.as_str()) {
         ("device", "detect") => {
-            let json = rest.iter().any(|a| a == "--format=json" || a == "json");
-            let _ = json;
             let devices = detect_devices(&mut runner)?;
             println!(
                 "{}",
@@ -69,8 +67,8 @@ fn run() -> Result<(), RomctlError> {
             Ok(())
         }
         ("build", _) => {
-            // Forma contrato: `tontosctl build --device ... --variant ... [--dry-run]`.
-            // Aquí cmd ya es primer flag (--device...), rest el resto.
+            // Contract: `tontosctl build --device ... --variant ... [--dry-run]`.
+            // cmd is the first flag (--device...), rest contains remaining flags.
             let mut all = vec![cmd.clone()];
             all.extend(rest);
             let device = all
@@ -91,7 +89,7 @@ fn run() -> Result<(), RomctlError> {
                 })?;
             let dry_run = all.iter().any(|a| a == "--dry-run");
             let plan = plan_build(&device, &variant, dry_run)?;
-            // Fail-closed: sin árbol no hay build real.
+            // Fail-closed: real build requires explicit verified AOSP tree.
             let tree = ensure_source_tree(dry_run)?;
             if dry_run {
                 println!("{}", serde_json::to_string_pretty(&plan)?);

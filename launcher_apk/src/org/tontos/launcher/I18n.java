@@ -8,9 +8,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Universal Internationalization & UI Localization Engine for TontOS.
- * Provides instant in-memory translations for all UI keys across all supported languages,
- * and updates Android runtime Resources configuration on demand.
+ * In-memory translations and runtime locale manager for TontOS.
  */
 public final class I18n {
 
@@ -218,6 +216,20 @@ public final class I18n {
     public static final String KEY_DESELECT_ALL = "deselect_all";
     public static final String KEY_APPLY = "apply";
     public static final String KEY_CONFIRM = "confirm";
+    public static final String KEY_SANDBOX_HEADER = "sandbox_header";
+    public static final String KEY_SANDBOX_TITLE = "sandbox_title";
+    public static final String KEY_SANDBOX_DESC = "sandbox_desc";
+    public static final String KEY_SANDBOX_STATUS_NOT_CREATED = "sandbox_status_not_created";
+    public static final String KEY_SANDBOX_STATUS_RUNNING = "sandbox_status_running";
+    public static final String KEY_SANDBOX_STATUS_PAUSED = "sandbox_status_paused";
+    public static final String KEY_SANDBOX_CREATE_BTN = "sandbox_create_btn";
+    public static final String KEY_SANDBOX_START_BTN = "sandbox_start_btn";
+    public static final String KEY_SANDBOX_PAUSE_BTN = "sandbox_pause_btn";
+    public static final String KEY_SANDBOX_DESTROY_BTN = "sandbox_destroy_btn";
+    public static final String KEY_SANDBOX_SHIELD_BTN = "sandbox_shield_btn";
+    public static final String KEY_SANDBOX_SHIELD_SUCCESS = "sandbox_shield_success";
+    public static final String KEY_SANDBOX_CONFIRM_DESTROY = "sandbox_confirm_destroy";
+    public static final String KEY_SANDBOX_EXPLANATION = "sandbox_explanation";
     public static final String KEY_BATTERY_PROTECTION = "battery_protection";
     public static final String KEY_BATTERY_100 = "battery_100";
     public static final String KEY_BATTERY_80 = "battery_80";
@@ -254,7 +266,45 @@ public final class I18n {
     public static final String KEY_STATE_ON = "state_on";
     public static final String KEY_STATE_OFF = "state_off";
     public static final String KEY_NFC_PAYMENTS = "nfc_payments";
+    public static final String KEY_CLOCK_FORMAT = "clock_format";
+    public static final String KEY_CLOCK_24H = "clock_24h";
+    public static final String KEY_CLOCK_12H = "clock_12h";
 
+    // Nested Submenu Keys
+    public static final String KEY_SUB_DISPLAY_STYLE = "sub_display_style";
+    public static final String KEY_SUB_DISPLAY_STYLE_DESC = "sub_display_style_desc";
+    public static final String KEY_SUB_DISPLAY_LOCALE = "sub_display_locale";
+    public static final String KEY_SUB_DISPLAY_LOCALE_DESC = "sub_display_locale_desc";
+    public static final String KEY_SUB_DISPLAY_LOCKSCREEN = "sub_display_lockscreen";
+    public static final String KEY_SUB_DISPLAY_LOCKSCREEN_DESC = "sub_display_lockscreen_desc";
+    public static final String KEY_SUB_DISPLAY_DETOX = "sub_display_detox";
+    public static final String KEY_SUB_DISPLAY_DETOX_DESC = "sub_display_detox_desc";
+
+    public static final String KEY_SUB_SOUND_VOLUMES = "sub_sound_volumes";
+    public static final String KEY_SUB_SOUND_VOLUMES_DESC = "sub_sound_volumes_desc";
+    public static final String KEY_SUB_SOUND_EQUALIZER = "sub_sound_equalizer";
+    public static final String KEY_SUB_SOUND_EQUALIZER_DESC = "sub_sound_equalizer_desc";
+
+    public static final String KEY_SUB_HOME_CONFIG = "sub_home_config";
+    public static final String KEY_SUB_HOME_CONFIG_DESC = "sub_home_config_desc";
+    public static final String KEY_SUB_HOME_PINNED = "sub_home_pinned";
+    public static final String KEY_SUB_HOME_PINNED_DESC = "sub_home_pinned_desc";
+    public static final String KEY_SUB_HOME_DRAWER_ALL = "sub_home_drawer_all";
+    public static final String KEY_SUB_HOME_DRAWER_ALL_DESC = "sub_home_drawer_all_desc";
+
+    public static final String KEY_SUB_CONN_FIREWALL = "sub_conn_firewall";
+    public static final String KEY_SUB_CONN_FIREWALL_DESC = "sub_conn_firewall_desc";
+    public static final String KEY_SUB_CONN_RADIOS = "sub_conn_radios";
+    public static final String KEY_SUB_CONN_RADIOS_DESC = "sub_conn_radios_desc";
+
+    public static final String KEY_SUB_SYS_INFO = "sub_sys_info";
+    public static final String KEY_SUB_SYS_INFO_DESC = "sub_sys_info_desc";
+    public static final String KEY_SUB_SYS_UPDATES = "sub_sys_updates";
+    public static final String KEY_SUB_SYS_UPDATES_DESC = "sub_sys_updates_desc";
+    public static final String KEY_SUB_SYS_BACKUP = "sub_sys_backup";
+    public static final String KEY_SUB_SYS_BACKUP_DESC = "sub_sys_backup_desc";
+    public static final String KEY_SUB_SYS_ADVANCED = "sub_sys_advanced";
+    public static final String KEY_SUB_SYS_ADVANCED_DESC = "sub_sys_advanced_desc";
 
     public static final String KEY_LOCKSCREEN_HEADER = "lockscreen_header";
     public static final String KEY_LOCKSCREEN_ENABLE = "lockscreen_enable";
@@ -264,6 +314,12 @@ public final class I18n {
     public static final String KEY_LOCK_CLOCK_STACKED = "lock_clock_stacked";
     public static final String KEY_LOCK_CLOCK_TERMINAL = "lock_clock_terminal";
     public static final String KEY_LOCK_CLOCK_COMPACT = "lock_clock_compact";
+    public static final String KEY_LOCK_CLOCK_DATE_ONLY = "lock_clock_date_only";
+    public static final String KEY_LOCK_CLOCK_OFF = "lock_clock_off";
+    public static final String KEY_LOCK_NOTIF_MODE = "lock_notif_mode";
+    public static final String KEY_LOCK_NOTIF_NONE = "lock_notif_none";
+    public static final String KEY_LOCK_NOTIF_HIDE_CONTENT = "lock_notif_hide_content";
+    public static final String KEY_LOCK_NOTIF_SHOW_ALL = "lock_notif_show_all";
     public static final String KEY_LOCK_THEME_OVERRIDE = "lock_theme_override";
     public static final String KEY_LOCK_THEME_MATCH = "lock_theme_match";
     public static final String KEY_LOCK_SHOW_DETOX = "lock_show_detox";
@@ -276,6 +332,9 @@ public final class I18n {
     public static final String KEY_LOCK_ACTION_CAMERA = "lock_action_camera";
     public static final String KEY_LOCK_ACTION_PHONE = "lock_action_phone";
     public static final String KEY_LOCK_ACTION_BROWSER = "lock_action_browser";
+    public static final String KEY_LOCK_ACTION_MESSAGES = "lock_action_messages";
+    public static final String KEY_LOCK_ACTION_EMAIL = "lock_action_email";
+    public static final String KEY_LOCK_ACTION_CALCULATOR = "lock_action_calculator";
     public static final String KEY_LOCK_ACTION_NONE = "lock_action_none";
     public static final String KEY_LOCK_UNLOCK_HINT = "lock_unlock_hint";
     public static final String KEY_LOCK_TEST_BTN = "lock_test_btn";
@@ -394,6 +453,9 @@ public final class I18n {
     public static final String KEY_NFC_NOT_EVALUATED = "nfc_not_evaluated";
     public static final String KEY_NFC_NOT_VERIFIED = "nfc_not_verified";
     public static final String KEY_NFC_ACTIONS_PAYMENTS = "nfc_actions_payments";
+    public static final String KEY_NFC_SEC_SANDBOX = "nfc_sec_sandbox";
+    public static final String KEY_NFC_SANDBOX_HCE_TITLE = "nfc_sandbox_hce_title";
+    public static final String KEY_NFC_SANDBOX_HCE_DESC = "nfc_sandbox_hce_desc";
 
     // Battery Protection
     public static final String KEY_BATTERY_CTRL_NA = "battery_ctrl_na";
@@ -442,6 +504,20 @@ public final class I18n {
         en.put(KEY_DESELECT_ALL, "[ DESELECT ALL ]");
         en.put(KEY_APPLY, "[ APPLY ]");
         en.put(KEY_CONFIRM, "[ CONFIRM ]");
+        en.put(KEY_SANDBOX_HEADER, "=== ISOLATED SANDBOX PROFILE ===");
+        en.put(KEY_SANDBOX_TITLE, "Isolated Sandbox Profile (GMS / Apps)");
+        en.put(KEY_SANDBOX_DESC, "DAC-isolated secondary user profile with Zero-RAM freeze mode");
+        en.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NOT CREATED ]");
+        en.put(KEY_SANDBOX_STATUS_RUNNING, "[ RUNNING (ACTIVE) ]");
+        en.put(KEY_SANDBOX_STATUS_PAUSED, "[ PAUSED (0 MB RAM) ]");
+        en.put(KEY_SANDBOX_CREATE_BTN, "[ CREATE SANDBOX PROFILE ]");
+        en.put(KEY_SANDBOX_START_BTN, "[ START SANDBOX ]");
+        en.put(KEY_SANDBOX_PAUSE_BTN, "[ PAUSE SANDBOX (0 MB RAM) ]");
+        en.put(KEY_SANDBOX_DESTROY_BTN, "[ DESTROY SANDBOX ]");
+        en.put(KEY_SANDBOX_SHIELD_BTN, "[ APPLY TELEMETRY SHIELD ]");
+        en.put(KEY_SANDBOX_SHIELD_SUCCESS, "Telemetry Shield applied via AppOps!");
+        en.put(KEY_SANDBOX_CONFIRM_DESTROY, "Are you sure you want to permanently delete the Sandbox profile and all its apps?");
+        en.put(KEY_SANDBOX_EXPLANATION, "The Sandbox runs inside a dedicated Android User (User 10). It cannot access User 0 contacts, SMS, photos, or storage. When paused, it consumes 0 MB of RAM.");
 
         en.put(KEY_SETTINGS, "[ SETTINGS ]");
         en.put(KEY_ALL_APPS, "[ ALL APPS ]");
@@ -489,6 +565,39 @@ public final class I18n {
         en.put(KEY_FONT_NORMAL, "Normal (100%)");
         en.put(KEY_FONT_LARGE, "Large (115%)");
         en.put(KEY_FONT_XL, "Extra Large (130%)");
+        en.put(KEY_CLOCK_FORMAT, "Clock Format");
+        en.put(KEY_CLOCK_24H, "24-Hour (14:00)");
+        en.put(KEY_CLOCK_12H, "12-Hour (2:00 PM)");
+        en.put(KEY_SUB_DISPLAY_STYLE, "Display & Style");
+        en.put(KEY_SUB_DISPLAY_STYLE_DESC, "Theme, grayscale, brightness, timeout, font, clock & battery");
+        en.put(KEY_SUB_DISPLAY_LOCALE, "Language & Region");
+        en.put(KEY_SUB_DISPLAY_LOCALE_DESC, "System language and regional formats");
+        en.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Lock Screen");
+        en.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Clock style, lock theme, owner info & shortcuts");
+        en.put(KEY_SUB_DISPLAY_DETOX, "Digital Detox & Limits");
+        en.put(KEY_SUB_DISPLAY_DETOX_DESC, "Daily screen time limit and mindful budgeting");
+        en.put(KEY_SUB_SOUND_VOLUMES, "Volumes & Profiles");
+        en.put(KEY_SUB_SOUND_VOLUMES_DESC, "Audio streams, ringer profile & notification delivery");
+        en.put(KEY_SUB_SOUND_EQUALIZER, "Audio Equalizer");
+        en.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Sound profiles & 5-band frequency equalizer");
+        en.put(KEY_SUB_HOME_CONFIG, "Home Preferences");
+        en.put(KEY_SUB_HOME_CONFIG_DESC, "Screen app count, mindful launch delay & background policy");
+        en.put(KEY_SUB_HOME_PINNED, "Pinned Screen Apps");
+        en.put(KEY_SUB_HOME_PINNED_DESC, "Reorder and unpin main screen applications");
+        en.put(KEY_SUB_HOME_DRAWER_ALL, "All Applications (Drawer)");
+        en.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Browse drawer, pin to main screen & privacy sheets");
+        en.put(KEY_SUB_CONN_FIREWALL, "Network Firewall & Isolation");
+        en.put(KEY_SUB_CONN_FIREWALL_DESC, "Per-app internet access control and background restriction");
+        en.put(KEY_SUB_CONN_RADIOS, "Radios, Sync & DNS");
+        en.put(KEY_SUB_CONN_RADIOS_DESC, "Wi-Fi, Bluetooth, mobile data, batch sync & private DNS");
+        en.put(KEY_SUB_SYS_INFO, "Device Specifications");
+        en.put(KEY_SUB_SYS_INFO_DESC, "Hardware model, Android version, kernel & build ID");
+        en.put(KEY_SUB_SYS_UPDATES, "System Updates (OTA)");
+        en.put(KEY_SUB_SYS_UPDATES_DESC, "Release channels, update check & local package install");
+        en.put(KEY_SUB_SYS_BACKUP, "Cryptographic Backup");
+        en.put(KEY_SUB_SYS_BACKUP_DESC, "Create and restore verifiable encrypted device snapshots");
+        en.put(KEY_SUB_SYS_ADVANCED, "Advanced & Developer Tools");
+        en.put(KEY_SUB_SYS_ADVANCED_DESC, "Setup wizard, developer options & hardware tests");
         en.put(KEY_MEDIA_VOL, "Media Volume");
         en.put(KEY_RING_VOL, "Ring Volume");
         en.put(KEY_ALARM_VOL, "Alarm Volume");
@@ -673,6 +782,12 @@ public final class I18n {
         en.put(KEY_LOCK_CLOCK_STACKED, "Vertical Stacked (HH / MM)");
         en.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal Retro [HH:mm:ss]");
         en.put(KEY_LOCK_CLOCK_COMPACT, "Compact Single Line");
+        en.put(KEY_LOCK_CLOCK_DATE_ONLY, "Minimal Date Only (Detox)");
+        en.put(KEY_LOCK_CLOCK_OFF, "Clock Hidden (Zero Distraction)");
+        en.put(KEY_LOCK_NOTIF_MODE, "Lock Screen Notifications");
+        en.put(KEY_LOCK_NOTIF_NONE, "Do not show (Pure Detox)");
+        en.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Hide sensitive content");
+        en.put(KEY_LOCK_NOTIF_SHOW_ALL, "Show all notifications");
         en.put(KEY_LOCK_THEME_OVERRIDE, "Lock Screen Theme Style");
         en.put(KEY_LOCK_THEME_MATCH, "Match Active Theme");
         en.put(KEY_LOCK_SHOW_DETOX, "Show Detox Screen Time Bar");
@@ -685,6 +800,9 @@ public final class I18n {
         en.put(KEY_LOCK_ACTION_CAMERA, "[ CAMERA ]");
         en.put(KEY_LOCK_ACTION_PHONE, "[ PHONE ]");
         en.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        en.put(KEY_LOCK_ACTION_MESSAGES, "[ MESSAGES ]");
+        en.put(KEY_LOCK_ACTION_EMAIL, "[ EMAIL ]");
+        en.put(KEY_LOCK_ACTION_CALCULATOR, "[ CALCULATOR ]");
         en.put(KEY_LOCK_ACTION_NONE, "None / Disabled");
         en.put(KEY_LOCK_UNLOCK_HINT, "[ ^ SWIPE OR TAP TO UNLOCK ]");
         en.put(KEY_LOCK_TEST_BTN, "Test Lock Screen Now");
@@ -803,6 +921,9 @@ public final class I18n {
         en.put(KEY_NFC_NOT_EVALUATED, "Not evaluated");
         en.put(KEY_NFC_NOT_VERIFIED, "Not verified by this app");
         en.put(KEY_NFC_ACTIONS_PAYMENTS, "NFC Payment Settings (HCE)");
+        en.put(KEY_NFC_SEC_SANDBOX, "=== ISOLATED SANDBOX / WORK PROFILE HCE ===");
+        en.put(KEY_NFC_SANDBOX_HCE_TITLE, "Cross-Profile HCE Routing");
+        en.put(KEY_NFC_SANDBOX_HCE_DESC, "Route NFC payment APDU events to banking apps in isolated work/sandbox profiles");
 
         // Battery Protection
         en.put(KEY_BATTERY_CTRL_NA, "100% · controls N/A");
@@ -842,6 +963,20 @@ public final class I18n {
         de.put(KEY_DESELECT_ALL, "[ ALLE ABWÄHLEN ]");
         de.put(KEY_APPLY, "[ ANWENDEN ]");
         de.put(KEY_CONFIRM, "[ BESTÄTIGEN ]");
+        de.put(KEY_SANDBOX_HEADER, "=== ISOLIERTES SANDBOX-PROFIL ===");
+        de.put(KEY_SANDBOX_TITLE, "Isoliertes Sandbox-Profil (GMS / Apps)");
+        de.put(KEY_SANDBOX_DESC, "DAC-isoliertes Benutzerprofil mit Null-RAM-Pause");
+        de.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NICHT ERSTELLT ]");
+        de.put(KEY_SANDBOX_STATUS_RUNNING, "[ AKTIV (LÄUFT) ]");
+        de.put(KEY_SANDBOX_STATUS_PAUSED, "[ PAUSIERT (0 MB RAM) ]");
+        de.put(KEY_SANDBOX_CREATE_BTN, "[ SANDBOX-PROFIL ERSTELLEN ]");
+        de.put(KEY_SANDBOX_START_BTN, "[ SANDBOX STARTEN ]");
+        de.put(KEY_SANDBOX_PAUSE_BTN, "[ SANDBOX PAUSIEREN (0 MB RAM) ]");
+        de.put(KEY_SANDBOX_DESTROY_BTN, "[ SANDBOX LÖSCHEN ]");
+        de.put(KEY_SANDBOX_SHIELD_BTN, "[ TELEMETRIE-SCHILD AKTIVIEREN ]");
+        de.put(KEY_SANDBOX_SHIELD_SUCCESS, "Telemetrie-Schild via AppOps angewendet!");
+        de.put(KEY_SANDBOX_CONFIRM_DESTROY, "Möchten Sie das Sandbox-Profil und alle darin enthaltenen Apps wirklich dauerhaft löschen?");
+        de.put(KEY_SANDBOX_EXPLANATION, "Die Sandbox läuft in einem getrennten Benutzer (User 10). Sie hat keinen Zugriff auf Kontakte, SMS oder Speicher von User 0. Bei Pause verbraucht sie 0 MB RAM.");
 
         de.put(KEY_SETTINGS, "[ EINSTELLUNGEN ]");
         de.put(KEY_ALL_APPS, "[ ALLE APPS ]");
@@ -889,6 +1024,39 @@ public final class I18n {
         de.put(KEY_FONT_NORMAL, "Normal (100%)");
         de.put(KEY_FONT_LARGE, "Groß (115%)");
         de.put(KEY_FONT_XL, "Sehr groß (130%)");
+        de.put(KEY_CLOCK_FORMAT, "Uhrzeitformat");
+        de.put(KEY_CLOCK_24H, "24-Stunden (14:00)");
+        de.put(KEY_CLOCK_12H, "12-Stunden (2:00 PM)");
+        de.put(KEY_SUB_DISPLAY_STYLE, "Bildschirm & Stil");
+        de.put(KEY_SUB_DISPLAY_STYLE_DESC, "Thema, Graustufen, Helligkeit, Timeout, Schrift, Uhr & Akku");
+        de.put(KEY_SUB_DISPLAY_LOCALE, "Sprache & Region");
+        de.put(KEY_SUB_DISPLAY_LOCALE_DESC, "Systemsprache und regionale Formate");
+        de.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Sperrbildschirm");
+        de.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Uhrstil, Sperrthema, Besitzerinfo & Verknüpfungen");
+        de.put(KEY_SUB_DISPLAY_DETOX, "Digital Detox & Limits");
+        de.put(KEY_SUB_DISPLAY_DETOX_DESC, "Tägliches Bildschirmzeitlimit und Achtsamkeit");
+        de.put(KEY_SUB_SOUND_VOLUMES, "Lautstärke & Profile");
+        de.put(KEY_SUB_SOUND_VOLUMES_DESC, "Audioströme, Klingelprofil & Benachrichtigungszustellung");
+        de.put(KEY_SUB_SOUND_EQUALIZER, "Audio-Equalizer");
+        de.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Klangprofile & 5-Band-Frequenz-Equalizer");
+        de.put(KEY_SUB_HOME_CONFIG, "Startbildschirm-Einstellungen");
+        de.put(KEY_SUB_HOME_CONFIG_DESC, "App-Anzahl, Achtsamkeits-Verzögerung & Hintergrundrichtlinie");
+        de.put(KEY_SUB_HOME_PINNED, "Angeheftete Apps verwalten");
+        de.put(KEY_SUB_HOME_PINNED_DESC, "Angeheftete Apps neu anordnen und entfernen");
+        de.put(KEY_SUB_HOME_DRAWER_ALL, "Alle Anwendungen (Drawer)");
+        de.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Drawer durchsuchen, anheften & Datenschutz");
+        de.put(KEY_SUB_CONN_FIREWALL, "Netzwerk-Firewall & Isolation");
+        de.put(KEY_SUB_CONN_FIREWALL_DESC, "App-Netzwerkzugriff & Hintergrundbeschränkung");
+        de.put(KEY_SUB_CONN_RADIOS, "Funkverbindungen, Sync & DNS");
+        de.put(KEY_SUB_CONN_RADIOS_DESC, "WLAN, Bluetooth, mobile Daten, Batch-Sync & privates DNS");
+        de.put(KEY_SUB_SYS_INFO, "Gerätespezifikationen");
+        de.put(KEY_SUB_SYS_INFO_DESC, "Hardwaremodell, Android-Version, Kernel & Build-ID");
+        de.put(KEY_SUB_SYS_UPDATES, "System-Updates (OTA)");
+        de.put(KEY_SUB_SYS_UPDATES_DESC, "Update-Kanäle, Prüfung & lokale Installation");
+        de.put(KEY_SUB_SYS_BACKUP, "Kryptographisches Backup");
+        de.put(KEY_SUB_SYS_BACKUP_DESC, "Verschlüsselte Snapshots erstellen und wiederherstellen");
+        de.put(KEY_SUB_SYS_ADVANCED, "Entwickler- & Hardware-Tools");
+        de.put(KEY_SUB_SYS_ADVANCED_DESC, "Einrichtungsassistent, Entwickleroptionen & Tests");
         de.put(KEY_MEDIA_VOL, "Medienlautstärke");
         de.put(KEY_RING_VOL, "Klingeltonlautstärke");
         de.put(KEY_ALARM_VOL, "Weckerlautstärke");
@@ -1073,6 +1241,12 @@ public final class I18n {
         de.put(KEY_LOCK_CLOCK_STACKED, "Vertikal gestapelt (HH / MM)");
         de.put(KEY_LOCK_CLOCK_TERMINAL, "Retro-Terminal [HH:mm:ss]");
         de.put(KEY_LOCK_CLOCK_COMPACT, "Kompakt einzeilig");
+        de.put(KEY_LOCK_CLOCK_DATE_ONLY, "Nur Datum (Detox)");
+        de.put(KEY_LOCK_CLOCK_OFF, "Uhr ausgeblendet (Keine Ablenkung)");
+        de.put(KEY_LOCK_NOTIF_MODE, "Sperrbildschirm-Benachrichtigungen");
+        de.put(KEY_LOCK_NOTIF_NONE, "Nicht anzeigen (Reines Detox)");
+        de.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Sensiblen Inhalt ausblenden");
+        de.put(KEY_LOCK_NOTIF_SHOW_ALL, "Alle Benachrichtigungen anzeigen");
         de.put(KEY_LOCK_THEME_OVERRIDE, "Sperrbildschirm-Design");
         de.put(KEY_LOCK_THEME_MATCH, "Wie aktives Design");
         de.put(KEY_LOCK_SHOW_DETOX, "Detox-Balken anzeigen");
@@ -1085,6 +1259,9 @@ public final class I18n {
         de.put(KEY_LOCK_ACTION_CAMERA, "[ KAMERA ]");
         de.put(KEY_LOCK_ACTION_PHONE, "[ TELEFON ]");
         de.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
+        de.put(KEY_LOCK_ACTION_MESSAGES, "[ NACHRICHTEN ]");
+        de.put(KEY_LOCK_ACTION_EMAIL, "[ E-MAIL ]");
+        de.put(KEY_LOCK_ACTION_CALCULATOR, "[ RECHNER ]");
         de.put(KEY_LOCK_ACTION_NONE, "Keine / Deaktiviert");
         de.put(KEY_LOCK_UNLOCK_HINT, "[ ^ WISCHEN ODER TIPPEN ZUM ENTSPERREN ]");
         de.put(KEY_LOCK_TEST_BTN, "Sperrbildschirm jetzt testen");
@@ -1163,6 +1340,20 @@ public final class I18n {
         pl.put(KEY_DESELECT_ALL, "[ OZNACZ WSZYSTKIE ]");
         pl.put(KEY_APPLY, "[ ZASTOSUJ ]");
         pl.put(KEY_CONFIRM, "[ POTWIERDŹ ]");
+        pl.put(KEY_SANDBOX_HEADER, "=== IZOLOWANY PROFIL SANDBOX ===");
+        pl.put(KEY_SANDBOX_TITLE, "Izolowany profil Sandbox (GMS / Aplikacje)");
+        pl.put(KEY_SANDBOX_DESC, "Izolowany profil DAC z trybem pauzy Zero-RAM");
+        pl.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NIEUTWORZONY ]");
+        pl.put(KEY_SANDBOX_STATUS_RUNNING, "[ AKTYWNY (DZIAŁA) ]");
+        pl.put(KEY_SANDBOX_STATUS_PAUSED, "[ WSTRZYMANY (0 MB RAM) ]");
+        pl.put(KEY_SANDBOX_CREATE_BTN, "[ UTWÓRZ PROFIL SANDBOX ]");
+        pl.put(KEY_SANDBOX_START_BTN, "[ URUCHOM SANDBOX ]");
+        pl.put(KEY_SANDBOX_PAUSE_BTN, "[ ZAPAUZUJ (0 MB RAM) ]");
+        pl.put(KEY_SANDBOX_DESTROY_BTN, "[ USUŃ SANDBOX ]");
+        pl.put(KEY_SANDBOX_SHIELD_BTN, "[ TARCZA TELEMETRII ]");
+        pl.put(KEY_SANDBOX_SHIELD_SUCCESS, "Tarcza telemetryczna wdrożona przez AppOps!");
+        pl.put(KEY_SANDBOX_CONFIRM_DESTROY, "Czy na pewno chcesz trwale usunąć profil Sandbox i wszystkie jego aplikacje?");
+        pl.put(KEY_SANDBOX_EXPLANATION, "Sandbox działa w dedykowanym profilu (User 10). Nie ma dostępu do kontaktów, SMS ani pamięci User 0. Po zapauzowaniu zużywa 0 MB RAM.");
 
         pl.put(KEY_SETTINGS, "[ USTAWIENIA ]");
         pl.put(KEY_ALL_APPS, "[ WSZYSTKIE APLIKACJE ]");
@@ -1210,6 +1401,39 @@ public final class I18n {
         pl.put(KEY_FONT_NORMAL, "Standardowa (100%)");
         pl.put(KEY_FONT_LARGE, "Duża (115%)");
         pl.put(KEY_FONT_XL, "Bardzo duża (130%)");
+        pl.put(KEY_CLOCK_FORMAT, "Format zegara");
+        pl.put(KEY_CLOCK_24H, "24-godzinny (14:00)");
+        pl.put(KEY_CLOCK_12H, "12-godzinny (2:00 PM)");
+        pl.put(KEY_SUB_DISPLAY_STYLE, "Ekran i styl");
+        pl.put(KEY_SUB_DISPLAY_STYLE_DESC, "Motyw, skala szarości, jasność, wygaszanie, czcionka, zegar i bateria");
+        pl.put(KEY_SUB_DISPLAY_LOCALE, "Język i region");
+        pl.put(KEY_SUB_DISPLAY_LOCALE_DESC, "Język systemu i format regionalny");
+        pl.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Ekran blokady");
+        pl.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Styl zegara, motyw blokady, właściciel i skróty");
+        pl.put(KEY_SUB_DISPLAY_DETOX, "Cyfrowy detoks i limity");
+        pl.put(KEY_SUB_DISPLAY_DETOX_DESC, "Dzienny limit czasu przed ekranem");
+        pl.put(KEY_SUB_SOUND_VOLUMES, "Głośność i profile");
+        pl.put(KEY_SUB_SOUND_VOLUMES_DESC, "Strumienie audio, profil dzwonka i dostarczanie powiadomień");
+        pl.put(KEY_SUB_SOUND_EQUALIZER, "Korektor dźwięku");
+        pl.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Profile brzmienia i 5-pasmowy korektor częstotliwości");
+        pl.put(KEY_SUB_HOME_CONFIG, "Preferencje ekranu głównego");
+        pl.put(KEY_SUB_HOME_CONFIG_DESC, "Limit aplikacji, świadome opóźnienie i zasady tła");
+        pl.put(KEY_SUB_HOME_PINNED, "Zarządzaj przypiętymi aplikacjami");
+        pl.put(KEY_SUB_HOME_PINNED_DESC, "Zmień kolejność i odepnij aplikacje z ekranu");
+        pl.put(KEY_SUB_HOME_DRAWER_ALL, "Wszystkie aplikacje (Menu)");
+        pl.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Przeglądaj aplikacje, przypinaj i sprawdzaj prywatność");
+        pl.put(KEY_SUB_CONN_FIREWALL, "Zapora sieciowa i izolacja");
+        pl.put(KEY_SUB_CONN_FIREWALL_DESC, "Kontrola dostępu do sieci per aplikacja i blokada w tle");
+        pl.put(KEY_SUB_CONN_RADIOS, "Łączność, synchronizacja i DNS");
+        pl.put(KEY_SUB_CONN_RADIOS_DESC, "Wi-Fi, Bluetooth, dane komórkowe, synchronizacja i prywatny DNS");
+        pl.put(KEY_SUB_SYS_INFO, "Specyfikacja urządzenia");
+        pl.put(KEY_SUB_SYS_INFO_DESC, "Model sprzętu, wersja Androida, jądro i numer kompilacji");
+        pl.put(KEY_SUB_SYS_UPDATES, "Aktualizacje systemu (OTA)");
+        pl.put(KEY_SUB_SYS_UPDATES_DESC, "Kanały aktualizacji, sprawdzanie i instalacja lokalna");
+        pl.put(KEY_SUB_SYS_BACKUP, "Kopia kryptograficzna");
+        pl.put(KEY_SUB_SYS_BACKUP_DESC, "Tworzenie i przywracanie szyfrowanych kopii urządzenia");
+        pl.put(KEY_SUB_SYS_ADVANCED, "Narzędzia zaawansowane i programistyczne");
+        pl.put(KEY_SUB_SYS_ADVANCED_DESC, "Kreator konfiguracji, opcje programisty i testy");
         pl.put(KEY_MEDIA_VOL, "Głośność multimediów");
         pl.put(KEY_RING_VOL, "Głośność dzwonka");
         pl.put(KEY_ALARM_VOL, "Głośność budzika");
@@ -1394,6 +1618,12 @@ public final class I18n {
         pl.put(KEY_LOCK_CLOCK_STACKED, "Pionowy stos (HH / MM)");
         pl.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal retro [HH:mm:ss]");
         pl.put(KEY_LOCK_CLOCK_COMPACT, "Kompaktowy pojedynczy wiersz");
+        pl.put(KEY_LOCK_CLOCK_DATE_ONLY, "Tylko data (Detox)");
+        pl.put(KEY_LOCK_CLOCK_OFF, "Zegar ukryty (Zero rozpraszaczy)");
+        pl.put(KEY_LOCK_NOTIF_MODE, "Powiadomienia na ekranie blokady");
+        pl.put(KEY_LOCK_NOTIF_NONE, "Nie pokazuj (Czysty Detox)");
+        pl.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Ukryj treść wrażliwą");
+        pl.put(KEY_LOCK_NOTIF_SHOW_ALL, "Pokaż wszystkie");
         pl.put(KEY_LOCK_THEME_OVERRIDE, "Motyw ekranu blokady");
         pl.put(KEY_LOCK_THEME_MATCH, "Zgodny z aktywnym motywem");
         pl.put(KEY_LOCK_SHOW_DETOX, "Pokaż pasek detoxu na blokadzie");
@@ -1406,6 +1636,9 @@ public final class I18n {
         pl.put(KEY_LOCK_ACTION_CAMERA, "[ APARAT ]");
         pl.put(KEY_LOCK_ACTION_PHONE, "[ TELEFON ]");
         pl.put(KEY_LOCK_ACTION_BROWSER, "[ PRZEGLĄDARKA ]");
+        pl.put(KEY_LOCK_ACTION_MESSAGES, "[ WIADOMOŚCI ]");
+        pl.put(KEY_LOCK_ACTION_EMAIL, "[ POCZTA ]");
+        pl.put(KEY_LOCK_ACTION_CALCULATOR, "[ KALKULATOR ]");
         pl.put(KEY_LOCK_ACTION_NONE, "Brak / Wyłączony");
         pl.put(KEY_LOCK_UNLOCK_HINT, "[ ^ PRZESUŃ LUB DOTKNIJ BY ODBLOKOWAĆ ]");
         pl.put(KEY_LOCK_TEST_BTN, "Przetestuj ekran blokady teraz");
@@ -1484,6 +1717,20 @@ public final class I18n {
         es.put(KEY_DESELECT_ALL, "[ DESMARCAR TODOS ]");
         es.put(KEY_APPLY, "[ APLICAR ]");
         es.put(KEY_CONFIRM, "[ CONFIRMAR ]");
+        es.put(KEY_SANDBOX_HEADER, "=== PERFIL SANDBOX AISLADO ===");
+        es.put(KEY_SANDBOX_TITLE, "Perfil Sandbox Aislado (GMS / Apps)");
+        es.put(KEY_SANDBOX_DESC, "Perfil secundario aislado por DAC con congelación Zero-RAM");
+        es.put(KEY_SANDBOX_STATUS_NOT_CREATED, "[ NO CREADO ]");
+        es.put(KEY_SANDBOX_STATUS_RUNNING, "[ ACTIVO (EN EJECUCIÓN) ]");
+        es.put(KEY_SANDBOX_STATUS_PAUSED, "[ EN PAUSA (0 MB RAM) ]");
+        es.put(KEY_SANDBOX_CREATE_BTN, "[ CREAR PERFIL SANDBOX ]");
+        es.put(KEY_SANDBOX_START_BTN, "[ INICIAR SANDBOX ]");
+        es.put(KEY_SANDBOX_PAUSE_BTN, "[ PAUSAR SANDBOX (0 MB RAM) ]");
+        es.put(KEY_SANDBOX_DESTROY_BTN, "[ ELIMINAR SANDBOX ]");
+        es.put(KEY_SANDBOX_SHIELD_BTN, "[ APLICAR ESCUDO DE TELEMETRÍA ]");
+        es.put(KEY_SANDBOX_SHIELD_SUCCESS, "¡Escudo de telemetría aplicado mediante AppOps!");
+        es.put(KEY_SANDBOX_CONFIRM_DESTROY, "¿Estás seguro de que deseas eliminar permanentemente el Sandbox y todas sus apps?");
+        es.put(KEY_SANDBOX_EXPLANATION, "El Sandbox corre en un usuario dedicado (User 10). No tiene acceso a contactos, SMS ni fotos de User 0. Al pausarlo, libera el 100% de la RAM consumida.");
 
         es.put(KEY_SETTINGS, "[ AJUSTES ]");
         es.put(KEY_ALL_APPS, "[ TODAS LAS APPS ]");
@@ -1531,6 +1778,39 @@ public final class I18n {
         es.put(KEY_FONT_NORMAL, "Normal (100%)");
         es.put(KEY_FONT_LARGE, "Grande (115%)");
         es.put(KEY_FONT_XL, "Muy grande (130%)");
+        es.put(KEY_CLOCK_FORMAT, "Formato de reloj");
+        es.put(KEY_CLOCK_24H, "24 Horas (14:00)");
+        es.put(KEY_CLOCK_12H, "12 Horas (2:00 PM)");
+        es.put(KEY_SUB_DISPLAY_STYLE, "Pantalla y estilo");
+        es.put(KEY_SUB_DISPLAY_STYLE_DESC, "Tema, monocromía, brillo, espera, fuente, reloj y batería");
+        es.put(KEY_SUB_DISPLAY_LOCALE, "Idioma y región");
+        es.put(KEY_SUB_DISPLAY_LOCALE_DESC, "Idioma del sistema y formato regional");
+        es.put(KEY_SUB_DISPLAY_LOCKSCREEN, "Pantalla de bloqueo");
+        es.put(KEY_SUB_DISPLAY_LOCKSCREEN_DESC, "Estilo de reloj, tema, propietario y accesos directos");
+        es.put(KEY_SUB_DISPLAY_DETOX, "Detox digital y límites");
+        es.put(KEY_SUB_DISPLAY_DETOX_DESC, "Límite diario de tiempo de pantalla y control reflexivo");
+        es.put(KEY_SUB_SOUND_VOLUMES, "Volumen y perfiles");
+        es.put(KEY_SUB_SOUND_VOLUMES_DESC, "Niveles de audio, perfil de timbre y entrega de alertas");
+        es.put(KEY_SUB_SOUND_EQUALIZER, "Ecualizador de audio");
+        es.put(KEY_SUB_SOUND_EQUALIZER_DESC, "Perfiles de sonido y ecualizador de 5 bandas");
+        es.put(KEY_SUB_HOME_CONFIG, "Preferencias de inicio");
+        es.put(KEY_SUB_HOME_CONFIG_DESC, "Límite de apps, pausa reflexiva y segundo plano");
+        es.put(KEY_SUB_HOME_PINNED, "Gestionar apps en pantalla");
+        es.put(KEY_SUB_HOME_PINNED_DESC, "Reordenar y quitar aplicaciones fijadas en pantalla");
+        es.put(KEY_SUB_HOME_DRAWER_ALL, "Todas las aplicaciones (Cajón)");
+        es.put(KEY_SUB_HOME_DRAWER_ALL_DESC, "Explorar cajón, fijar a principal y ficha de privacidad");
+        es.put(KEY_SUB_CONN_FIREWALL, "Firewall y aislamiento de red");
+        es.put(KEY_SUB_CONN_FIREWALL_DESC, "Control de acceso a internet por app y bloqueo en segundo plano");
+        es.put(KEY_SUB_CONN_RADIOS, "Conectividad, sincronización y DNS");
+        es.put(KEY_SUB_CONN_RADIOS_DESC, "Wi-Fi, Bluetooth, datos móviles, sincronización y DNS privado");
+        es.put(KEY_SUB_SYS_INFO, "Información del dispositivo");
+        es.put(KEY_SUB_SYS_INFO_DESC, "Modelo, versión Android, kernel y número de compilación");
+        es.put(KEY_SUB_SYS_UPDATES, "Actualizaciones del sistema (OTA)");
+        es.put(KEY_SUB_SYS_UPDATES_DESC, "Canales de actualización, comprobación e instalación local");
+        es.put(KEY_SUB_SYS_BACKUP, "Copia de seguridad criptográfica");
+        es.put(KEY_SUB_SYS_BACKUP_DESC, "Crear y restaurar instantáneas cifradas verificables");
+        es.put(KEY_SUB_SYS_ADVANCED, "Herramientas y desarrollo");
+        es.put(KEY_SUB_SYS_ADVANCED_DESC, "Asistente de configuración, opciones de desarrollo y pruebas");
         es.put(KEY_MEDIA_VOL, "Volumen de medios");
         es.put(KEY_RING_VOL, "Volumen de llamada");
         es.put(KEY_ALARM_VOL, "Volumen de alarma");
@@ -1715,6 +1995,12 @@ public final class I18n {
         es.put(KEY_LOCK_CLOCK_STACKED, "Apilado vertical (HH / MM)");
         es.put(KEY_LOCK_CLOCK_TERMINAL, "Terminal retro [HH:mm:ss]");
         es.put(KEY_LOCK_CLOCK_COMPACT, "Compacto una línea");
+        es.put(KEY_LOCK_CLOCK_DATE_ONLY, "Solo fecha (Detox)");
+        es.put(KEY_LOCK_CLOCK_OFF, "Oculto (Cero distracción)");
+        es.put(KEY_LOCK_NOTIF_MODE, "Notificaciones en pantalla de bloqueo");
+        es.put(KEY_LOCK_NOTIF_NONE, "No mostrar (Detox puro)");
+        es.put(KEY_LOCK_NOTIF_HIDE_CONTENT, "Ocultar contenido sensible");
+        es.put(KEY_LOCK_NOTIF_SHOW_ALL, "Mostrar todas");
         es.put(KEY_LOCK_THEME_OVERRIDE, "Tema de pantalla de bloqueo");
         es.put(KEY_LOCK_THEME_MATCH, "Sincronizado con tema activo");
         es.put(KEY_LOCK_SHOW_DETOX, "Mostrar barra de detox en bloqueo");
@@ -1727,6 +2013,9 @@ public final class I18n {
         es.put(KEY_LOCK_ACTION_CAMERA, "[ CÁMARA ]");
         es.put(KEY_LOCK_ACTION_PHONE, "[ TELÉFONO ]");
         es.put(KEY_LOCK_ACTION_BROWSER, "[ NAVEGADOR ]");
+        es.put(KEY_LOCK_ACTION_MESSAGES, "[ MENSAJES ]");
+        es.put(KEY_LOCK_ACTION_EMAIL, "[ CORREO ]");
+        es.put(KEY_LOCK_ACTION_CALCULATOR, "[ CALCULADORA ]");
         es.put(KEY_LOCK_ACTION_NONE, "Ninguno / Desactivado");
         es.put(KEY_LOCK_UNLOCK_HINT, "[ ^ DESLIZA O TOCA PARA DESBLOQUEAR ]");
         es.put(KEY_LOCK_TEST_BTN, "Probar pantalla de bloqueo ahora");
@@ -1845,6 +2134,9 @@ public final class I18n {
         es.put(KEY_NFC_NOT_EVALUATED, "No evaluado");
         es.put(KEY_NFC_NOT_VERIFIED, "No verificado por esta app");
         es.put(KEY_NFC_ACTIONS_PAYMENTS, "Ajustes de pagos NFC (HCE)");
+        es.put(KEY_NFC_SEC_SANDBOX, "=== ENRUTAMIENTO SANDBOX / PERFIL AISLADO ===");
+        es.put(KEY_NFC_SANDBOX_HCE_TITLE, "Enrutamiento HCE entre perfiles");
+        es.put(KEY_NFC_SANDBOX_HCE_DESC, "Permite a apps bancarias en perfiles aislados o sandbox responder a pagos contactless NFC");
 
         // Battery Protection
         es.put(KEY_BATTERY_CTRL_NA, "100% · control no disp.");
@@ -3829,15 +4121,19 @@ public final class I18n {
             String base = langCode.contains("-") ? langCode.substring(0, langCode.indexOf('-')) : langCode;
             base = base.toLowerCase(Locale.ROOT);
             Map<String, String> langMap = TRANSLATIONS.get(base);
-            if (langMap != null && langMap.containsKey(key)) {
+            if (langMap != null) {
                 String val = langMap.get(key);
-                return val != null ? val.replace("\\n", "\n") : key;
+                if (val != null) {
+                    return val.indexOf('\\') >= 0 ? val.replace("\\n", "\n") : val;
+                }
             }
         }
         Map<String, String> en = TRANSLATIONS.get("en");
-        if (en != null && en.containsKey(key)) {
+        if (en != null) {
             String val = en.get(key);
-            return val != null ? val.replace("\\n", "\n") : key;
+            if (val != null) {
+                return val.indexOf('\\') >= 0 ? val.replace("\\n", "\n") : val;
+            }
         }
         return key;
     }
@@ -3885,5 +4181,7 @@ public final class I18n {
             }
             res.updateConfiguration(config, res.getDisplayMetrics());
         }
+
+        LocaleManager.applySystemWideLocale(context, languageCode, regionCode);
     }
 }

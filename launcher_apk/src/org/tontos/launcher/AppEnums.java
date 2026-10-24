@@ -207,6 +207,33 @@ enum SettingsSection {
 }
 
 /**
+ * Nested Sub-sections for Settings to eliminate visual clutter and group options cleanly.
+ */
+enum SettingsSubSection {
+    NONE,
+    // Section 1: DISPLAY
+    DISPLAY_STYLE,
+    DISPLAY_LOCALE,
+    DISPLAY_LOCKSCREEN,
+    DISPLAY_DETOX,
+    // Section 2: SOUND
+    SOUND_VOLUMES,
+    SOUND_EQUALIZER,
+    // Section 3: HOME & APPS
+    HOME_CONFIG,
+    HOME_PINNED,
+    HOME_DRAWER_ALL,
+    // Section 4: CONNECTIVITY
+    CONN_FIREWALL,
+    CONN_RADIOS,
+    // Section 5: SYSTEM
+    SYS_INFO,
+    SYS_UPDATES,
+    SYS_BACKUP,
+    SYS_ADVANCED
+}
+
+/**
  * Step enumeration for the First-Startup Install Wizard (OOBE).
  */
 enum WizardStep {
@@ -363,7 +390,9 @@ enum LockClockStyle {
     BIG_MONOSPACE("BIG_MONOSPACE", "Big Monospace 24h"),
     VERTICAL_STACKED("VERTICAL_STACKED", "Vertical Stacked (HH/MM)"),
     TERMINAL_RETRO("TERMINAL_RETRO", "Terminal Retro [HH:mm:ss]"),
-    COMPACT_SINGLE("COMPACT_SINGLE", "Compact Single Line");
+    COMPACT_SINGLE("COMPACT_SINGLE", "Compact Single Line"),
+    MINIMAL_DATE_ONLY("MINIMAL_DATE_ONLY", "Minimal Date Only (Detox)"),
+    CLOCK_OFF("CLOCK_OFF", "Clock Hidden (Zero Distraction)");
 
     private final String id;
     private final String label;
@@ -395,7 +424,10 @@ enum LockShortcut {
     TORCH("TORCH", "Flashlight"),
     CAMERA("CAMERA", "Camera"),
     PHONE("PHONE", "Phone"),
-    BROWSER("BROWSER", "FOSS Browser");
+    MESSAGES("MESSAGES", "Messages"),
+    BROWSER("BROWSER", "FOSS Browser"),
+    EMAIL("EMAIL", "Email"),
+    CALCULATOR("CALCULATOR", "Calculator");
 
     private final String id;
     private final String label;
@@ -416,5 +448,35 @@ enum LockShortcut {
             }
         }
         return NONE;
+    }
+}
+
+/**
+ * Lock screen notification privacy policies.
+ */
+enum LockNotificationMode {
+    DONT_SHOW("DONT_SHOW", "Do not show notifications (Pure Detox)"),
+    HIDE_SENSITIVE("HIDE_SENSITIVE", "Hide sensitive content"),
+    SHOW_ALL("SHOW_ALL", "Show all notifications");
+
+    private final String id;
+    private final String label;
+
+    LockNotificationMode(String id, String label) {
+        this.id = id;
+        this.label = label;
+    }
+
+    public String getId() { return id; }
+    public String getLabel() { return label; }
+
+    public static LockNotificationMode fromId(String id) {
+        if (id == null) return DONT_SHOW;
+        for (LockNotificationMode m : values()) {
+            if (m.id.equalsIgnoreCase(id) || m.name().equalsIgnoreCase(id)) {
+                return m;
+            }
+        }
+        return DONT_SHOW;
     }
 }

@@ -1,0 +1,146 @@
+
+project build/blueprint/
+diff --git a/bootstrap/bootstrap.go b/bootstrap/bootstrap.go
+index fda878a..abd63d9 100644
+--- a/bootstrap/bootstrap.go
++++ b/bootstrap/bootstrap.go
+@@ -171,7 +171,7 @@ var (
+ 			Command: `cd "$$(dirname "$builder")" && ` +
+ 				`BUILDER="$$PWD/$$(basename "$builder")" && ` +
+ 				`cd / && ` +
+-				`env -i $env "$$BUILDER" ` +
++				`env -i GOMEMLIMIT=7GiB GOGC=15 $env "$$BUILDER" ` +
+ 				`    --top "$$TOP" ` +
+ 				`    --soong_out "$soongOutDir" ` +
+ 				`    --out "$outDir" ` +
+
+project frameworks/base/
+diff --git a/core/java/android/os/Build.java b/core/java/android/os/Build.java
+index 25912a0a5..4b272f76b 100644
+--- a/core/java/android/os/Build.java
++++ b/core/java/android/os/Build.java
+@@ -1724,6 +1724,14 @@ public class Build {
+      * partitions, so we might derive the fingerprint at runtime.
+      */
+     private static String deriveFingerprint() {
++        boolean spoof = SystemProperties.getBoolean("persist.sys.tontos.certified_spoof", true);
++        if (spoof) {
++            String customFinger = SystemProperties.get("persist.sys.tontos.spoof_fingerprint");
++            if (!TextUtils.isEmpty(customFinger)) {
++                return customFinger;
++            }
++            return "google/shiba/shiba:14/UQ1A.240205.004/11269730:user/release-keys";
++        }
+         String finger = SystemProperties.get("ro.build.fingerprint");
+         if (TextUtils.isEmpty(finger)) {
+             finger = getString("ro.product.brand") + '/' +
+@@ -1966,6 +1974,30 @@ public class Build {
+ 
+     @UnsupportedAppUsage
+     private static String getString(String property) {
++        boolean spoof = SystemProperties.getBoolean("persist.sys.tontos.certified_spoof", true);
++        if (spoof) {
++            switch (property) {
++                case "ro.build.type":
++                    return "user";
++                case "ro.build.tags":
++                    return "release-keys";
++                case "ro.product.brand":
++                case "ro.product.system.brand":
++                    return SystemProperties.get("persist.sys.tontos.spoof_brand", "google");
++                case "ro.product.manufacturer":
++                case "ro.product.system.manufacturer":
++                    return SystemProperties.get("persist.sys.tontos.spoof_manufacturer", "Google");
++                case "ro.product.model":
++                case "ro.product.system.model":
++                    return SystemProperties.get("persist.sys.tontos.spoof_model", "Pixel 8");
++                case "ro.product.device":
++                case "ro.product.system.device":
++                    return SystemProperties.get("persist.sys.tontos.spoof_device", "shiba");
++                case "ro.product.name":
++                case "ro.product.system.name":
++                    return SystemProperties.get("persist.sys.tontos.spoof_name", "shiba");
++            }
++        }
+         return SystemProperties.get(property, UNKNOWN);
+     }
+     /**
+
+project packages/modules/Nfc/
+diff --git a/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java b/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java
+index a835071..ab54572 100644
+--- a/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java
++++ b/NfcNci/src/com/android/nfc/cardemulation/PreferredServices.java
+@@ -192,11 +192,41 @@ public class PreferredServices implements com.android.nfc.ForegroundUtils.Callba
+         }
+         ComponentName candidate = !roleHolderPaymentServices.isEmpty()
+                 ? roleHolderPaymentServices.get(0) : null;
++        int targetUserId = userId;
++        if (candidate == null && android.os.SystemProperties.getBoolean("persist.sys.nfc_sandbox_hce", false)) {
++            UserManager um = mContext.getSystemService(UserManager.class);
++            if (um != null) {
++                for (UserHandle profile : um.getEnabledProfiles()) {
++                    int pId = profile.getIdentifier();
++                    if (pId == userId) continue;
++                    List<ApduServiceInfo> pInfos = mServiceCache.getInstalledServices(pId);
++                    for (int i = 0; i < pInfos.size(); i++) {
++                        ApduServiceInfo pInfo = pInfos.get(i);
++                        ComponentName cn = pInfo.getComponent();
++                        if (cn.getPackageName().equals(defaultWalletHolderPackageName)) {
++                            List<String> pAids = pInfo.getAids();
++                            for (int j = 0; j < pAids.size(); j++) {
++                                String aid = pAids.get(j);
++                                if (pInfo.getCategoryForAid(aid).equals(CardEmulation.CATEGORY_PAYMENT)) {
++                                    candidate = cn;
++                                    targetUserId = pId;
++                                    Log.i(TAG, "onWalletRoleHolderChanged: Found cross-profile HCE service "
++                                            + cn + " in user profile " + pId);
++                                    break;
++                                }
++                            }
++                        }
++                        if (candidate != null) break;
++                    }
++                    if (candidate != null) break;
++                }
++            }
++        }
+         if (!Objects.equals(candidate, mDefaultWalletHolderPaymentService) ||
+-                userId != mUserIdDefaultWalletHolder) {
++                targetUserId != mUserIdDefaultWalletHolder) {
+             mDefaultWalletHolderPaymentService = candidate;
+-            mUserIdDefaultWalletHolder = userId;
+-            mCallback.onPreferredPaymentServiceChanged(new ComponentNameAndUser(userId, candidate));
++            mUserIdDefaultWalletHolder = targetUserId;
++            mCallback.onPreferredPaymentServiceChanged(new ComponentNameAndUser(targetUserId, candidate));
+             return true;
+         }
+         return false;
+
+project prebuilts/module_sdk/WebApp/
+diff --git a/current/Android.bp b/current/Android.bp
+index 8b0a239..88085a3 100644
+--- a/current/Android.bp
++++ b/current/Android.bp
+@@ -8,11 +8,12 @@ package {
+ 
+ apex_contributions_defaults {
+     name: "webapp-module-sdk.contributions",
+-    contents: ["prebuilt_framework-webapp"],
++    contents: [],
+ }
+ 
+ prebuilt_bootclasspath_fragment {
+     name: "com.android.webapp-bootclasspath-fragment",
++    enabled: false,
+     visibility: ["//visibility:public"],
+     apex_available: ["com.android.webapp"],
+     licenses: ["webapp-module-sdk_Android-Apache-2.0"],
+@@ -38,6 +39,7 @@ prebuilt_bootclasspath_fragment {
+ 
+ java_sdk_library_import {
+     name: "framework-webapp",
++    enabled: false,
+     visibility: ["//visibility:public"],
+     apex_available: ["com.android.webapp"],
+     licenses: ["webapp-module-sdk_Android-Apache-2.0"],

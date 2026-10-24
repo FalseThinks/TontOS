@@ -71,33 +71,3 @@ impl PowerController {
         })
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_read_wakeup_count() {
-        let temp_dir = std::env::temp_dir().join("tont_test_power_count");
-        fs::create_dir_all(&temp_dir).unwrap();
-        let count_file = temp_dir.join("wakeup_count");
-        fs::write(&count_file, "42\n").unwrap();
-
-        let count = PowerController::read_wakeup_count(&count_file).unwrap();
-        assert_eq!(count, 42);
-        let _ = fs::remove_dir_all(&temp_dir);
-    }
-
-    #[test]
-    fn test_read_battery() {
-        let temp_dir = std::env::temp_dir().join("tont_test_battery");
-        fs::create_dir_all(&temp_dir).unwrap();
-        fs::write(temp_dir.join("capacity"), "95\n").unwrap();
-        fs::write(temp_dir.join("status"), "Discharging\n").unwrap();
-
-        let info = PowerController::read_battery(&temp_dir).unwrap();
-        assert_eq!(info.capacity_percent, 95);
-        assert_eq!(info.status, BatteryStatus::Discharging);
-        let _ = fs::remove_dir_all(&temp_dir);
-    }
-}

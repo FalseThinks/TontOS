@@ -19,7 +19,7 @@ jobs:
   # ============================================================================
   pr-target-guard:
     name: "1. Gatekeeper: PR Target Policy"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Enforce PR branch policy
         env:
@@ -43,7 +43,7 @@ jobs:
 
   hygiene-and-scripts:
     name: "1. Hygiene: Secrets & Script Syntax"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,10 +54,10 @@ jobs:
         run: jq empty platform/manifests/pinned.json tests/ui/package.json
 
       - name: Check Shell scripts syntax
-        run: bash -n scripts/*.sh
+        run: bash -n scripts/*.sh scripts/helpers/*.sh
 
       - name: Run Gitleaks secret scan
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -66,7 +66,7 @@ jobs:
   # ============================================================================
   rust-quality:
     name: "2. Build: Rust Format, Lint & Test"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
@@ -99,7 +99,7 @@ jobs:
 
   android-build:
     name: "2. Build: Android Launcher APK"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
@@ -110,6 +110,27 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+
+      - name: Run Java Modular Tests with JaCoCo Coverage
+        run: |
+          mkdir -p target/test-classes target/jacoco-report
+          JAVA_TEST_FILES=$(find tests/java -name "*.java")
+          javac -d target/test-classes $JAVA_TEST_FILES
+          java -javaagent:tools/jacoco/jacocoagent.jar=destfile=target/jacoco.exec -cp target/test-classes org.tontos.tests.TestRunner
+          java -jar tools/jacoco/jacococli.jar report target/jacoco.exec --classfiles target/test-classes --sourcefiles tests/java --html target/jacoco-report --csv target/jacoco-report/jacoco.csv
+          awk -F',' 'NR>1 {inst_miss+=$4; inst_cov+=$5; line_miss+=$8; line_cov+=$9} END {total_inst=inst_miss+inst_cov; total_line=line_miss+line_cov; if (total_inst>0) printf "::notice title=JaCoCo Coverage::Instructions: %.1f%% (%d/%d), Lines: %.1f%% (%d/%d)\n", (inst_cov*100.0/total_inst), inst_cov, total_inst, (line_cov*100.0/total_line), line_cov, total_line}' target/jacoco-report/jacoco.csv
+          COVERAGE_PCT=$(awk -F',' 'NR>1 {inst_miss+=$4; inst_cov+=$5} END {total=inst_miss+inst_cov; if (total>0) printf "%.0f", (inst_cov*100.0/total)}' target/jacoco-report/jacoco.csv)
+          if [ "$COVERAGE_PCT" -lt 90 ]; then
+            echo "::error title=Coverage Regression::JaCoCo instruction coverage ($COVERAGE_PCT%) is below required threshold (90%)!"
+            exit 1
+          fi
+          echo "JaCoCo coverage gate passed: ${COVERAGE_PCT}% >= 90%"
+
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: target/jacoco-report/
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -142,7 +163,7 @@ jobs:
 
   docker-builder-verification:
     name: "2. Build: Docker ROM Environment"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
@@ -150,7 +171,7 @@ jobs:
 
       - name: Build TontOS ROM Builder Container
         run: |
-          docker build -t tontos-builder:latest -f Dockerfile.aosp .
+          docker build -t tontos-builder:latest -f Dockerfile .
 
       - name: Verify Dependencies & Glibc Toolchain
         run: |
@@ -187,7 +208,7 @@ jobs:
           mkdir -p "$TMP_DIR/build"
           echo 'echo "Mock envsetup loaded"' > "$TMP_DIR/build/envsetup.sh"
           chmod -R 777 "$TMP_DIR"
-          AOSP_DIR="$TMP_DIR" ./scripts/docker_build_rom.sh bash -c "source build/envsetup.sh && echo 'AOSP compile pipeline bootstrap successful!'"
+          AOSP_DIR="$TMP_DIR" ./scripts/docker_build_rom.sh bash -c "cd /home/tontos/aosp && source build/envsetup.sh && echo 'AOSP compile pipeline bootstrap successful!'"
           rm -rf "$TMP_DIR"
 
   # ============================================================================
@@ -195,7 +216,7 @@ jobs:
   # ============================================================================
   rust-security:
     name: "3. Security: Rust Dependency Audit"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [rust-quality]
     steps:
       - name: Checkout repository
@@ -207,10 +228,10 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Install cargo-audit & cargo-deny
-        run: |
-          cargo install cargo-audit --locked
-          cargo install cargo-deny --locked
+      - name: Install cargo-audit & cargo-deny (precompiled)
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit,cargo-deny
 
       - name: Run cargo audit (Advisory DB)
         run: cargo audit
@@ -220,7 +241,7 @@ jobs:
 
   semgrep-sast-scan:
     name: "3. Security: Semgrep SAST Analysis"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read
@@ -232,12 +253,18 @@ jobs:
 
       - name: Run Semgrep SAST
         run: |
-          pip install semgrep
+          pip install --break-system-packages semgrep || pipx install semgrep
           semgrep scan --config auto \
             --exclude-rule yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag \
             --exclude-rule package_managers.dependabot.dependabot-missing-cooldown.dependabot-missing-cooldown \
             --exclude-rule java.android.security.exported_activity.exported_activity \
             --exclude-rule java.lang.security.audit.command-injection-process-builder.command-injection-process-builder \
+            --exclude target \
+            --exclude tools \
+            --exclude apps \
+            --exclude .git \
+            --exclude .ccache \
+            --error \
             --sarif --output semgrep.sarif .
 
       - name: Upload Semgrep results to GitHub Security tab
@@ -253,7 +280,7 @@ jobs:
 
   trivy-security-scan:
     name: "3. Security: Trivy Container & FS"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read
@@ -271,6 +298,8 @@ jobs:
           format: sarif
           output: trivy-results.sarif
           severity: CRITICAL,HIGH
+          exit-code: '1'
+          skip-dirs: target,tools,apps,.ccache
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
@@ -285,7 +314,7 @@ jobs:
 
   playwright-ui:
     name: "3. E2E: Playwright UI Visual Tests"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [android-build]
     steps:
       - name: Checkout repository
@@ -296,7 +325,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -308,6 +337,10 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm exec playwright install --with-deps chromium
+
+      - name: Audit UI dependencies
+        working-directory: tests/ui
+        run: pnpm audit --prod
 
       - name: Run Playwright Tests
         working-directory: tests/ui
@@ -327,7 +360,7 @@ jobs:
   # ============================================================================
   ci-executive-summary:
     name: "4. Executive: Health & Security Summary"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs:
       - pr-target-guard
       - hygiene-and-scripts

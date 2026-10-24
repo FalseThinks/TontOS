@@ -17,7 +17,7 @@ public final class SafeCommandExecutor {
 
     private static final String TAG = "SafeCommandExecutor";
     private static final Pattern VALID_PACKAGE_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
-    private static final Pattern SAFE_ARG_PATTERN = Pattern.compile("^[a-zA-Z0-9._/\\-:*#@=,\\$]+$");
+    private static final Pattern SAFE_ARG_PATTERN = Pattern.compile("^[a-zA-Z0-9._/\\-:*#@=,]+$");
     private static final long DEFAULT_TIMEOUT_MS = 3000;
 
     private SafeCommandExecutor() {}
@@ -58,6 +58,39 @@ public final class SafeCommandExecutor {
         }
 
         return runRawProcess(command);
+    }
+
+    /**
+     * Executes a system command with argument array and returns its combined output.
+     */
+    public static String executeWithOutput(String... command) {
+        if (command == null || command.length == 0) return "";
+        for (String arg : command) {
+            if (!isSafeArgument(arg)) {
+                Log.w(TAG, "Refusing execution with unsafe argument: " + arg);
+                return "";
+            }
+        }
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append('\n');
+                }
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                process.waitFor(DEFAULT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } else {
+                process.waitFor();
+            }
+            return sb.toString();
+        } catch (Throwable t) {
+            return "";
+        }
     }
 
     /**

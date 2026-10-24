@@ -69,11 +69,13 @@ public final class BooleanSelectorDialog {
         root.setBackgroundColor(tokens.bg);
         root.setPadding(pad, pad, pad, pad);
 
+        final float fontScale = GlobalSettingsBridge.getFontScale(activity);
+
         // Header Title
         TextView titleView = new TextView(activity);
         titleView.setText(title != null ? title.toUpperCase(Locale.ROOT) : "");
         titleView.setTextColor(tokens.accent);
-        titleView.setTextSize(16);
+        titleView.setTextSize(16 * fontScale);
         titleView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         titleView.setPadding(0, 0, 0, (int) (8 * density));
         root.addView(titleView);
@@ -96,7 +98,7 @@ public final class BooleanSelectorDialog {
         TextView messageView = new TextView(activity);
         messageView.setText(message != null ? message : "");
         messageView.setTextColor(tokens.textPrimary);
-        messageView.setTextSize(14);
+        messageView.setTextSize(14 * fontScale);
         messageView.setTypeface(Typeface.MONOSPACE);
         messageView.setLineSpacing(0, 1.3f);
         messageView.setPadding(0, (int) (8 * density), 0, (int) (16 * density));
@@ -114,7 +116,7 @@ public final class BooleanSelectorDialog {
         TextView cancelBtn = new TextView(activity);
         cancelBtn.setText(cancelLabel != null ? cancelLabel : "[ CANCEL ]");
         cancelBtn.setTextColor(tokens.textMuted);
-        cancelBtn.setTextSize(13);
+        cancelBtn.setTextSize(13 * fontScale);
         cancelBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         cancelBtn.setGravity(Gravity.CENTER);
         cancelBtn.setMinHeight((int) (48 * density));
@@ -140,7 +142,7 @@ public final class BooleanSelectorDialog {
         TextView confirmBtn = new TextView(activity);
         confirmBtn.setText(confirmLabel != null ? confirmLabel : "[ CONFIRM ]");
         confirmBtn.setTextColor(tokens.accent);
-        confirmBtn.setTextSize(13);
+        confirmBtn.setTextSize(13 * fontScale);
         confirmBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         confirmBtn.setGravity(Gravity.CENTER);
         confirmBtn.setMinHeight((int) (48 * density));

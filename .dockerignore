@@ -1,0 +1,8 @@
+out/
+.build/
+.ccache/
+target/
+.git/
+*.swapfile*
+cuttlefish_*
+cf_avd_*

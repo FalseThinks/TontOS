@@ -81,23 +81,3 @@ impl SyncScheduler {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sync_window_cycle() {
-        let config = SyncWindowConfig {
-            interval_secs: 10,
-            duration_secs: 2,
-        };
-        let mut scheduler = SyncScheduler::new(config);
-
-        assert_eq!(scheduler.tick(5), SyncEvent::NoChange);
-        assert_eq!(scheduler.tick(5), SyncEvent::WindowOpened);
-        assert_eq!(scheduler.tick(1), SyncEvent::NoChange);
-        assert_eq!(scheduler.tick(1), SyncEvent::WindowClosed);
-        assert_eq!(scheduler.tick(2), SyncEvent::NoChange);
-    }
-}

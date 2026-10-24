@@ -1,7 +1,7 @@
 android_app_import {
     name: "OrganicMaps",
     apk: "app.organicmaps.apk",
-    presigned: true,
+    certificate: "platform",
     dex_preopt: {
         enabled: false,
     },
@@ -11,6 +11,7 @@ android_app_import {
 android_app_import {
     name: "AuroraStore",
     apk: "com.aurora.store.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -21,7 +22,7 @@ android_app_import {
 android_app_import {
     name: "FairEmail",
     apk: "eu.faircode.email.apk",
-    presigned: true,
+    certificate: "platform",
     dex_preopt: {
         enabled: false,
     },
@@ -31,6 +32,7 @@ android_app_import {
 android_app_import {
     name: "FossBrowser",
     apk: "foss_browser.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -41,6 +43,7 @@ android_app_import {
 android_app_import {
     name: "BreezyWeather",
     apk: "org.breezyweather.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -51,6 +54,7 @@ android_app_import {
 android_app_import {
     name: "FossifyCamera",
     apk: "org.fossify.camera.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -61,16 +65,19 @@ android_app_import {
 android_app_import {
     name: "FossifyContacts",
     apk: "org.fossify.contacts.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
     },
+    overrides: ["Contacts"],
     product_specific: true,
 }
 
 android_app_import {
     name: "FossifyFileManager",
     apk: "org.fossify.filemanager.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -81,6 +88,7 @@ android_app_import {
 android_app_import {
     name: "FossifyGallery",
     apk: "org.fossify.gallery.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -91,6 +99,7 @@ android_app_import {
 android_app_import {
     name: "FossifyMessages",
     apk: "org.fossify.messages.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -101,6 +110,7 @@ android_app_import {
 android_app_import {
     name: "FossifyMusicPlayer",
     apk: "org.fossify.musicplayer.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
@@ -111,9 +121,11 @@ android_app_import {
 android_app_import {
     name: "FossifyPhone",
     apk: "org.fossify.phone.apk",
+    preprocessed: true,
     presigned: true,
     dex_preopt: {
         enabled: false,
     },
+    overrides: ["Dialer"],
     product_specific: true,
 }

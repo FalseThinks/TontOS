@@ -1,5 +1,11 @@
 package org.tontos.launcher;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.util.Log;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -157,9 +163,57 @@ public final class LocaleManager {
         RegionItem defR = regionMap.get("US");
         if (defR == null && !regions.isEmpty()) defR = regions.get(0);
         DEFAULT_REGION = defR != null ? defR : new RegionItem("US", "United States", Locale.US);
+
+        Map<String, String> defLangRegion = new HashMap<>();
+        defLangRegion.put("es", "ES");
+        defLangRegion.put("en", "US");
+        defLangRegion.put("de", "DE");
+        defLangRegion.put("pl", "PL");
+        defLangRegion.put("fr", "FR");
+        defLangRegion.put("it", "IT");
+        defLangRegion.put("pt", "PT");
+        defLangRegion.put("ru", "RU");
+        defLangRegion.put("uk", "UA");
+        defLangRegion.put("zh", "CN");
+        defLangRegion.put("ja", "JP");
+        defLangRegion.put("nl", "NL");
+        defLangRegion.put("ko", "KR");
+        defLangRegion.put("tr", "TR");
+        defLangRegion.put("ar", "SA");
+        defLangRegion.put("hi", "IN");
+        defLangRegion.put("sv", "SE");
+        defLangRegion.put("no", "NO");
+        defLangRegion.put("da", "DK");
+        defLangRegion.put("fi", "FI");
+        defLangRegion.put("cs", "CZ");
+        defLangRegion.put("ro", "RO");
+        defLangRegion.put("hu", "HU");
+        defLangRegion.put("el", "GR");
+        DEFAULT_LANG_REGION_MAP = Collections.unmodifiableMap(defLangRegion);
     }
 
+    private static final Map<String, String> DEFAULT_LANG_REGION_MAP;
+
     private LocaleManager() {}
+
+    public static String getDefaultRegionForLanguage(String langCode) {
+        if (langCode == null || langCode.trim().isEmpty()) {
+            return "US";
+        }
+        String clean = langCode.trim().toLowerCase(Locale.ROOT);
+        if (clean.contains("-")) {
+            clean = clean.substring(0, clean.indexOf('-'));
+        }
+        String reg = DEFAULT_LANG_REGION_MAP.get(clean);
+        if (reg != null) return reg;
+        if (clean.length() == 2) {
+            String candidate = clean.toUpperCase(Locale.ROOT);
+            if (REGION_INDEX != null && REGION_INDEX.containsKey(candidate)) {
+                return candidate;
+            }
+        }
+        return "US";
+    }
 
     public static List<LocaleItem> getAllAvailableLocales() {
         return ALL_LOCALES;
@@ -238,6 +292,97 @@ public final class LocaleManager {
 
     public static int getAvailableCount() {
         return ALL_LOCALES.size();
+    }
+
+    /**
+     * Applies the chosen language and region globally across the entire Android system,
+     * ensuring third-party and preinstalled apps (like FairEmail, Fossify, etc.) adopt
+     * the selected locale (or fallback to English) and receive ACTION_LOCALE_CHANGED.
+     */
+    public static void applySystemWideLocale(final Context context, String languageCode, String regionCode) {
+        if (languageCode == null || languageCode.trim().isEmpty()) {
+            languageCode = "en";
+        }
+        if (regionCode == null) {
+            regionCode = "";
+        }
+        String cleanLang = languageCode.trim().toLowerCase(Locale.ROOT);
+        if (cleanLang.contains("-")) {
+            cleanLang = cleanLang.substring(0, cleanLang.indexOf('-'));
+        }
+        String cleanRegion = regionCode.trim().toUpperCase(Locale.ROOT);
+
+        final Locale targetLocale = !cleanRegion.isEmpty()
+                ? new Locale(cleanLang, cleanRegion)
+                : new Locale(cleanLang);
+
+        Locale.setDefault(targetLocale);
+
+        // 1. Update local Resources Configuration for immediate UI refresh
+        if (context != null) {
+            try {
+                Resources res = context.getResources();
+                Configuration config = new Configuration(res.getConfiguration());
+                config.setLocale(targetLocale);
+                res.updateConfiguration(config, res.getDisplayMetrics());
+            } catch (Throwable ignored) {}
+        }
+
+        final String langTag = targetLocale.toLanguageTag();
+
+        // 2. Synchronize system-wide configuration via privileged framework commands
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Try Framework ActivityManager / LocalePicker via reflection
+                    try {
+                        Class<?> localePicker = Class.forName("com.android.internal.app.LocalePicker");
+                        Method updateLocale = localePicker.getMethod("updateLocale", Locale.class);
+                        updateLocale.invoke(null, targetLocale);
+                    } catch (Throwable t1) {
+                        try {
+                            Class<?> localePicker = Class.forName("com.android.internal.app.LocalePicker");
+                            Class<?> localeListClass = Class.forName("android.os.LocaleList");
+                            Object localeList = localeListClass.getConstructor(Locale[].class)
+                                    .newInstance((Object) new Locale[]{targetLocale, Locale.US});
+                            Method updateLocales = localePicker.getMethod("updateLocales", localeListClass);
+                            updateLocales.invoke(null, localeList);
+                        } catch (Throwable ignored) {}
+                    }
+
+                    // Update system persistent configuration via ActivityManager
+                    try {
+                        Class<?> amClass = Class.forName("android.app.ActivityManager");
+                        Method getService = amClass.getMethod("getService");
+                        Object am = getService.invoke(null);
+                        if (am != null) {
+                            Method getConfiguration = am.getClass().getMethod("getConfiguration");
+                            Configuration sysConfig = (Configuration) getConfiguration.invoke(am);
+                            if (sysConfig != null) {
+                                sysConfig.setLocale(targetLocale);
+                                Method updatePersistentConfig = am.getClass().getMethod("updatePersistentConfiguration", Configuration.class);
+                                updatePersistentConfig.invoke(am, sysConfig);
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+
+                    // Apply system-wide via Android command line (notifies all apps and framework)
+                    SafeCommandExecutor.executePrivileged("cmd", "locale", "set-locales", langTag + ",en-US");
+                    SafeCommandExecutor.executePrivileged("settings", "put", "system", "system_locales", langTag + ",en-US");
+                    SafeCommandExecutor.executePrivileged("setprop", "persist.sys.locale", langTag);
+
+                    // Send ACTION_LOCALE_CHANGED broadcast
+                    if (context != null) {
+                        Intent localeIntent = new Intent(Intent.ACTION_LOCALE_CHANGED);
+                        localeIntent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY);
+                        context.sendBroadcast(localeIntent);
+                    }
+                } catch (Throwable t) {
+                    Log.w("LocaleManager", "Failed to apply system-wide locale: " + t.getMessage());
+                }
+            }
+        }, "TontOS-SystemLocaleApplier").start();
     }
 
     private static String buildDisplayName(Locale l, String displayLang) {

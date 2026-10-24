@@ -39,6 +39,14 @@ public final class UltraShadeDialog {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setCanceledOnTouchOutside(true);
         dialog.setCancelable(true);
+        dialog.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(android.content.DialogInterface di) {
+                if (activity instanceof UltraShadeActivity && !activity.isFinishing()) {
+                    activity.finish();
+                }
+            }
+        });
 
         SharedPreferences prefs = activity.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
         final String lang = prefs.getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");

@@ -1,8 +1,7 @@
 //! tont-compositor entry point
 use tont_compositor::DirectScanoutEvaluator;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     tracing_subscriber::fmt::init();
     tracing::info!("Starting TontOS Wayland Compositor (tont-compositor)...");
 

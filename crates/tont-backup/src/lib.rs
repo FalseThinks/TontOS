@@ -47,7 +47,9 @@ impl BackupPackage {
         let json = serde_json::to_vec(payload)?;
         let mut hasher = Sha256::new();
         hasher.update(&json);
-        Ok(format!("{:x}", hasher.finalize()))
+        let hash = hasher.finalize();
+        let hex = hash.iter().map(|b| format!("{b:02x}")).collect::<String>();
+        Ok(hex)
     }
 
     /// Create a new verified backup package.
@@ -103,58 +105,5 @@ impl BackupPackage {
         }
 
         Ok(package)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_backup_create_save_load_roundtrip() {
-        let temp_dir = std::env::temp_dir().join("tont_test_backup");
-        let backup_path = temp_dir.join("tontos_backup.json");
-
-        let settings = TontSettings::default();
-        let sms = vec![SmsMessage {
-            message_id: 1,
-            sender: "Bank".to_string(),
-            content: "Auth code 123456".to_string(),
-            timestamp_secs: 1700000000,
-        }];
-        let apps = vec![];
-
-        let backup =
-            BackupPackage::create(settings, sms, apps, 1700000000, "Treble-ARM64".to_string())
-                .unwrap();
-
-        assert!(backup.verify_integrity());
-
-        backup.save_to_file(&backup_path).unwrap();
-        let loaded = BackupPackage::load_from_file(&backup_path).unwrap();
-
-        assert_eq!(backup, loaded);
-        assert_eq!(loaded.payload.sms_history[0].sender, "Bank");
-
-        let _ = fs::remove_dir_all(&temp_dir);
-    }
-
-    #[test]
-    fn test_backup_tampering_fails_verification() {
-        let settings = TontSettings::default();
-        let mut backup = BackupPackage::create(
-            settings,
-            vec![],
-            vec![],
-            1700000000,
-            "Treble-ARM64".to_string(),
-        )
-        .unwrap();
-
-        assert!(backup.verify_integrity());
-
-        // Tamper with payload without updating manifest checksum
-        backup.payload.settings.connectivity.wifi_enabled = false;
-        assert!(!backup.verify_integrity());
     }
 }

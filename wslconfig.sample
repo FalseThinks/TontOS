@@ -1,0 +1,19 @@
+# TontOS Recommended Windows WSL2 Configuration
+# Copy this file to: %USERPROFILE%\.wslconfig  (e.g., C:\Users\<YourUser>\.wslconfig)
+# Then restart WSL in Windows PowerShell: wsl --shutdown
+
+[wsl2]
+# Allocate at least 12GB RAM to WSL (adjust to 75% of your host RAM)
+memory=12GB
+
+# Allocate generous swap on fast SSD/NVMe (prevents OOM during ROM compilation)
+swap=24GB
+
+# Enable all CPU cores for parallel Ninja/Soong compilation
+processors=16
+
+# Enable nested virtualization for Cuttlefish/KVM acceleration inside WSL
+nestedVirtualization=true
+
+# Keep page cache clean
+pageReporting=true

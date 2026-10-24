@@ -72,6 +72,27 @@ public final class NfcPaymentSandboxManager {
         private AttestationStatus() {}
     }
 
+    public static final String PREF_NFC_SANDBOX_HCE = "pref_nfc_sandbox_hce";
+
+    public static boolean isSandboxHceEnabled(Context context) {
+        if (context == null) return false;
+        android.content.SharedPreferences sp = context.getSharedPreferences("tontos_prefs", Context.MODE_PRIVATE);
+        return sp.getBoolean(PREF_NFC_SANDBOX_HCE, false);
+    }
+
+    public static void setSandboxHceEnabled(Context context, boolean enabled) {
+        if (context == null) return;
+        android.content.SharedPreferences sp = context.getSharedPreferences("tontos_prefs", Context.MODE_PRIVATE);
+        sp.edit().putBoolean(PREF_NFC_SANDBOX_HCE, enabled).apply();
+        try {
+            SafeCommandExecutor.executePrivileged(
+                enabled
+                    ? "cmd role add-role-holder --user all android.app.role.WALLET $(cmd role get-role-holders android.app.role.WALLET 2>/dev/null) 2>/dev/null; setprop persist.sys.nfc_sandbox_hce 1"
+                    : "setprop persist.sys.nfc_sandbox_hce 0"
+            );
+        } catch (Throwable ignored) {}
+    }
+
     private NfcPaymentSandboxManager() {}
 
     public static boolean isNfcSupported(Context context) {
@@ -251,6 +272,20 @@ public final class NfcPaymentSandboxManager {
         addStatusRow(list, "Basic / Device / Strong", I18n.get(I18n.KEY_NFC_NOT_EVALUATED, langCode), false, tokens);
         addStatusRow(list, "Verified Boot / CTS", I18n.get(I18n.KEY_NFC_NOT_VERIFIED, langCode), false, tokens);
 
+        // Section: Isolated Sandbox / Multi-Profile HCE Routing
+        addCategoryHeader(list, I18n.get(I18n.KEY_NFC_SEC_SANDBOX, langCode), tokens);
+        addDescriptionText(list, I18n.get(I18n.KEY_NFC_SANDBOX_HCE_DESC, langCode), tokens);
+        final boolean isSandboxHce = isSandboxHceEnabled(activity);
+        addToggleRow(list, I18n.get(I18n.KEY_NFC_SANDBOX_HCE_TITLE, langCode), isSandboxHce ? "[ " + I18n.get(I18n.KEY_STATE_ON, langCode) + " ]" : "[ " + I18n.get(I18n.KEY_STATE_OFF, langCode) + " ]", isSandboxHce, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean next = !isSandboxHceEnabled(activity);
+                setSandboxHceEnabled(activity, next);
+                dialog.dismiss();
+                showDiagnosticsDialog(activity, tokens, langCode);
+            }
+        }, tokens);
+
         // Actions
         addCategoryHeader(list, I18n.get(I18n.KEY_NFC_SEC_ACTIONS, langCode), tokens);
         addActionRow(list, I18n.get(I18n.KEY_NFC_ACTIONS_PAYMENTS, langCode), new View.OnClickListener() {
@@ -362,5 +397,48 @@ public final class NfcPaymentSandboxManager {
         btn.setFocusable(true);
         btn.setOnClickListener(listener);
         container.addView(btn);
+    }
+
+    private static void addDescriptionText(LinearLayout container, String desc, ThemeTokens tokens) {
+        TextView tv = new TextView(container.getContext());
+        tv.setText(desc);
+        tv.setTextColor(tokens.textMuted);
+        tv.setTextSize(11);
+        tv.setTypeface(Typeface.MONOSPACE);
+        tv.setPadding(0, 0, 0, 6);
+        container.addView(tv);
+    }
+
+    private static void addToggleRow(LinearLayout container, String label, String value, boolean isPositive, View.OnClickListener listener, ThemeTokens tokens) {
+        LinearLayout row = new LinearLayout(container.getContext());
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, 6, 0, 6);
+
+        TextView lbl = new TextView(container.getContext());
+        lbl.setText(label);
+        lbl.setTextColor(tokens.textPrimary);
+        lbl.setTextSize(12);
+        lbl.setTypeface(Typeface.MONOSPACE);
+        lbl.setSingleLine(true);
+        lbl.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        lbl.setLayoutParams(lp);
+        row.addView(lbl);
+
+        TextView val = new TextView(container.getContext());
+        val.setText(value);
+        val.setTextColor(isPositive ? tokens.navAccent : tokens.textMuted);
+        val.setTextSize(12);
+        val.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        val.setSingleLine(true);
+        val.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        row.addView(val);
+
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(listener);
+
+        container.addView(row);
     }
 }

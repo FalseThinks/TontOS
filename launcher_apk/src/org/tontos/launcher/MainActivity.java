@@ -18,6 +18,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.net.Uri;
+import android.provider.AlarmClock;
+import android.provider.ContactsContract;
+import android.provider.MediaStore;
+import android.provider.Settings;
+import java.lang.reflect.Method;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -55,7 +61,6 @@ import java.util.Set;
 
 /**
  * TontOS AMOLED Detox Launcher Home Screen.
- * Demonstrates Strategy Pattern for Themes, Flyweight Color Tokens, and Algorithmic Cache.
  */
 public class MainActivity extends Activity {
 
@@ -133,6 +138,7 @@ public class MainActivity extends Activity {
     // Performance & scaling optimizations: font scale and cached formatters
     private float fontScale = 1.0f;
     private Locale cachedLocale;
+    private boolean cachedIs24 = true;
     private SimpleDateFormat cachedTimeFormat;
     private SimpleDateFormat cachedDateFormat;
     private final Date reusableDate = new Date();
@@ -396,7 +402,15 @@ public class MainActivity extends Activity {
         batteryView.setOnClickListener(shadeOpener);
         timeView.setOnClickListener(shadeOpener);
 
-        registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        try {
+            Intent serviceIntent = new Intent(this, TontOSShadeService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        } catch (Throwable ignored) {}
+
         disableStatusBarExpansion();
         hideSystemUI();
     }
@@ -420,6 +434,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        try {
+            unregisterReceiver(batteryReceiver);
+        } catch (Exception ignored) {}
         if (handler != null && tickRunnable != null) {
             handler.removeCallbacks(tickRunnable);
         }
@@ -444,16 +461,21 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        try {
+            Intent batIntent = registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            if (batIntent != null) {
+                int level = batIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = batIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                if (level >= 0 && scale > 0) {
+                    batteryLevel = (level * 100) / scale;
+                }
+                int status = batIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING
+                        || status == BatteryManager.BATTERY_STATUS_FULL);
+                updateBatteryDisplay();
+            }
+        } catch (Throwable ignored) {}
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        if (!prefs.getBoolean(KEY_SETUP_COMPLETED, false)) {
-            startActivity(new Intent(this, SetupWizardActivity.class));
-            finish();
-            return;
-        }
-
-        disableStatusBarExpansion();
-        hideSystemUI();
-
         isDrawerView = false;
 
         String langCode = prefs.getString(KEY_SYSTEM_LANGUAGE, "en");
@@ -550,23 +572,46 @@ public class MainActivity extends Activity {
     }
 
     private void hideSystemUI() {
-        // TontOS compositor owns chrome. Use app top bar; don't hide
-        // Pixel system bars via WindowInsets/controller.
-        // No-op keeps background/defaults visible and avoids AOSP dependency.
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && getWindow().getInsetsController() != null) {
+                getWindow().getInsetsController().hide(WindowInsets.Type.statusBars());
+                getWindow().getInsetsController().setSystemBarsBehavior(
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                );
+            } else {
+                getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                );
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void disableStatusBarExpansion() {
-        // TontOS owns its shade (UltraShadeDialog + in-app top bar).
-        // No Pixel/AOSP 'cmd statusbar' dependency.
+        try {
+            Object sbm = getSystemService("statusbar");
+            if (sbm != null) {
+                Method disableMethod = sbm.getClass().getMethod("disable", int.class);
+                disableMethod.invoke(sbm, 0x00010000); // StatusBarManager.DISABLE_EXPAND
+            }
+        } catch (Throwable ignored) {}
+        try {
+            SafeCommandExecutor.executePrivileged("cmd", "statusbar", "send-disable-flag",
+                "statusbar-expansion", "quick-settings", "notification-peek");
+        } catch (Throwable ignored) {}
     }
 
     private void updateDateFormats(String langCode, String regionCode) {
         Locale targetLocale = (regionCode != null && !regionCode.isEmpty())
             ? new Locale(langCode, regionCode)
             : new Locale(langCode);
-        if (cachedLocale == null || !cachedLocale.equals(targetLocale)) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean is24 = prefs.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
+        if (cachedLocale == null || !cachedLocale.equals(targetLocale) || cachedIs24 != is24) {
             cachedLocale = targetLocale;
-            cachedTimeFormat = new SimpleDateFormat("HH:mm", cachedLocale);
+            cachedIs24 = is24;
+            cachedTimeFormat = new SimpleDateFormat(is24 ? "HH:mm" : "hh:mm a", cachedLocale);
             cachedDateFormat = new SimpleDateFormat("EEEE, MMMM d", cachedLocale);
         }
     }
@@ -637,8 +682,6 @@ public class MainActivity extends Activity {
         String modeTag = "";
         if (mode == BatteryProtectionManager.MODE_80) {
             modeTag = " [80%]";
-        } else if (mode == BatteryProtectionManager.MODE_BYPASS) {
-            modeTag = " [BYPASS]";
         }
         batteryView.setText(batteryLevel + "%" + (isCharging ? " ⚡" : "") + modeTag);
     }
@@ -657,7 +700,8 @@ public class MainActivity extends Activity {
 
         for (ResolveInfo ri : activities) {
             String pkg = ri.activityInfo.packageName;
-            if (pkg.equals(getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")) {
+            if (pkg.equals(getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")
+                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")) {
                 continue;
             }
             String label = ri.loadLabel(pm).toString();
@@ -682,7 +726,7 @@ public class MainActivity extends Activity {
     }
 
     private void renderDrawerApps(final ThemeTokens tokens) {
-        rootLayout.setBackgroundColor(tokens.surface);
+        rootLayout.setBackgroundColor(tokens.bg);
         topSection.setVisibility(View.GONE);
         bottomBar.setVisibility(View.GONE);
 
@@ -848,22 +892,17 @@ public class MainActivity extends Activity {
         int homeLimit = prefs.getInt(KEY_HOME_APP_LIMIT, DEFAULT_HOME_APP_LIMIT);
         Set<String> pinned = prefs.getStringSet(KEY_PINNED_APPS, DEFAULT_PINNED_PACKAGES);
 
-        // Algorithmic optimization: Parse ordered list in O(M) time and resolve with O(1) hash map lookups
         String orderCsv = prefs.getString(KEY_PINNED_APPS_ORDER, null);
-        List<String> orderedPkgs = new ArrayList<>();
+        Set<String> orderedPkgs = new java.util.LinkedHashSet<>();
         if (orderCsv != null && !orderCsv.trim().isEmpty()) {
             for (String p : orderCsv.split(",")) {
                 String clean = p.trim();
-                if (pinned.contains(clean) && !orderedPkgs.contains(clean)) {
+                if (pinned.contains(clean)) {
                     orderedPkgs.add(clean);
                 }
             }
         }
-        for (String p : pinned) {
-            if (!orderedPkgs.contains(p)) {
-                orderedPkgs.add(p);
-            }
-        }
+        orderedPkgs.addAll(pinned);
 
         int shown = 0;
         for (String pkg : orderedPkgs) {
@@ -890,18 +929,6 @@ public class MainActivity extends Activity {
                 shown++;
             }
         }
-    }
-
-    private void addAppRow(String label, int textColor, View.OnClickListener listener) {
-        addAppRow(label, textColor, ThemeTokens.get(currentTheme()), listener);
-    }
-
-    private void addAppRow(String label, int textColor, ThemeTokens tokens, View.OnClickListener listener) {
-        addAppRow(appListContainer, label, textColor, tokens, listener);
-    }
-
-    private void addAppRow(LinearLayout parent, String label, int textColor, View.OnClickListener listener) {
-        addAppRow(parent, label, textColor, ThemeTokens.get(currentTheme()), listener);
     }
 
     private void addAppRow(LinearLayout parent, String label, int textColor, ThemeTokens tokens, View.OnClickListener listener) {
@@ -931,22 +958,27 @@ public class MainActivity extends Activity {
         parent.addView(btn);
     }
 
-    private Drawable createTouchFeedbackDrawable() {
-        return createTouchFeedbackDrawable(ThemeTokens.get(currentTheme()));
-    }
+    private String cachedTouchTheme = null;
+    private android.graphics.drawable.Drawable.ConstantState cachedTouchState = null;
 
     private Drawable createTouchFeedbackDrawable(ThemeTokens tokens) {
-        StateListDrawable states = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setShape(GradientDrawable.RECTANGLE);
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius(dpToPx(4));
+        String themeId = currentTheme().getId();
+        if (cachedTouchState == null || !themeId.equals(cachedTouchTheme)) {
+            StateListDrawable states = new StateListDrawable();
+            GradientDrawable pressed = new GradientDrawable();
+            pressed.setShape(GradientDrawable.RECTANGLE);
+            pressed.setColor(tokens.controlBgPressed);
+            pressed.setCornerRadius(dpToPx(4));
 
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-        states.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        states.addState(new int[]{android.R.attr.state_focused}, pressed);
-        states.addState(new int[]{}, normal);
-        return states;
+            ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
+            states.addState(new int[]{android.R.attr.state_pressed}, pressed);
+            states.addState(new int[]{android.R.attr.state_focused}, pressed);
+            states.addState(new int[]{}, normal);
+            cachedTouchState = states.getConstantState();
+            cachedTouchTheme = themeId;
+            return states;
+        }
+        return cachedTouchState != null ? cachedTouchState.newDrawable() : new ColorDrawable(Color.TRANSPARENT);
     }
 
     private int dpToPx(int dp) {
@@ -994,6 +1026,18 @@ public class MainActivity extends Activity {
         if (pkg == null) return;
         mLastLaunchedPackage = pkg;
         AppItem app = cachedAppLookup.get(pkg);
+
+        // 1. Try canonical getLaunchIntentForPackage first (resolves active activities/aliases)
+        try {
+            Intent launchIntent = getPackageManager().getLaunchIntentForPackage(pkg);
+            if (launchIntent != null) {
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                startActivity(launchIntent);
+                return;
+            }
+        } catch (Throwable ignored) {}
+
+        // 2. Try explicit ComponentName from cached activity info
         if (app != null && app.activityName != null) {
             try {
                 Intent intent = new Intent(Intent.ACTION_MAIN);
@@ -1002,19 +1046,44 @@ public class MainActivity extends Activity {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
                 startActivity(intent);
                 return;
-            } catch (Exception ignored) {}
+            } catch (Throwable ignored) {}
         }
+
+        // 3. Semantic fallback intents for core apps
         try {
-            Intent fallback = getPackageManager().getLaunchIntentForPackage(pkg);
+            String p = pkg.toLowerCase(Locale.ROOT);
+            Intent fallback = null;
+            if (p.contains("camera")) {
+                fallback = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
+            } else if (p.contains("dialer") || p.contains("phone")) {
+                fallback = new Intent(Intent.ACTION_DIAL);
+            } else if (p.contains("message") || p.contains("sms") || p.contains("mms")) {
+                fallback = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING);
+            } else if (p.contains("browser")) {
+                fallback = new Intent(Intent.ACTION_VIEW, Uri.parse("https://duckduckgo.com"));
+            } else if (p.contains("gallery") || p.contains("photo")) {
+                fallback = new Intent(Intent.ACTION_VIEW).setType("image/*");
+            } else if (p.contains("email")) {
+                fallback = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_EMAIL);
+            } else if (p.contains("contact")) {
+                fallback = new Intent(Intent.ACTION_VIEW, ContactsContract.Contacts.CONTENT_URI);
+            } else if (p.contains("settings")) {
+                fallback = new Intent(Settings.ACTION_SETTINGS);
+            }
+
             if (fallback != null) {
                 fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(fallback);
-            } else {
-                Toast.makeText(MainActivity.this, "Could not open " + (app != null ? app.label : pkg), Toast.LENGTH_SHORT).show();
+                return;
             }
-        } catch (Exception ex) {
-            Toast.makeText(MainActivity.this, "Could not open " + (app != null ? app.label : pkg), Toast.LENGTH_SHORT).show();
-        }
+        } catch (Throwable ignored) {}
+
+        // 4. Try privileged monkey launcher
+        try {
+            SafeCommandExecutor.executePrivileged("monkey", "-p", pkg, "-c", "android.intent.category.LAUNCHER", "1");
+        } catch (Throwable ignored) {}
+
+        Toast.makeText(MainActivity.this, "Could not open " + (app != null ? app.label : pkg), Toast.LENGTH_SHORT).show();
     }
 
     private void checkAndTerminateExitedApp() {
@@ -1053,17 +1122,31 @@ public class MainActivity extends Activity {
     private boolean isEssentialSystemPackage(String pkg) {
         if (pkg == null) return true;
         if (pkg.equals(getPackageName())
-                || pkg.equals("org.fossify.phone")
-                || pkg.equals("org.fossify.messages")
+                || pkg.startsWith("org.fossify.")
+                || pkg.equals("eu.faircode.email")
+                || pkg.equals("de.baumann.browser")
+                || pkg.equals("app.organicmaps")
+                || pkg.equals("org.breezyweather")
+                || pkg.equals("com.aurora.store")
                 || pkg.equals("com.android.phone")
                 || pkg.equals("com.android.server.telecom")
                 || pkg.equals("com.android.systemui")
                 || pkg.equals("com.android.inputmethod.latin")
-                || pkg.equals("org.fossify.contacts")) {
+                || pkg.equals("com.android.settings")
+                || pkg.equals("com.android.dialer")
+                || pkg.equals("com.android.messaging")
+                || pkg.equals("com.android.camera2")
+                || pkg.equals("com.android.gallery3d")
+                || pkg.equals("com.android.deskclock")
+                || pkg.equals("com.android.calculator2")
+                || pkg.equals("com.android.contacts")
+                || pkg.equals("com.android.calendar")
+                || pkg.equals("com.android.documentsui")
+                || DEFAULT_PINNED_PACKAGES.contains(pkg)) {
             return true;
         }
         String p = pkg.toLowerCase(Locale.ROOT);
-        return p.contains("telecom") || p.contains("dialer") || p.contains("inputmethod");
+        return p.contains("telecom") || p.contains("dialer") || p.contains("inputmethod") || p.contains("systemui");
     }
 
 

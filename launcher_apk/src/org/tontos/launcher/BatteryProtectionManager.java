@@ -14,7 +14,6 @@ public final class BatteryProtectionManager {
 
     public static final int MODE_100 = 0;
     public static final int MODE_80 = 1;
-    public static final int MODE_BYPASS = 2;
 
     public enum ModeResult {
         APPLIED,
@@ -29,7 +28,7 @@ public final class BatteryProtectionManager {
     }
 
     public static ModeResult setMode(Context context, int mode) {
-        if (context == null || (mode != MODE_100 && mode != MODE_80 && mode != MODE_BYPASS)) {
+        if (context == null || (mode != MODE_100 && mode != MODE_80)) {
             return ModeResult.INVALID;
         }
         if (mode != MODE_100) return ModeResult.UNSUPPORTED;
@@ -42,8 +41,6 @@ public final class BatteryProtectionManager {
     public static String getModeDisplay(int mode, String langCode) {
         if (mode == MODE_80) {
             return I18n.get(I18n.KEY_BATTERY_80, langCode);
-        } else if (mode == MODE_BYPASS) {
-            return I18n.get(I18n.KEY_BATTERY_BYPASS, langCode);
         } else {
             return I18n.get(I18n.KEY_BATTERY_100, langCode);
         }
@@ -56,9 +53,6 @@ public final class BatteryProtectionManager {
     public static String getOptionDisplay(int mode, String langCode) {
         if (mode == MODE_80) {
             return I18n.get(I18n.KEY_BATTERY_80_NA, langCode);
-        }
-        if (mode == MODE_BYPASS) {
-            return I18n.get(I18n.KEY_BATTERY_BYPASS_NA, langCode);
         }
         return getModeDisplay(mode, langCode);
     }
