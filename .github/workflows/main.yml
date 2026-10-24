@@ -19,7 +19,7 @@ jobs:
   # ============================================================================
   pr-target-guard:
     name: "1. Gatekeeper: PR Target Policy"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Enforce PR branch policy
         env:
@@ -43,7 +43,7 @@ jobs:
 
   hygiene-and-scripts:
     name: "1. Hygiene: Secrets & Script Syntax"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
   # ============================================================================
   rust-quality:
     name: "2. Build: Rust Format, Lint & Test"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
@@ -99,7 +99,7 @@ jobs:
 
   android-build:
     name: "2. Build: Android Launcher APK"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
@@ -163,7 +163,7 @@ jobs:
 
   docker-builder-verification:
     name: "2. Build: Docker ROM Environment"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [pr-target-guard, hygiene-and-scripts]
     steps:
       - name: Checkout repository
@@ -216,7 +216,7 @@ jobs:
   # ============================================================================
   rust-security:
     name: "3. Security: Rust Dependency Audit"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [rust-quality]
     steps:
       - name: Checkout repository
@@ -241,7 +241,7 @@ jobs:
 
   semgrep-sast-scan:
     name: "3. Security: Semgrep SAST Analysis"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read
@@ -280,7 +280,7 @@ jobs:
 
   trivy-security-scan:
     name: "3. Security: Trivy Container & FS"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       actions: read
       contents: read
@@ -314,7 +314,7 @@ jobs:
 
   playwright-ui:
     name: "3. E2E: Playwright UI Visual Tests"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: [android-build]
     steps:
       - name: Checkout repository
@@ -325,7 +325,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -360,7 +360,7 @@ jobs:
   # ============================================================================
   ci-executive-summary:
     name: "4. Executive: Health & Security Summary"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs:
       - pr-target-guard
       - hygiene-and-scripts
