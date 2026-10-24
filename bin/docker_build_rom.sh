@@ -143,8 +143,8 @@ for arg in "$@"; do
         --build|build)
             ACTION="build"
             ;;
-        --available|--mem-mode=*|--mode=*|--total|--force-total|--ram=*|--ram)
-            # Memory options consumed by memory_profile.sh
+        --available|--mem-mode=*|--mode=*|--total|--force-total|--ram=*|--ram|--docker)
+            # Memory and container flags consumed cleanly
             ;;
         *)
             PASSTHROUGH_ARGS+=("$arg")
