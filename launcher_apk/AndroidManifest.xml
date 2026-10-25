@@ -37,6 +37,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <queries>
         <package android:name="org.fossify.phone" />
@@ -51,6 +54,11 @@
         <package android:name="de.baumann.browser" />
         <package android:name="org.breezyweather" />
         <package android:name="app.organicmaps" />
+        <package android:name="org.schabi.newpipe" />
+        <package android:name="app.grapheneos.pdfviewer" />
+        <package android:name="org.opendocument.reader" />
+        <package android:name="helium314.keyboard" />
+        <package android:name="com.bitchat.droid" />
     </queries>
 
     <application
@@ -91,7 +99,7 @@
 
         <activity
             android:name=".LockScreenActivity"
-            android:exported="true"
+            android:exported="false"
             android:taskAffinity=""
             android:launchMode="singleInstance"
             android:showOnLockScreen="true"
@@ -116,7 +124,7 @@
 
         <service
             android:name=".TontOSShadeService"
-            android:exported="true"
+            android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
         <receiver
@@ -127,6 +135,14 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".PackageInstallReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <data android:scheme="package" />
             </intent-filter>
         </receiver>
     </application>

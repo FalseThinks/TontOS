@@ -1,16 +1,20 @@
 package org.tontos.launcher;
 
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -89,26 +93,65 @@ public final class SettingsDescriptions {
 
     public static void showExplanationDialog(Context context, ThemeTokens tokens, String title, String explanation) {
         if (context == null || explanation == null) return;
+        final Dialog dialog = new Dialog(context);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            context,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-        builder.setTitle(title);
-        builder.setMessage(explanation);
-        builder.setPositiveButton("OK", null);
+        float density = context.getResources().getDisplayMetrics().density;
+        LinearLayout root = new LinearLayout(context);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(tokens.bg);
+        int padH = (int) (24 * density);
+        int padV = (int) (20 * density);
+        root.setPadding(padH, padV, padH, padV);
 
-        AlertDialog dialog = builder.create();
-        dialog.show();
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(tokens.bg);
+        bg.setStroke((int) (1 * density), tokens.border);
+        bg.setCornerRadius((int) (4 * density));
+        root.setBackground(bg);
+
+        TextView titleView = new TextView(context);
+        titleView.setText(title != null ? title.toUpperCase(Locale.ROOT) : "INFO");
+        titleView.setTextColor(tokens.accent);
+        titleView.setTextSize(15);
+        titleView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        titleView.setPadding(0, 0, 0, (int) (8 * density));
+        root.addView(titleView);
+
+        View div = new View(context);
+        div.setBackgroundColor(tokens.border);
+        div.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (1 * density)));
+        root.addView(div);
+
+        TextView msgView = new TextView(context);
+        msgView.setText(explanation);
+        msgView.setTextColor(tokens.textPrimary);
+        msgView.setTextSize(13);
+        msgView.setTypeface(Typeface.MONOSPACE);
+        msgView.setLineSpacing(3, 1.2f);
+        msgView.setPadding(0, (int) (14 * density), 0, (int) (18 * density));
+        root.addView(msgView);
+
+        Button okBtn = new Button(context);
+        okBtn.setText("[ ENTENDIDO / OK ]");
+        okBtn.setTextColor(tokens.navAccent);
+        okBtn.setTextSize(13);
+        okBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        okBtn.setBackgroundColor(Color.TRANSPARENT);
+        okBtn.setGravity(Gravity.CENTER);
+        okBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        root.addView(okBtn);
+
+        dialog.setContentView(root);
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
-
-        Button pBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        if (pBtn != null) {
-            pBtn.setTextColor(tokens.accent);
-            pBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        }
+        dialog.show();
     }
 
     public static View createHelpBadge(final Context context, final ThemeTokens tokens, final String labelKey, final String fallbackTitle) {
@@ -121,6 +164,7 @@ public final class SettingsDescriptions {
         badge.setTextColor(tokens.navAccent);
         badge.setTextSize(12);
         badge.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        badge.setSingleLine(true);
         badge.setPadding(pad, 0, pad, 0);
         badge.setClickable(true);
         badge.setFocusable(true);

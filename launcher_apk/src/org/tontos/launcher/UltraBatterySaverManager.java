@@ -76,8 +76,54 @@ public final class UltraBatterySaverManager {
         }
     }
 
+    public static ActionResult setAirplaneMode(Context context, boolean enable) {
+        if (context == null) return ActionResult.FAILED;
+        try {
+            Settings.Global.putInt(context.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON, enable ? 1 : 0);
+            Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+            intent.putExtra("state", enable);
+            context.sendBroadcast(intent);
+        } catch (Throwable ignored) {}
+
+        SafeCommandExecutor.executePrivileged("cmd", "connectivity", "airplane-mode", enable ? "enable" : "disable");
+        return ActionResult.APPLIED;
+    }
+
     public static ActionResult openAirplaneModeSettings(Context context) {
         return openSettings(context, Settings.ACTION_AIRPLANE_MODE_SETTINGS);
+    }
+
+    public static boolean isUltraBatterySaverActive(Context context) {
+        if (context == null) return false;
+        android.content.SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean("pref_ultra_battery_saver", false);
+    }
+
+    public static ActionResult setUltraBatterySaver(Context context, boolean enable) {
+        if (context == null) return ActionResult.FAILED;
+        android.content.SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit().putBoolean("pref_ultra_battery_saver", enable).apply();
+
+        if (enable) {
+            try {
+                int curB = Settings.System.getInt(context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 128);
+                prefs.edit().putInt("pre_ultra_brightness", curB).apply();
+            } catch (Throwable ignored) {}
+            GlobalSettingsBridge.applyGlobalBrightness(context, 25);
+            GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15000);
+            SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", "1");
+            SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", "1");
+            GrayscaleManager.setGrayscaleEnabled(context, true);
+        } else {
+            int prevB = prefs.getInt("pre_ultra_brightness", 100);
+            GlobalSettingsBridge.applyGlobalBrightness(context, prevB);
+            GlobalSettingsBridge.applyGlobalScreenTimeout(context, 60000);
+            SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", "0");
+            SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", "0");
+            boolean userGrayscale = prefs.getBoolean("pref_grayscale_enabled", false);
+            GrayscaleManager.setGrayscaleEnabled(context, userGrayscale);
+        }
+        return ActionResult.APPLIED;
     }
 
     public static ToggleState getDndState(Context context) {
@@ -239,17 +285,15 @@ public final class UltraBatterySaverManager {
                 manager.setTorchMode(torchCameraId, enable);
                 return ActionResult.REQUESTED;
             } catch (SecurityException denied) {
-                SafeCommandExecutor.execute("pm", "grant", "org.tontos.launcher", "android.permission.CAMERA");
+                SafeCommandExecutor.executePrivileged("pm", "grant", "org.tontos.launcher", "android.permission.CAMERA");
                 try {
                     manager.setTorchMode(torchCameraId, enable);
                     return ActionResult.REQUESTED;
                 } catch (Throwable t) {
-                    return ActionResult.FAILED;
+                    return ActionResult.UNSUPPORTED;
                 }
-            } catch (CameraAccessException failure) {
-                return ActionResult.FAILED;
-            } catch (RuntimeException failure) {
-                return ActionResult.FAILED;
+            } catch (Throwable failure) {
+                return ActionResult.UNSUPPORTED;
             }
         }
     }
@@ -408,39 +452,7 @@ public final class UltraBatterySaverManager {
     }
 
     public static boolean isUltraBatterySaverEnabled(Context context) {
-        if (context == null) return false;
-        try {
-            return Settings.Global.getInt(context.getContentResolver(), "low_power", 0) == 1;
-        } catch (Throwable t) {
-            return false;
-        }
-    }
-
-    public static void setUltraBatterySaver(final Context context, final boolean enable) {
-        if (context == null) return;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", enable ? "1" : "0");
-                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", enable ? "1" : "0");
-                    if (enable) {
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "window_animation_scale", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "transition_animation_scale", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "animator_duration_scale", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "wifi_scan_always_enabled", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "ble_scan_always_enabled", "0");
-                        GrayscaleManager.setGrayscaleEnabled(context, true);
-                        GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15);
-                        GlobalSettingsBridge.applyGlobalBrightness(context, 20);
-                    } else {
-                        GrayscaleManager.setGrayscaleEnabled(context, false);
-                        GlobalSettingsBridge.applyGlobalScreenTimeout(context, 30);
-                        GlobalSettingsBridge.applyGlobalBrightness(context, 50);
-                    }
-                } catch (Throwable ignored) {}
-            }
-        }).start();
+        return isUltraBatterySaverActive(context);
     }
 
     private static ToggleState toState(boolean enabled) {

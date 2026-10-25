@@ -242,3 +242,70 @@
 - [ ] Guest networking works and clean stop/start plus VM reboot recovery pass.
 - [ ] No battery, performance, OTA or Verified Boot improvements are claimed until their own acceptance tests pass.
 - Local 2026-10-10: `fmt PASS` · `test --workspace PASS` · `clippy PASS` · `APK 168K v2+v3 SIGN PASS targetSdk 34` · `CONSTRAINTS.md:5-6` · `unshare --user mount -t binder binder → binder/hwbinder/vndbinder OK` · but `binder_linux` kmod absent, `waydroid`+`lxc` not installed (`sudo: password required`), `/dev/binder*` absent on bare host. Host baseline 2026-10-07 E2E evidence (boot_completed=1+pm path+HTTP+stop/start) recorded in `tasks/todo.md:20.4`; needs fresh `TONTOS_DESIGNATED_RUNNER=1` run on VM/runner.
+
+## Phase 25: ROM Integration, Setup Wizard, Detox Controls & FOSS Suite Hardening
+- [x] Task 25.1: AOSP Native Boot & Role Grants
+  - Acceptance: `TontOSLauncher` defined in `vendor/tontos/apps/prebuilts/Android.bp` with `privileged: true` and `privapp-permissions-tontos.xml`. `default-permissions-tontos.xml` sets `org.fossify.phone` as default dialer without system prompt. Disable stock lockscreen via `ro.lockscreen.disable.default=true`.
+  - Verify: Build produces image that boots straight into TontOS; phone role is pre-granted.
+  - Files: `vendor/tontos/apps/prebuilts/Android.bp`, `vendor/tontos/products/tontos_base.mk`, `vendor/tontos/products/default-permissions-tontos.xml`, `vendor/tontos/products/privapp-permissions-tontos.xml`.
+- [x] Task 25.2: Typography Scaling & Setup Wizard Polish
+  - Acceptance: Font size scaling (`pref_font_scale`) applied to all button texts, headers, and selector triggers in `SetupWizardActivity.java`. Redundant `[ SALTAR GUÍA ]` button removed from `QuickStartGuideDialog.java`. `SettingsActivity.java` always opens on main category dashboard.
+  - Verify: Changing font scale to 85% or 130% visibly resizes buttons; settings resumes to root.
+  - Files: `launcher_apk/src/org/tontos/launcher/SetupWizardActivity.java`, `launcher_apk/src/org/tontos/launcher/QuickStartGuideDialog.java`, `launcher_apk/src/org/tontos/launcher/SettingsActivity.java`.
+- [x] Task 25.3: AMOLED Monospace Dialogs & Row Layout Protection
+  - Acceptance: White `AlertDialog` in `SettingsDescriptions.java` replaced with AMOLED monospace modal using `ThemeTokens`. In `SettingsRowFactory.java`, `labelView` uses flexible weight with end-ellipsizing so `(?)` help badge never breaks onto extra lines or clips.
+  - Verify: Clicking `(?)` opens dark themed dialog matching current palette; long labels do not displace badge.
+  - Files: `launcher_apk/src/org/tontos/launcher/SettingsDescriptions.java`, `launcher_apk/src/org/tontos/launcher/SettingsRowFactory.java`.
+- [x] Task 25.4: Seamless Quick Settings, Silent Mode & Ultra Battery Saver
+  - Acceptance: Airplane mode toggles via privileged bridge without jumping to system settings. Silent mode applies without error. Ultra Battery Saver title shows badge ONLY when active, and an explicit toggle is added to the shade. Slide-down animation smoothed.
+  - Verify: Clicking Airplane mode toggles state in-place; Ultra Battery Saver header updates dynamically.
+  - Files: `launcher_apk/src/org/tontos/launcher/UltraShadeDialog.java`, `launcher_apk/src/org/tontos/launcher/UltraBatterySaverManager.java`, `launcher_apk/src/org/tontos/launcher/GlobalSettingsBridge.java`.
+- [x] Task 25.5: Automated App Sandbox Receiver & Curated FOSS Suite Expansion
+  - Acceptance: `PackageInstallReceiver` auto-provisions sandbox isolation on `ACTION_PACKAGE_ADDED`. Stock `DocumentsUI` debloated in favor of `org.fossify.filemanager`. FOSS document viewer and NewPipe added to `apps/`. Pure offline FOSS keyboard documented/bundled.
+  - Verify: Installing an APK auto-registers sandbox policy; new APKs install cleanly in `apps/`.
+  - Files: `launcher_apk/src/org/tontos/launcher/PackageInstallReceiver.java`, `launcher_apk/AndroidManifest.xml`, `apps/`, `bin/helpers/debloat_custom_rom.sh`.
+
+## Phase 26: Lock Screen Security & Biometric Integration
+- [x] Task 26.1: Security Storage & Cryptographic Verifier (`LockSecurityManager.java`)
+  - Acceptance: Store SHA-256 salted hashes for Pattern and PIN; implement verification, salt generation, and security state queries.
+  - Verify: Unit tests pass for pattern/PIN hash matching and tamper detection.
+  - Files: `launcher_apk/src/org/tontos/launcher/LockSecurityManager.java`.
+- [x] Task 26.2: Tactile Pattern & PIN Keypad Views (`PatternView.java` & `PinUnlockView.java`)
+  - Acceptance: Native Canvas 3x3 dot matrix with touch tracking, line drawing, and `ThemeTokens` integration; monospace numeric keypad with digit indicators.
+  - Verify: Smooth touch response and haptic feedback.
+  - Files: `launcher_apk/src/org/tontos/launcher/PatternView.java`, `launcher_apk/src/org/tontos/launcher/PinUnlockView.java`.
+- [x] Task 26.3: Pattern & PIN Configuration Dialogs (`PatternSetupDialog.java` & `PinSetupDialog.java`)
+  - Acceptance: AMOLED modal dialogs guiding 2-step setup (Draw/Enter -> Confirm) with validation and mismatch recovery.
+  - Verify: Setup flow completes and persists credential cleanly.
+  - Files: `launcher_apk/src/org/tontos/launcher/PatternSetupDialog.java`, `launcher_apk/src/org/tontos/launcher/PinSetupDialog.java`.
+- [x] Task 26.4: Biometric Fingerprint Listener & Enrollment Bridge
+  - Acceptance: Support hardware detection, enrolled count, and background `FingerprintManager` listening with `CancellationSignal`; launch AOSP `ACTION_FINGERPRINT_ENROLL`.
+  - Verify: Touching fingerprint sensor unlocks device instantly; enrollment intent launches system setup.
+  - Files: `launcher_apk/src/org/tontos/launcher/LockSecurityManager.java`, `launcher_apk/AndroidManifest.xml`.
+- [x] Task 26.5: LockScreenActivity & Settings Integration
+  - Acceptance: `LockScreenActivity` integrates Pattern, PIN, and Fingerprint unlocking; `SettingsActivity` subsection 1 adds security configuration suite; full I18n translations across 7 languages.
+  - Verify: Live lock and unlock on Cuttlefish across all 3 methods; all tests pass.
+  - Files: `launcher_apk/src/org/tontos/launcher/LockScreenActivity.java`, `launcher_apk/src/org/tontos/launcher/SettingsActivity.java`, `launcher_apk/src/org/tontos/launcher/I18n.java`.
+
+## Phase 27: Lock Screen Security Audit, Access Control & Exploit Hardening
+- [x] Task 27.1: Security Audit & Attack Surface Mapping
+  - Acceptance: Document all access control bypasses (quick shade to settings, exported activities, radio tampering, shortcut data exfiltration, volatile lock states).
+  - Verify: Artifact `security_audit_lockscreen_bypass.md` approved.
+  - Files: `tasks/todo.md`, `security_audit_lockscreen_bypass.md`.
+- [x] Task 27.2: Access Control Gates in `SettingsActivity` & `MainActivity`
+  - Acceptance: `SettingsActivity.java` rejects unauthenticated launches in `onCreate` and `onResume`, redirecting to `LockScreenActivity` and calling `finish()`; `MainActivity.java` checks lock state in `onCreate`.
+  - Verify: ADB intent `am start -n org.tontos.launcher/.SettingsActivity` is rejected and logged with `Access denied`.
+  - Files: `launcher_apk/src/org/tontos/launcher/SettingsActivity.java`, `launcher_apk/src/org/tontos/launcher/MainActivity.java`.
+- [x] Task 27.3: Quick Shade (`UltraShadeDialog`) & Anti-Theft Radio Hardening
+  - Acceptance: `btnSettings` and `btnAirplane` verify `isDeviceLocked()`; prompt user to unlock and redirect to `LockScreenActivity` without modifying state or opening settings.
+  - Verify: Clicking settings or airplane mode while locked prompts for credentials.
+  - Files: `launcher_apk/src/org/tontos/launcher/UltraShadeDialog.java`.
+## Phase 28: BitChat P2P Mesh Integration into TontOS Curated FOSS Suite
+- [x] Task 28.1: Package Ingestion & Manifest Registration
+  - Acceptance: Download official BitChat universal FOSS APK (`com.bitchat.droid`) into `apps/bitchat.apk`; register package in `launcher_apk/AndroidManifest.xml` queries allowlist.
+  - Verify: APK builds cleanly; queries verified in manifest.
+  - Files: `apps/bitchat.apk`, `launcher_apk/AndroidManifest.xml`.
+- [x] Task 28.2: Debloat Retention & Live Device Integration
+  - Acceptance: Whitelist `com.bitchat.droid` in `bin/helpers/debloat_custom_rom.sh`; install on Cuttlefish device; verify presence in TontOS App Drawer and successful launch.
+  - Verify: App listed in drawer under `--- [ B ] ---` and launches on tap.
+  - Files: `bin/helpers/debloat_custom_rom.sh`, `apps/bitchat.apk`.

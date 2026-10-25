@@ -128,6 +128,7 @@ GOOGLE_BLOATWARE=(
     "com.android.egg"
     "com.android.traceur"
     "com.android.musicfx"
+    "com.android.documentsui"
 )
 
 echo ""
@@ -172,6 +173,11 @@ FOSS_PACKAGES=(
     "org.fossify.musicplayer"
     "eu.faircode.email"
     "com.aurora.store"
+    "com.bitchat.droid"
+    "org.schabi.newpipe"
+    "app.grapheneos.pdfviewer"
+    "org.opendocument.reader"
+    "helium314.keyboard"
 )
 
 for pkg in "${FOSS_PACKAGES[@]}"; do

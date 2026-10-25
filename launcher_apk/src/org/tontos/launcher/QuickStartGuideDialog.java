@@ -46,6 +46,8 @@ public final class QuickStartGuideDialog {
         }
 
         float density = context.getResources().getDisplayMetrics().density;
+        SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        float fontScale = prefs.getInt("pref_font_scale", 100) / 100.0f;
         int pHoriz = (int) (24 * density);
         int pVert = (int) (32 * density);
 
@@ -58,7 +60,7 @@ public final class QuickStartGuideDialog {
         TextView header = new TextView(context);
         header.setText(I18n.get(I18n.KEY_GUIDE_HEADER, langCode));
         header.setTextColor(tokens.accent);
-        header.setTextSize(16);
+        header.setTextSize(16f * fontScale);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setPadding(0, 0, 0, (int) (6 * density));
         root.addView(header);
@@ -66,7 +68,7 @@ public final class QuickStartGuideDialog {
         TextView subtitle = new TextView(context);
         subtitle.setText(I18n.get(I18n.KEY_GUIDE_SUBTITLE, langCode));
         subtitle.setTextColor(tokens.textMuted);
-        subtitle.setTextSize(12);
+        subtitle.setTextSize(12f * fontScale);
         subtitle.setTypeface(Typeface.MONOSPACE);
         subtitle.setPadding(0, 0, 0, (int) (16 * density));
         root.addView(subtitle);
@@ -88,66 +90,43 @@ public final class QuickStartGuideDialog {
         cardsContainer.setOrientation(LinearLayout.VERTICAL);
 
         // Feature 1: Home & Drawer
-        addCard(context, cardsContainer, tokens, density,
+        addCard(context, cardsContainer, tokens, density, fontScale,
             I18n.get(I18n.KEY_GUIDE_CARD1_TITLE, langCode),
             I18n.get(I18n.KEY_GUIDE_CARD1_DESC, langCode));
 
         // Feature 2: Background Task Termination
-        addCard(context, cardsContainer, tokens, density,
+        addCard(context, cardsContainer, tokens, density, fontScale,
             I18n.get(I18n.KEY_GUIDE_CARD2_TITLE, langCode),
             I18n.get(I18n.KEY_GUIDE_CARD2_DESC, langCode));
 
         // Feature 3: Mindful Pause
-        addCard(context, cardsContainer, tokens, density,
+        addCard(context, cardsContainer, tokens, density, fontScale,
             I18n.get(I18n.KEY_GUIDE_CARD3_TITLE, langCode),
             I18n.get(I18n.KEY_GUIDE_CARD3_DESC, langCode));
 
         // Feature 4: Detox Budget & Monochrome
-        addCard(context, cardsContainer, tokens, density,
+        addCard(context, cardsContainer, tokens, density, fontScale,
             I18n.get(I18n.KEY_GUIDE_CARD4_TITLE, langCode),
             I18n.get(I18n.KEY_GUIDE_CARD4_DESC, langCode));
 
         // Feature 5: Ultra Shade
-        addCard(context, cardsContainer, tokens, density,
+        addCard(context, cardsContainer, tokens, density, fontScale,
             I18n.get(I18n.KEY_GUIDE_CARD5_TITLE, langCode),
             I18n.get(I18n.KEY_GUIDE_CARD5_DESC, langCode));
 
         scroll.addView(cardsContainer);
         root.addView(scroll);
 
-        // Bottom Actions
+        // Bottom Actions (Single Start Button)
         LinearLayout buttonsRow = new LinearLayout(context);
         buttonsRow.setOrientation(LinearLayout.HORIZONTAL);
         buttonsRow.setGravity(Gravity.CENTER_VERTICAL);
-
-        // Skip Button
-        TextView skipBtn = new TextView(context);
-        skipBtn.setText(I18n.get(I18n.KEY_GUIDE_SKIP, langCode));
-        skipBtn.setTextColor(tokens.textMuted);
-        skipBtn.setTextSize(13);
-        skipBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        skipBtn.setGravity(Gravity.CENTER);
-        skipBtn.setMinHeight((int) (48 * density));
-        skipBtn.setMinimumHeight((int) (48 * density));
-        skipBtn.setPadding((int) (12 * density), (int) (8 * density), (int) (12 * density), (int) (8 * density));
-        skipBtn.setBackground(createButtonBg(tokens.border, Color.TRANSPARENT, tokens.controlBgPressed, density));
-        skipBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                markGuideCompleted(context);
-                dialog.dismiss();
-            }
-        });
-        LinearLayout.LayoutParams skipLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        skipLp.setMargins(0, 0, (int) (8 * density), 0);
-        skipBtn.setLayoutParams(skipLp);
-        buttonsRow.addView(skipBtn);
 
         // Done / Start Button
         TextView doneBtn = new TextView(context);
         doneBtn.setText(I18n.get(I18n.KEY_GUIDE_START, langCode));
         doneBtn.setTextColor(tokens.isLight ? Color.WHITE : tokens.navAccent);
-        doneBtn.setTextSize(13);
+        doneBtn.setTextSize(14f * fontScale);
         doneBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         doneBtn.setGravity(Gravity.CENTER);
         doneBtn.setMinHeight((int) (48 * density));
@@ -161,7 +140,7 @@ public final class QuickStartGuideDialog {
                 dialog.dismiss();
             }
         });
-        LinearLayout.LayoutParams doneLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        LinearLayout.LayoutParams doneLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         doneBtn.setLayoutParams(doneLp);
         buttonsRow.addView(doneBtn);
 
@@ -176,7 +155,7 @@ public final class QuickStartGuideDialog {
         prefs.edit().putBoolean(PREF_GUIDE_SHOWN, true).apply();
     }
 
-    private static void addCard(Context context, LinearLayout parent, ThemeTokens tokens, float density, String title, String body) {
+    private static void addCard(Context context, LinearLayout parent, ThemeTokens tokens, float density, float fontScale, String title, String body) {
         LinearLayout card = new LinearLayout(context);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setBackgroundColor(tokens.surface);
@@ -191,7 +170,7 @@ public final class QuickStartGuideDialog {
         TextView cardTitle = new TextView(context);
         cardTitle.setText(title);
         cardTitle.setTextColor(tokens.accent);
-        cardTitle.setTextSize(13);
+        cardTitle.setTextSize(13f * fontScale);
         cardTitle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         cardTitle.setPadding(0, 0, 0, (int) (4 * density));
         card.addView(cardTitle);
@@ -199,7 +178,7 @@ public final class QuickStartGuideDialog {
         TextView cardBody = new TextView(context);
         cardBody.setText(body);
         cardBody.setTextColor(tokens.textPrimary);
-        cardBody.setTextSize(12);
+        cardBody.setTextSize(12f * fontScale);
         cardBody.setTypeface(Typeface.MONOSPACE);
         cardBody.setLineSpacing(2, 1.15f);
         card.addView(cardBody);

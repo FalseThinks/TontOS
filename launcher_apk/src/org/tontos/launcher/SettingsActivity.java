@@ -129,6 +129,13 @@ public class SettingsActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
+            android.util.Log.w("SettingsActivity", "Access denied: Device is locked");
+            LockScreenManager.launchLockScreen(this);
+            finish();
+            return;
+        }
+
         preferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
@@ -180,19 +187,9 @@ public class SettingsActivity extends Activity {
             }
             pendingRestoreScrollY = savedInstanceState.getInt("saved_scroll_y", -1);
         } else {
-            String lastSec = preferences.getString(PREF_LAST_SETTINGS_SECTION, null);
-            if (lastSec != null) {
-                try {
-                    currentSection = SettingsSection.valueOf(lastSec);
-                } catch (Exception ignored) {}
-            }
-            String lastSubSec = preferences.getString(PREF_LAST_SETTINGS_SUB_SECTION, null);
-            if (lastSubSec != null) {
-                try {
-                    currentSubSection = SettingsSubSection.valueOf(lastSubSec);
-                } catch (Exception ignored) {}
-            }
-            pendingRestoreScrollY = preferences.getInt(PREF_LAST_SETTINGS_SCROLL_Y, -1);
+            currentSection = SettingsSection.MENU;
+            currentSubSection = SettingsSubSection.NONE;
+            pendingRestoreScrollY = -1;
         }
         if (getIntent() != null && getIntent().hasExtra("section")) {
             String extraSec = getIntent().getStringExtra("section");
@@ -226,6 +223,12 @@ public class SettingsActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
+            android.util.Log.w("SettingsActivity", "Access denied: Device is locked");
+            LockScreenManager.launchLockScreen(this);
+            finish();
+            return;
+        }
         refreshActivitiesCache();
         buildSettingsUI();
     }
@@ -865,6 +868,125 @@ public class SettingsActivity extends Activity {
                 @Override
                 public void onClick(View v) {
                     showLockShortcutPicker(false, curRight, tokens, curLangCode);
+                }
+            }, tokens);
+
+            // --- Lock Screen Security & Biometrics ---
+            addHeader(I18n.get(I18n.KEY_LOCK_SECURITY_HEADER, curLangCode), tokens);
+
+            final LockSecurityManager.SecurityType secType = LockSecurityManager.getSecurityType(this);
+            String secTypeDisplay;
+            switch (secType) {
+                case PATTERN:
+                    secTypeDisplay = I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, curLangCode);
+                    break;
+                case PIN:
+                    secTypeDisplay = I18n.get(I18n.KEY_LOCK_TYPE_PIN, curLangCode);
+                    break;
+                case NONE:
+                default:
+                    secTypeDisplay = I18n.get(I18n.KEY_LOCK_TYPE_NONE, curLangCode);
+                    break;
+            }
+
+            addSelectorRow(I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, curLangCode), secTypeDisplay, new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                    options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.NONE.getId(), I18n.get(I18n.KEY_LOCK_TYPE_NONE, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.PATTERN.getId(), I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, curLangCode)));
+                    options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.PIN.getId(), I18n.get(I18n.KEY_LOCK_TYPE_PIN, curLangCode)));
+
+                    SingleChoiceSelectorDialog.show(
+                        SettingsActivity.this,
+                        tokens,
+                        I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, curLangCode),
+                        options,
+                        secType.getId(),
+                        new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                            @Override
+                            public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                                if (LockSecurityManager.SecurityType.NONE.getId().equals(selected.id)) {
+                                    LockSecurityManager.clearSecurity(SettingsActivity.this);
+                                    buildSettingsUI();
+                                } else if (LockSecurityManager.SecurityType.PATTERN.getId().equals(selected.id)) {
+                                    PatternSetupDialog.show(SettingsActivity.this, tokens, curLangCode, new PatternSetupDialog.OnPatternSetupListener() {
+                                        @Override
+                                        public void onPatternConfigured() {
+                                            buildSettingsUI();
+                                        }
+                                    });
+                                } else if (LockSecurityManager.SecurityType.PIN.getId().equals(selected.id)) {
+                                    PinSetupDialog.show(SettingsActivity.this, tokens, curLangCode, new PinSetupDialog.OnPinSetupListener() {
+                                        @Override
+                                        public void onPinConfigured() {
+                                            buildSettingsUI();
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    );
+                }
+            }, tokens);
+
+            if (secType == LockSecurityManager.SecurityType.PATTERN) {
+                addButtonRow(I18n.get(I18n.KEY_LOCK_CHANGE_PATTERN, curLangCode), "[ CONFIGURAR ]", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        PatternSetupDialog.show(SettingsActivity.this, tokens, curLangCode, new PatternSetupDialog.OnPatternSetupListener() {
+                            @Override
+                            public void onPatternConfigured() {
+                                buildSettingsUI();
+                            }
+                        });
+                    }
+                }, tokens);
+            } else if (secType == LockSecurityManager.SecurityType.PIN) {
+                addButtonRow(I18n.get(I18n.KEY_LOCK_CHANGE_PIN, curLangCode), "[ CONFIGURAR ]", new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        PinSetupDialog.show(SettingsActivity.this, tokens, curLangCode, new PinSetupDialog.OnPinSetupListener() {
+                            @Override
+                            public void onPinConfigured() {
+                                buildSettingsUI();
+                            }
+                        });
+                    }
+                }, tokens);
+            }
+
+            final boolean fpAvailable = LockSecurityManager.isFingerprintHardwareAvailable(this);
+            final boolean fpEnrolled = LockSecurityManager.hasEnrolledFingerprints(this);
+            final boolean fpEnabled = LockSecurityManager.isFingerprintEnabled(this);
+
+            if (fpAvailable) {
+                addToggleRow(I18n.get(I18n.KEY_LOCK_FINGERPRINT_TOGGLE, curLangCode), fpEnabled ? "[ ON ]" : "[ OFF ]", fpEnabled, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        LockSecurityManager.setFingerprintEnabled(SettingsActivity.this, !fpEnabled);
+                        buildSettingsUI();
+                    }
+                }, tokens);
+
+                String fpStatus = fpEnrolled
+                    ? String.format(Locale.getDefault(), I18n.get(I18n.KEY_LOCK_FINGERPRINT_ENROLLED_FMT, curLangCode), 1)
+                    : I18n.get(I18n.KEY_LOCK_FINGERPRINT_NONE, curLangCode);
+
+                addButtonRow(I18n.get(I18n.KEY_LOCK_FINGERPRINT_MANAGE, curLangCode), fpStatus, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        LockSecurityManager.launchFingerprintEnrollment(SettingsActivity.this);
+                    }
+                }, tokens);
+            } else {
+                addInfoRow(I18n.get(I18n.KEY_LOCK_FINGERPRINT_TOGGLE, curLangCode), I18n.get(I18n.KEY_LOCK_FINGERPRINT_UNSUPPORTED, curLangCode), tokens);
+            }
+
+            addButtonRow(I18n.get(I18n.KEY_LOCK_AOSP_SECURITY, curLangCode), "[ AJUSTES AOSP ]", new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    LockSecurityManager.launchAospLockSettings(SettingsActivity.this);
                 }
             }, tokens);
 
@@ -2308,6 +2430,16 @@ public class SettingsActivity extends Activity {
         }
     }
 
+    private void addHeader(String title, ThemeTokens tokens) {
+        TextView headerView = new TextView(this);
+        headerView.setText(title);
+        headerView.setTextColor(tokens.accent);
+        headerView.setTextSize(13 * SettingsRowFactory.getFontScale(this));
+        headerView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        headerView.setPadding(0, dpToPx(16), 0, dpToPx(8));
+        contentContainer.addView(headerView);
+    }
+
     private void addCategoryCard(String title, String subtitle, View.OnClickListener listener, ThemeTokens tokens) {
         SettingsRowFactory.addCategoryCard(this, contentContainer, title, subtitle, listener, tokens);
     }
@@ -2686,12 +2818,7 @@ public class SettingsActivity extends Activity {
 
     private void showTonePickerModal(final int type, final String title, final ThemeTokens tokens, final String curLangCode) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.System.canWrite(this)) {
-            try {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:" + getPackageName()));
-                startActivity(intent);
-                Toast.makeText(this, "Enable 'Modify system settings' to set tones", Toast.LENGTH_SHORT).show();
-            } catch (Throwable ignored) {}
-            return;
+            SafeCommandExecutor.executePrivileged("cmd", "appops", "set", getPackageName(), "WRITE_SETTINGS", "allow");
         }
 
         List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();

@@ -140,6 +140,15 @@ public final class GlobalSettingsBridge {
      */
     public static void applyGlobalRingerMode(final Context context, final int ringerMode) {
         if (context == null) return;
+        final String modeStr;
+        if (ringerMode == AudioManager.RINGER_MODE_SILENT) {
+            modeStr = "SILENT";
+        } else if (ringerMode == AudioManager.RINGER_MODE_VIBRATE) {
+            modeStr = "VIBRATE";
+        } else {
+            modeStr = "NORMAL";
+        }
+
         try {
             AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
@@ -150,7 +159,8 @@ public final class GlobalSettingsBridge {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                SafeCommandExecutor.executePrivileged("cmd", "audio", "set-ringer-mode", String.valueOf(ringerMode));
+                SafeCommandExecutor.executePrivileged("cmd", "notification", "allow_dnd", context.getPackageName());
+                SafeCommandExecutor.executePrivileged("cmd", "audio", "set-ringer-mode", modeStr);
             }
         }, "TontOS-GlobalRingerApplier").start();
     }

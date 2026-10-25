@@ -172,10 +172,10 @@ public final class LockScreenManager {
 
     /**
      * Executes designated lock screen shortcut safely.
+     * Prevents data exfiltration by enforcing unlock authentication for sensitive user applications.
      */
     public static void executeShortcut(Activity activity, LockShortcut shortcut) {
         if (activity == null || shortcut == null || shortcut == LockShortcut.NONE) return;
-        PackageManager pm = activity.getPackageManager();
 
         switch (shortcut) {
             case TORCH:
@@ -184,22 +184,35 @@ public final class LockScreenManager {
             case CAMERA:
                 launchApp(activity, "org.fossify.camera", new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA));
                 break;
-            case PHONE:
-                launchApp(activity, "org.fossify.phone", new Intent(Intent.ACTION_DIAL));
-                break;
-            case BROWSER:
-                launchApp(activity, "de.baumann.browser", null);
-                break;
-            case MESSAGES:
-                launchApp(activity, "org.fossify.messages", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING));
-                break;
-            case EMAIL:
-                launchApp(activity, "eu.faircode.email", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_EMAIL));
-                break;
-            case CALCULATOR:
-                launchApp(activity, "com.android.calculator2", null);
-                break;
             default:
+                // Sensitive user apps (Phone, Browser, Messages, Email, Calculator) require authentication if locked
+                if (isDeviceLocked(activity) && isLockScreenEnabled(activity) && LockSecurityManager.getSecurityType(activity) != LockSecurityManager.SecurityType.NONE) {
+                    if (activity instanceof LockScreenActivity) {
+                        ((LockScreenActivity) activity).handleUnlockAction();
+                    } else {
+                        launchLockScreen(activity);
+                    }
+                    return;
+                }
+                switch (shortcut) {
+                    case PHONE:
+                        launchApp(activity, "org.fossify.phone", new Intent(Intent.ACTION_DIAL));
+                        break;
+                    case BROWSER:
+                        launchApp(activity, "de.baumann.browser", null);
+                        break;
+                    case MESSAGES:
+                        launchApp(activity, "org.fossify.messages", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING));
+                        break;
+                    case EMAIL:
+                        launchApp(activity, "eu.faircode.email", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_EMAIL));
+                        break;
+                    case CALCULATOR:
+                        launchApp(activity, "com.android.calculator2", null);
+                        break;
+                    default:
+                        break;
+                }
                 break;
         }
     }
@@ -217,10 +230,25 @@ public final class LockScreenManager {
         }
     }
 
-    private static volatile boolean isDeviceLocked = false;
+    private static volatile Boolean isDeviceLocked = null;
 
     public static boolean isDeviceLocked() {
+        return isDeviceLocked != null && isDeviceLocked;
+    }
+
+    public static boolean isDeviceLocked(Context context) {
+        if (isDeviceLocked == null) {
+            if (context != null && LockSecurityManager.getSecurityType(context) != LockSecurityManager.SecurityType.NONE) {
+                isDeviceLocked = true;
+                return true;
+            }
+            return false;
+        }
         return isDeviceLocked;
+    }
+
+    public static void setDeviceLocked(boolean locked) {
+        isDeviceLocked = locked;
     }
 
     public static void setDeviceUnlocked() {
@@ -245,7 +273,7 @@ public final class LockScreenManager {
                         launchLockScreen(appContext);
                     }
                 } else if (Intent.ACTION_SCREEN_ON.equals(action)) {
-                    if (isDeviceLocked && isLockScreenEnabled(appContext)) {
+                    if (isDeviceLocked(appContext) && isLockScreenEnabled(appContext)) {
                         launchLockScreen(appContext);
                     }
                 }
@@ -260,7 +288,8 @@ public final class LockScreenManager {
         receiverRegistered = true;
     }
 
-    private static void launchLockScreen(Context context) {
+    public static void launchLockScreen(Context context) {
+        isDeviceLocked = true;
         try {
             Intent lockIntent = new Intent(context, LockScreenActivity.class);
             lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK

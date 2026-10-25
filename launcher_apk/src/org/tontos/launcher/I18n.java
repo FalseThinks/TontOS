@@ -215,6 +215,9 @@ public final class I18n {
     public static final String KEY_SELECT_ALL = "select_all";
     public static final String KEY_DESELECT_ALL = "deselect_all";
     public static final String KEY_APPLY = "apply";
+    public static final String KEY_DONE = "done";
+    public static final String KEY_RESET = "reset";
+
     public static final String KEY_CONFIRM = "confirm";
     public static final String KEY_SANDBOX_HEADER = "sandbox_header";
     public static final String KEY_SANDBOX_TITLE = "sandbox_title";
@@ -250,6 +253,9 @@ public final class I18n {
     public static final String KEY_BOOTLOADER_WARNING_UNLOCK = "bootloader_warning_unlock";
     public static final String KEY_BOOTLOADER_WARNING_LOCK = "bootloader_warning_lock";
     public static final String KEY_SHADE_HEADER = "shade_header";
+    public static final String KEY_QUICK_SETTINGS_HEADER = "quick_settings_header";
+    public static final String KEY_TOGGLE_ULTRA_SAVER = "toggle_ultra_saver";
+    public static final String KEY_ULTRA_SAVER_ACTIVE = "ultra_saver_active";
     public static final String KEY_SHADE_ESTIMATE_FMT = "shade_estimate_fmt";
     public static final String KEY_TOGGLE_AIRPLANE = "toggle_airplane";
     public static final String KEY_TOGGLE_DND = "toggle_dnd";
@@ -337,6 +343,39 @@ public final class I18n {
     public static final String KEY_LOCK_ACTION_CALCULATOR = "lock_action_calculator";
     public static final String KEY_LOCK_ACTION_NONE = "lock_action_none";
     public static final String KEY_LOCK_UNLOCK_HINT = "lock_unlock_hint";
+    public static final String KEY_LOCK_SECURITY_HEADER = "lock_security_header";
+    public static final String KEY_LOCK_SECURITY_TYPE = "lock_security_type";
+    public static final String KEY_LOCK_TYPE_NONE = "lock_type_none";
+    public static final String KEY_LOCK_TYPE_PATTERN = "lock_type_pattern";
+    public static final String KEY_LOCK_TYPE_PIN = "lock_type_pin";
+    public static final String KEY_LOCK_SETUP_PATTERN = "lock_setup_pattern";
+    public static final String KEY_LOCK_SETUP_PIN = "lock_setup_pin";
+    public static final String KEY_LOCK_CHANGE_PATTERN = "lock_change_pattern";
+    public static final String KEY_LOCK_CHANGE_PIN = "lock_change_pin";
+    public static final String KEY_LOCK_FINGERPRINT_TOGGLE = "lock_fingerprint_toggle";
+    public static final String KEY_LOCK_FINGERPRINT_MANAGE = "lock_fingerprint_manage";
+    public static final String KEY_LOCK_FINGERPRINT_ENROLLED_FMT = "lock_fingerprint_enrolled_fmt";
+    public static final String KEY_LOCK_FINGERPRINT_NONE = "lock_fingerprint_none";
+    public static final String KEY_LOCK_FINGERPRINT_UNSUPPORTED = "lock_fingerprint_unsupported";
+    public static final String KEY_LOCK_AOSP_SECURITY = "lock_aosp_security";
+    public static final String KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE = "lock_hint_fingerprint_or_swipe";
+    public static final String KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN = "lock_hint_fingerprint_or_pattern";
+    public static final String KEY_LOCK_HINT_FINGERPRINT_OR_PIN = "lock_hint_fingerprint_or_pin";
+    public static final String KEY_LOCK_PATTERN_DRAW_HINT = "lock_pattern_draw_hint";
+    public static final String KEY_LOCK_PATTERN_CONFIRM_HINT = "lock_pattern_confirm_hint";
+    public static final String KEY_LOCK_PATTERN_MISMATCH = "lock_pattern_mismatch";
+    public static final String KEY_LOCK_PATTERN_TOO_SHORT = "lock_pattern_too_short";
+    public static final String KEY_LOCK_PIN_ENTER_HINT = "lock_pin_enter_hint";
+    public static final String KEY_LOCK_PIN_CONFIRM_HINT = "lock_pin_confirm_hint";
+    public static final String KEY_LOCK_PIN_MISMATCH = "lock_pin_mismatch";
+    public static final String KEY_LOCK_PIN_TOO_SHORT = "lock_pin_too_short";
+    public static final String KEY_LOCK_PATTERN_PROMPT = "lock_pattern_prompt";
+    public static final String KEY_LOCK_PATTERN_WRONG = "lock_pattern_wrong";
+    public static final String KEY_LOCK_PIN_PROMPT = "lock_pin_prompt";
+    public static final String KEY_LOCK_PIN_WRONG = "lock_pin_wrong";
+    public static final String KEY_LOCK_BACK_TO_CLOCK = "lock_back_to_clock";
+    public static final String KEY_LOCK_FINGERPRINT_ACTIVE_HINT = "lock_fingerprint_active_hint";
+
     public static final String KEY_LOCK_TEST_BTN = "lock_test_btn";
 
     // Quick Guide
@@ -503,6 +542,8 @@ public final class I18n {
         en.put(KEY_SELECT_ALL, "[ SELECT ALL ]");
         en.put(KEY_DESELECT_ALL, "[ DESELECT ALL ]");
         en.put(KEY_APPLY, "[ APPLY ]");
+        en.put(KEY_DONE, "[ DONE ]");
+        en.put(KEY_RESET, "[ RESET ]");
         en.put(KEY_CONFIRM, "[ CONFIRM ]");
         en.put(KEY_SANDBOX_HEADER, "=== ISOLATED SANDBOX PROFILE ===");
         en.put(KEY_SANDBOX_TITLE, "Isolated Sandbox Profile (GMS / Apps)");
@@ -759,6 +800,9 @@ public final class I18n {
         en.put(KEY_BOOTLOADER_WARNING_UNLOCK, "This launcher cannot unlock the bootloader.");
         en.put(KEY_BOOTLOADER_WARNING_LOCK, "This launcher cannot lock the bootloader or attest Verified Boot.");
         en.put(KEY_SHADE_HEADER, "=== ULTRA BATTERY SAVER ===");
+        en.put(KEY_QUICK_SETTINGS_HEADER, "=== QUICK SETTINGS ===");
+        en.put(KEY_TOGGLE_ULTRA_SAVER, "ULTRA SAVER");
+        en.put(KEY_ULTRA_SAVER_ACTIVE, "ULTRA SAVER: [ ON ]");
         en.put(KEY_SHADE_ESTIMATE_FMT, "Battery: %d%% · ~%dh remaining (Ultra Saver)");
         en.put(KEY_TOGGLE_AIRPLANE, "AIRPLANE");
         en.put(KEY_TOGGLE_DND, "DND / SILENT");
@@ -805,6 +849,39 @@ public final class I18n {
         en.put(KEY_LOCK_ACTION_CALCULATOR, "[ CALCULATOR ]");
         en.put(KEY_LOCK_ACTION_NONE, "None / Disabled");
         en.put(KEY_LOCK_UNLOCK_HINT, "[ ^ SWIPE OR TAP TO UNLOCK ]");
+        en.put(KEY_LOCK_SECURITY_HEADER, "=== SCREEN LOCK SECURITY ===");
+        en.put(KEY_LOCK_SECURITY_TYPE, "Screen Lock Method");
+        en.put(KEY_LOCK_TYPE_NONE, "None / Swipe");
+        en.put(KEY_LOCK_TYPE_PATTERN, "Pattern Lock");
+        en.put(KEY_LOCK_TYPE_PIN, "PIN / Password");
+        en.put(KEY_LOCK_SETUP_PATTERN, "Configure Pattern");
+        en.put(KEY_LOCK_SETUP_PIN, "Configure PIN");
+        en.put(KEY_LOCK_CHANGE_PATTERN, "Change Pattern");
+        en.put(KEY_LOCK_CHANGE_PIN, "Change PIN");
+        en.put(KEY_LOCK_FINGERPRINT_TOGGLE, "Fingerprint Unlock");
+        en.put(KEY_LOCK_FINGERPRINT_MANAGE, "Configure / Manage Fingerprints");
+        en.put(KEY_LOCK_FINGERPRINT_ENROLLED_FMT, "%d fingerprints enrolled");
+        en.put(KEY_LOCK_FINGERPRINT_NONE, "No fingerprints enrolled");
+        en.put(KEY_LOCK_FINGERPRINT_UNSUPPORTED, "Hardware not available");
+        en.put(KEY_LOCK_AOSP_SECURITY, "Android System Security (AOSP)");
+        en.put(KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, "[ ◉ FINGERPRINT OR SWIPE ]");
+        en.put(KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, "[ ◉ FINGERPRINT OR PATTERN ]");
+        en.put(KEY_LOCK_HINT_FINGERPRINT_OR_PIN, "[ ◉ FINGERPRINT OR PIN ]");
+        en.put(KEY_LOCK_PATTERN_DRAW_HINT, "Draw unlock pattern (at least 4 dots)");
+        en.put(KEY_LOCK_PATTERN_CONFIRM_HINT, "Confirm pattern (draw it again)");
+        en.put(KEY_LOCK_PATTERN_MISMATCH, "Patterns do not match. Try again.");
+        en.put(KEY_LOCK_PATTERN_TOO_SHORT, "Pattern must have at least 4 dots");
+        en.put(KEY_LOCK_PIN_ENTER_HINT, "Enter PIN (4 to 8 digits)");
+        en.put(KEY_LOCK_PIN_CONFIRM_HINT, "Confirm PIN (enter it again)");
+        en.put(KEY_LOCK_PIN_MISMATCH, "PINs do not match. Try again.");
+        en.put(KEY_LOCK_PIN_TOO_SHORT, "PIN must have at least 4 digits");
+        en.put(KEY_LOCK_PATTERN_PROMPT, "Draw unlock pattern");
+        en.put(KEY_LOCK_PATTERN_WRONG, "WRONG PATTERN. TRY AGAIN.");
+        en.put(KEY_LOCK_PIN_PROMPT, "Enter PIN to unlock");
+        en.put(KEY_LOCK_PIN_WRONG, "WRONG PIN. TRY AGAIN.");
+        en.put(KEY_LOCK_BACK_TO_CLOCK, "[ BACK TO CLOCK ]");
+        en.put(KEY_LOCK_FINGERPRINT_ACTIVE_HINT, "Touch fingerprint sensor to unlock");
+
         en.put(KEY_LOCK_TEST_BTN, "Test Lock Screen Now");
 
         // Quick Guide
@@ -962,6 +1039,8 @@ public final class I18n {
         de.put(KEY_SELECT_ALL, "[ ALLE AUSWÄHLEN ]");
         de.put(KEY_DESELECT_ALL, "[ ALLE ABWÄHLEN ]");
         de.put(KEY_APPLY, "[ ANWENDEN ]");
+        de.put(KEY_DONE, "[ FERTIG ]");
+        de.put(KEY_RESET, "[ ZURÜCKSETZEN ]");
         de.put(KEY_CONFIRM, "[ BESTÄTIGEN ]");
         de.put(KEY_SANDBOX_HEADER, "=== ISOLIERTES SANDBOX-PROFIL ===");
         de.put(KEY_SANDBOX_TITLE, "Isoliertes Sandbox-Profil (GMS / Apps)");
@@ -1218,6 +1297,9 @@ public final class I18n {
         de.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Diese App kann den Bootloader nicht entsperren.");
         de.put(KEY_BOOTLOADER_WARNING_LOCK, "Diese App kann den Bootloader nicht sperren oder Verified Boot attestieren.");
         de.put(KEY_SHADE_HEADER, "=== ULTRA-ENERGIESPARMODUS ===");
+        de.put(KEY_QUICK_SETTINGS_HEADER, "=== SCHNELLEINSTELLUNGEN ===");
+        de.put(KEY_TOGGLE_ULTRA_SAVER, "ULTRA-SPARMODUS");
+        de.put(KEY_ULTRA_SAVER_ACTIVE, "ULTRA-SPARMODUS: [ AN ]");
         de.put(KEY_SHADE_ESTIMATE_FMT, "Akku: %d%% · ~%dh verbleibend (Ultra-Sparmodus)");
         de.put(KEY_TOGGLE_AIRPLANE, "FLUGMODUS");
         de.put(KEY_TOGGLE_DND, "NICHT STÖREN");
@@ -1264,6 +1346,39 @@ public final class I18n {
         de.put(KEY_LOCK_ACTION_CALCULATOR, "[ RECHNER ]");
         de.put(KEY_LOCK_ACTION_NONE, "Keine / Deaktiviert");
         de.put(KEY_LOCK_UNLOCK_HINT, "[ ^ WISCHEN ODER TIPPEN ZUM ENTSPERREN ]");
+        de.put(KEY_LOCK_SECURITY_HEADER, "=== BILDSCHIRMSPERRE-SICHERHEIT ===");
+        de.put(KEY_LOCK_SECURITY_TYPE, "Sperrmethode");
+        de.put(KEY_LOCK_TYPE_NONE, "Keine / Wischen");
+        de.put(KEY_LOCK_TYPE_PATTERN, "Muster-Sperre");
+        de.put(KEY_LOCK_TYPE_PIN, "PIN / Passwort");
+        de.put(KEY_LOCK_SETUP_PATTERN, "Muster einrichten");
+        de.put(KEY_LOCK_SETUP_PIN, "PIN einrichten");
+        de.put(KEY_LOCK_CHANGE_PATTERN, "Muster ändern");
+        de.put(KEY_LOCK_CHANGE_PIN, "PIN ändern");
+        de.put(KEY_LOCK_FINGERPRINT_TOGGLE, "Fingerabdruck-Entsperrung");
+        de.put(KEY_LOCK_FINGERPRINT_MANAGE, "Fingerabdrücke verwalten");
+        de.put(KEY_LOCK_FINGERPRINT_ENROLLED_FMT, "%d Fingerabdrücke registriert");
+        de.put(KEY_LOCK_FINGERPRINT_NONE, "Keine Fingerabdrücke registriert");
+        de.put(KEY_LOCK_FINGERPRINT_UNSUPPORTED, "Hardware nicht verfügbar");
+        de.put(KEY_LOCK_AOSP_SECURITY, "Android-Systemsicherheit (AOSP)");
+        de.put(KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, "[ ◉ FINGERABDRUCK ODER WISCHEN ]");
+        de.put(KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, "[ ◉ FINGERABDRUCK ODER MUSTER ]");
+        de.put(KEY_LOCK_HINT_FINGERPRINT_OR_PIN, "[ ◉ FINGERABDRUCK ODER PIN ]");
+        de.put(KEY_LOCK_PATTERN_DRAW_HINT, "Muster zeichnen (mindestens 4 Punkte)");
+        de.put(KEY_LOCK_PATTERN_CONFIRM_HINT, "Muster bestätigen (erneut zeichnen)");
+        de.put(KEY_LOCK_PATTERN_MISMATCH, "Muster stimmen nicht überein.");
+        de.put(KEY_LOCK_PATTERN_TOO_SHORT, "Muster muss mindestens 4 Punkte haben");
+        de.put(KEY_LOCK_PIN_ENTER_HINT, "PIN eingeben (4 bis 8 Ziffern)");
+        de.put(KEY_LOCK_PIN_CONFIRM_HINT, "PIN bestätigen (erneut eingeben)");
+        de.put(KEY_LOCK_PIN_MISMATCH, "PINs stimmen nicht überein.");
+        de.put(KEY_LOCK_PIN_TOO_SHORT, "PIN muss mindestens 4 Ziffern haben");
+        de.put(KEY_LOCK_PATTERN_PROMPT, "Entsperrmuster zeichnen");
+        de.put(KEY_LOCK_PATTERN_WRONG, "FALSCHES MUSTER. ERNEUT VERSUCHEN.");
+        de.put(KEY_LOCK_PIN_PROMPT, "PIN zur Entsperrung eingeben");
+        de.put(KEY_LOCK_PIN_WRONG, "FALSCHER PIN. ERNEUT VERSUCHEN.");
+        de.put(KEY_LOCK_BACK_TO_CLOCK, "[ ZURÜCK ZUR UHR ]");
+        de.put(KEY_LOCK_FINGERPRINT_ACTIVE_HINT, "Fingerabdrucksensor berühren");
+
         de.put(KEY_LOCK_TEST_BTN, "Sperrbildschirm jetzt testen");
 
         // Settings & Privacy
@@ -1339,6 +1454,8 @@ public final class I18n {
         pl.put(KEY_SELECT_ALL, "[ ZAZNACZ WSZYSTKIE ]");
         pl.put(KEY_DESELECT_ALL, "[ OZNACZ WSZYSTKIE ]");
         pl.put(KEY_APPLY, "[ ZASTOSUJ ]");
+        pl.put(KEY_DONE, "[ GOTOWE ]");
+        pl.put(KEY_RESET, "[ RESETUJ ]");
         pl.put(KEY_CONFIRM, "[ POTWIERDŹ ]");
         pl.put(KEY_SANDBOX_HEADER, "=== IZOLOWANY PROFIL SANDBOX ===");
         pl.put(KEY_SANDBOX_TITLE, "Izolowany profil Sandbox (GMS / Aplikacje)");
@@ -1595,6 +1712,9 @@ public final class I18n {
         pl.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Ta aplikacja nie może odblokować bootloadera.");
         pl.put(KEY_BOOTLOADER_WARNING_LOCK, "Ta aplikacja nie może zablokować bootloadera ani potwierdzić Verified Boot.");
         pl.put(KEY_SHADE_HEADER, "=== ULTRA OSZCZĘDZANIE BATERII ===");
+        pl.put(KEY_QUICK_SETTINGS_HEADER, "=== SZYBKIE USTAWIENIA ===");
+        pl.put(KEY_TOGGLE_ULTRA_SAVER, "ULTRA OSZCZĘDZANIE");
+        pl.put(KEY_ULTRA_SAVER_ACTIVE, "ULTRA OSZCZĘDZANIE: [ WŁ ]");
         pl.put(KEY_SHADE_ESTIMATE_FMT, "Bateria: %d%% · ~%dh pozostało (Ultra Oszczędzanie)");
         pl.put(KEY_TOGGLE_AIRPLANE, "TRYB SAMOLOTOWY");
         pl.put(KEY_TOGGLE_DND, "NIE PRZESZKADZAĆ");
@@ -1641,6 +1761,39 @@ public final class I18n {
         pl.put(KEY_LOCK_ACTION_CALCULATOR, "[ KALKULATOR ]");
         pl.put(KEY_LOCK_ACTION_NONE, "Brak / Wyłączony");
         pl.put(KEY_LOCK_UNLOCK_HINT, "[ ^ PRZESUŃ LUB DOTKNIJ BY ODBLOKOWAĆ ]");
+        pl.put(KEY_LOCK_SECURITY_HEADER, "=== BLOKADA EKRANU I BEZPIECZEŃSTWO ===");
+        pl.put(KEY_LOCK_SECURITY_TYPE, "Metoda blokady ekranu");
+        pl.put(KEY_LOCK_TYPE_NONE, "Brak / Przesunięcie");
+        pl.put(KEY_LOCK_TYPE_PATTERN, "Wzór blokady");
+        pl.put(KEY_LOCK_TYPE_PIN, "PIN / Hasło");
+        pl.put(KEY_LOCK_SETUP_PATTERN, "Skonfiguruj wzór");
+        pl.put(KEY_LOCK_SETUP_PIN, "Skonfiguruj PIN");
+        pl.put(KEY_LOCK_CHANGE_PATTERN, "Zmień wzór");
+        pl.put(KEY_LOCK_CHANGE_PIN, "Zmień PIN");
+        pl.put(KEY_LOCK_FINGERPRINT_TOGGLE, "Odblokowanie odciskiem palca");
+        pl.put(KEY_LOCK_FINGERPRINT_MANAGE, "Konfiguruj odciski palców");
+        pl.put(KEY_LOCK_FINGERPRINT_ENROLLED_FMT, "%d zarejestrowanych odcisków");
+        pl.put(KEY_LOCK_FINGERPRINT_NONE, "Brak zarejestrowanych odcisków");
+        pl.put(KEY_LOCK_FINGERPRINT_UNSUPPORTED, "Brak czytnika linii papilarnych");
+        pl.put(KEY_LOCK_AOSP_SECURITY, "Zabezpieczenia Androida (AOSP)");
+        pl.put(KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, "[ ◉ ODCISK PALCA LUB PRZESUŃ ]");
+        pl.put(KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, "[ ◉ ODCISK PALCA LUB WZÓR ]");
+        pl.put(KEY_LOCK_HINT_FINGERPRINT_OR_PIN, "[ ◉ ODCISK PALCA LUB PIN ]");
+        pl.put(KEY_LOCK_PATTERN_DRAW_HINT, "Narysuj wzór (co najmniej 4 punkty)");
+        pl.put(KEY_LOCK_PATTERN_CONFIRM_HINT, "Potwierdź wzór (narysuj ponownie)");
+        pl.put(KEY_LOCK_PATTERN_MISMATCH, "Wzory nie zgadzają się. Spróbuj ponownie.");
+        pl.put(KEY_LOCK_PATTERN_TOO_SHORT, "Wzór musi mieć co najmniej 4 punkty");
+        pl.put(KEY_LOCK_PIN_ENTER_HINT, "Wprowadź PIN (4 do 8 cyfr)");
+        pl.put(KEY_LOCK_PIN_CONFIRM_HINT, "Potwierdź PIN (wprowadź ponownie)");
+        pl.put(KEY_LOCK_PIN_MISMATCH, "Kody PIN nie zgadzają się.");
+        pl.put(KEY_LOCK_PIN_TOO_SHORT, "PIN musi mieć co najmniej 4 cyfry");
+        pl.put(KEY_LOCK_PATTERN_PROMPT, "Narysuj wzór odblokowania");
+        pl.put(KEY_LOCK_PATTERN_WRONG, "BŁĘDNY WZÓR. SPRÓBUJ PONOWNIE.");
+        pl.put(KEY_LOCK_PIN_PROMPT, "Wprowadź PIN, aby odblokować");
+        pl.put(KEY_LOCK_PIN_WRONG, "BŁĘDNY PIN. SPRÓBUJ PONOWNIE.");
+        pl.put(KEY_LOCK_BACK_TO_CLOCK, "[ POWRÓT DO ZEGARA ]");
+        pl.put(KEY_LOCK_FINGERPRINT_ACTIVE_HINT, "Dotknij czytnika linii papilarnych");
+
         pl.put(KEY_LOCK_TEST_BTN, "Przetestuj ekran blokady teraz");
 
         // Settings & Privacy
@@ -1716,6 +1869,8 @@ public final class I18n {
         es.put(KEY_SELECT_ALL, "[ SELECCIONAR TODOS ]");
         es.put(KEY_DESELECT_ALL, "[ DESMARCAR TODOS ]");
         es.put(KEY_APPLY, "[ APLICAR ]");
+        es.put(KEY_DONE, "[ LISTO ]");
+        es.put(KEY_RESET, "[ REINICIAR ]");
         es.put(KEY_CONFIRM, "[ CONFIRMAR ]");
         es.put(KEY_SANDBOX_HEADER, "=== PERFIL SANDBOX AISLADO ===");
         es.put(KEY_SANDBOX_TITLE, "Perfil Sandbox Aislado (GMS / Apps)");
@@ -1972,6 +2127,9 @@ public final class I18n {
         es.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Esta aplicación no puede desbloquear el bootloader.");
         es.put(KEY_BOOTLOADER_WARNING_LOCK, "Esta aplicación no puede bloquear el bootloader ni verificar Verified Boot.");
         es.put(KEY_SHADE_HEADER, "=== ULTRA AHORRO DE BATERÍA ===");
+        es.put(KEY_QUICK_SETTINGS_HEADER, "=== AJUSTES RÁPIDOS ===");
+        es.put(KEY_TOGGLE_ULTRA_SAVER, "ULTRA AHORRO");
+        es.put(KEY_ULTRA_SAVER_ACTIVE, "ULTRA AHORRO: [ ACTIVO ]");
         es.put(KEY_SHADE_ESTIMATE_FMT, "Batería: %d%% · ~%dh restantes (Ultra Ahorro)");
         es.put(KEY_TOGGLE_AIRPLANE, "MODO AVIÓN");
         es.put(KEY_TOGGLE_DND, "NO MOLESTAR");
@@ -2018,6 +2176,39 @@ public final class I18n {
         es.put(KEY_LOCK_ACTION_CALCULATOR, "[ CALCULADORA ]");
         es.put(KEY_LOCK_ACTION_NONE, "Ninguno / Desactivado");
         es.put(KEY_LOCK_UNLOCK_HINT, "[ ^ DESLIZA O TOCA PARA DESBLOQUEAR ]");
+        es.put(KEY_LOCK_SECURITY_HEADER, "=== SEGURIDAD DE BLOQUEO ===");
+        es.put(KEY_LOCK_SECURITY_TYPE, "Método de bloqueo de pantalla");
+        es.put(KEY_LOCK_TYPE_NONE, "Ninguno / Deslizar");
+        es.put(KEY_LOCK_TYPE_PATTERN, "Patrón de desbloqueo");
+        es.put(KEY_LOCK_TYPE_PIN, "PIN / Contraseña");
+        es.put(KEY_LOCK_SETUP_PATTERN, "Configurar patrón");
+        es.put(KEY_LOCK_SETUP_PIN, "Configurar PIN");
+        es.put(KEY_LOCK_CHANGE_PATTERN, "Cambiar patrón");
+        es.put(KEY_LOCK_CHANGE_PIN, "Cambiar PIN");
+        es.put(KEY_LOCK_FINGERPRINT_TOGGLE, "Desbloqueo por huella dactilar");
+        es.put(KEY_LOCK_FINGERPRINT_MANAGE, "Configurar / Gestionar huellas");
+        es.put(KEY_LOCK_FINGERPRINT_ENROLLED_FMT, "%d huellas registradas");
+        es.put(KEY_LOCK_FINGERPRINT_NONE, "Sin huellas registradas");
+        es.put(KEY_LOCK_FINGERPRINT_UNSUPPORTED, "Hardware no disponible");
+        es.put(KEY_LOCK_AOSP_SECURITY, "Seguridad del sistema Android (AOSP)");
+        es.put(KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, "[ ◉ HUELLA O DESLIZAR ]");
+        es.put(KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, "[ ◉ HUELLA O PATRÓN ]");
+        es.put(KEY_LOCK_HINT_FINGERPRINT_OR_PIN, "[ ◉ HUELLA O PIN ]");
+        es.put(KEY_LOCK_PATTERN_DRAW_HINT, "Dibuja el patrón (mínimo 4 puntos)");
+        es.put(KEY_LOCK_PATTERN_CONFIRM_HINT, "Confirma el patrón (trázalo de nuevo)");
+        es.put(KEY_LOCK_PATTERN_MISMATCH, "Los patrones no coinciden. Inténtalo de nuevo.");
+        es.put(KEY_LOCK_PATTERN_TOO_SHORT, "El patrón debe tener al menos 4 puntos");
+        es.put(KEY_LOCK_PIN_ENTER_HINT, "Introduce el PIN (4 a 8 dígitos)");
+        es.put(KEY_LOCK_PIN_CONFIRM_HINT, "Confirma el PIN (introdúcelo de nuevo)");
+        es.put(KEY_LOCK_PIN_MISMATCH, "Los PIN no coinciden. Inténtalo de nuevo.");
+        es.put(KEY_LOCK_PIN_TOO_SHORT, "El PIN debe tener al menos 4 dígitos");
+        es.put(KEY_LOCK_PATTERN_PROMPT, "Dibuja el patrón de desbloqueo");
+        es.put(KEY_LOCK_PATTERN_WRONG, "PATRÓN INCORRECTO. INTÉNTALO DE NUEVO.");
+        es.put(KEY_LOCK_PIN_PROMPT, "Introduce el PIN para desbloquear");
+        es.put(KEY_LOCK_PIN_WRONG, "PIN INCORRECTO. INTÉNTALO DE NUEVO.");
+        es.put(KEY_LOCK_BACK_TO_CLOCK, "[ VOLVER AL RELOJ ]");
+        es.put(KEY_LOCK_FINGERPRINT_ACTIVE_HINT, "Toca el sensor de huella para desbloquear");
+
         es.put(KEY_LOCK_TEST_BTN, "Probar pantalla de bloqueo ahora");
 
         // Quick Guide
@@ -2175,6 +2366,8 @@ public final class I18n {
         fr.put(KEY_SELECT_ALL, "[ TOUT SÉLECTIONNER ]");
         fr.put(KEY_DESELECT_ALL, "[ TOUT DÉSÉLECTIONNER ]");
         fr.put(KEY_APPLY, "[ APPLIQUER ]");
+        fr.put(KEY_DONE, "[ TERMINÉ ]");
+        fr.put(KEY_RESET, "[ RÉINITIALISER ]");
         fr.put(KEY_CONFIRM, "[ CONFIRMER ]");
 
         fr.put(KEY_SETTINGS, "[ PARAMÈTRES ]");
@@ -2382,6 +2575,9 @@ public final class I18n {
         fr.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Cette application ne peut pas déverrouiller le bootloader.");
         fr.put(KEY_BOOTLOADER_WARNING_LOCK, "Cette application ne peut pas verrouiller le bootloader.");
         fr.put(KEY_SHADE_HEADER, "=== ULTRA ÉCONOMIE D'ÉNERGIE ===");
+        fr.put(KEY_QUICK_SETTINGS_HEADER, "=== PARAMÈTRES RAPIDES ===");
+        fr.put(KEY_TOGGLE_ULTRA_SAVER, "ULTRA ÉCONOMIE");
+        fr.put(KEY_ULTRA_SAVER_ACTIVE, "ULTRA ÉCONOMIE: [ ACTIF ]");
         fr.put(KEY_SHADE_ESTIMATE_FMT, "Batterie: %d%% · ~%dh restants (Ultra Économie)");
         fr.put(KEY_TOGGLE_AIRPLANE, "MODE AVION");
         fr.put(KEY_TOGGLE_DND, "NE PAS DÉRANGER");
@@ -2421,6 +2617,39 @@ public final class I18n {
         fr.put(KEY_LOCK_ACTION_BROWSER, "[ NAVIGATEUR ]");
         fr.put(KEY_LOCK_ACTION_NONE, "Aucun / Désactivé");
         fr.put(KEY_LOCK_UNLOCK_HINT, "[ ^ GLISSER OU TOUCHER POUR DÉVERROUILLER ]");
+        fr.put(KEY_LOCK_SECURITY_HEADER, "=== SÉCURITÉ DE VERROUILLAGE ===");
+        fr.put(KEY_LOCK_SECURITY_TYPE, "Méthode de verrouillage");
+        fr.put(KEY_LOCK_TYPE_NONE, "Aucun / Glisser");
+        fr.put(KEY_LOCK_TYPE_PATTERN, "Schéma de déverrouillage");
+        fr.put(KEY_LOCK_TYPE_PIN, "Code PIN / Mot de passe");
+        fr.put(KEY_LOCK_SETUP_PATTERN, "Configurer le schéma");
+        fr.put(KEY_LOCK_SETUP_PIN, "Configurer le code PIN");
+        fr.put(KEY_LOCK_CHANGE_PATTERN, "Changer de schéma");
+        fr.put(KEY_LOCK_CHANGE_PIN, "Changer de code PIN");
+        fr.put(KEY_LOCK_FINGERPRINT_TOGGLE, "Déverrouillage par empreinte");
+        fr.put(KEY_LOCK_FINGERPRINT_MANAGE, "Gérer les empreintes");
+        fr.put(KEY_LOCK_FINGERPRINT_ENROLLED_FMT, "%d empreintes enregistrées");
+        fr.put(KEY_LOCK_FINGERPRINT_NONE, "Aucune empreinte enregistrée");
+        fr.put(KEY_LOCK_FINGERPRINT_UNSUPPORTED, "Matériel non disponible");
+        fr.put(KEY_LOCK_AOSP_SECURITY, "Sécurité du système Android (AOSP)");
+        fr.put(KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, "[ ◉ EMPREINTE OU GLISSER ]");
+        fr.put(KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, "[ ◉ EMPREINTE OU SCHÉMA ]");
+        fr.put(KEY_LOCK_HINT_FINGERPRINT_OR_PIN, "[ ◉ EMPREINTE OU PIN ]");
+        fr.put(KEY_LOCK_PATTERN_DRAW_HINT, "Dessinez le schéma (au moins 4 points)");
+        fr.put(KEY_LOCK_PATTERN_CONFIRM_HINT, "Confirmez le schéma (dessinez-le à nouveau)");
+        fr.put(KEY_LOCK_PATTERN_MISMATCH, "Les schémas ne correspondent pas.");
+        fr.put(KEY_LOCK_PATTERN_TOO_SHORT, "Le schéma doit comporter au moins 4 points");
+        fr.put(KEY_LOCK_PIN_ENTER_HINT, "Entrez le code PIN (4 à 8 chiffres)");
+        fr.put(KEY_LOCK_PIN_CONFIRM_HINT, "Confirmez le code PIN (entrez-le à nouveau)");
+        fr.put(KEY_LOCK_PIN_MISMATCH, "Les codes PIN ne correspondent pas.");
+        fr.put(KEY_LOCK_PIN_TOO_SHORT, "Le code PIN doit comporter au moins 4 chiffres");
+        fr.put(KEY_LOCK_PATTERN_PROMPT, "Dessinez le schéma de déverrouillage");
+        fr.put(KEY_LOCK_PATTERN_WRONG, "SCHÉMA INCORRECT. RÉESSAYEZ.");
+        fr.put(KEY_LOCK_PIN_PROMPT, "Entrez le code PIN pour déverrouiller");
+        fr.put(KEY_LOCK_PIN_WRONG, "CODE PIN INCORRECT. RÉESSAYEZ.");
+        fr.put(KEY_LOCK_BACK_TO_CLOCK, "[ RETOUR À L'HORLOGE ]");
+        fr.put(KEY_LOCK_FINGERPRINT_ACTIVE_HINT, "Touchez le capteur d'empreinte");
+
         fr.put(KEY_LOCK_TEST_BTN, "Tester l'écran de verrouillage");
         TRANSLATIONS.put("fr", fr);
 
@@ -2442,6 +2671,8 @@ public final class I18n {
         it.put(KEY_SELECT_ALL, "[ SELEZIONA TUTTI ]");
         it.put(KEY_DESELECT_ALL, "[ DESELEZIONA TUTTI ]");
         it.put(KEY_APPLY, "[ APPLICA ]");
+        it.put(KEY_DONE, "[ FATTO ]");
+        it.put(KEY_RESET, "[ RIPRISTINA ]");
         it.put(KEY_CONFIRM, "[ CONFERMA ]");
 
         it.put(KEY_SETTINGS, "[ IMPOSTAZIONI ]");
@@ -2649,6 +2880,9 @@ public final class I18n {
         it.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Questa app non può sbloccare il bootloader.");
         it.put(KEY_BOOTLOADER_WARNING_LOCK, "Questa app non può bloccare il bootloader.");
         it.put(KEY_SHADE_HEADER, "=== ULTRA RISPARMIO BATTERIA ===");
+        it.put(KEY_QUICK_SETTINGS_HEADER, "=== IMPOSTAZIONI RAPIDE ===");
+        it.put(KEY_TOGGLE_ULTRA_SAVER, "ULTRA RISPARMIO");
+        it.put(KEY_ULTRA_SAVER_ACTIVE, "ULTRA RISPARMIO: [ ATTIVO ]");
         it.put(KEY_SHADE_ESTIMATE_FMT, "Batteria: %d%% · ~%dh rimanenti (Ultra Risparmio)");
         it.put(KEY_TOGGLE_AIRPLANE, "MODALITÀ AEREO");
         it.put(KEY_TOGGLE_DND, "NON DISTURBARE");
@@ -2688,6 +2922,39 @@ public final class I18n {
         it.put(KEY_LOCK_ACTION_BROWSER, "[ BROWSER ]");
         it.put(KEY_LOCK_ACTION_NONE, "Nessuno / Disattivato");
         it.put(KEY_LOCK_UNLOCK_HINT, "[ ^ SCORRI O TOCCA PER SBLOCCARE ]");
+        it.put(KEY_LOCK_SECURITY_HEADER, "=== SICUREZZA BLOCCO SCHERMO ===");
+        it.put(KEY_LOCK_SECURITY_TYPE, "Metodo di blocco");
+        it.put(KEY_LOCK_TYPE_NONE, "Nessuno / Scorri");
+        it.put(KEY_LOCK_TYPE_PATTERN, "Sequenza di sblocco");
+        it.put(KEY_LOCK_TYPE_PIN, "PIN / Password");
+        it.put(KEY_LOCK_SETUP_PATTERN, "Configura sequenza");
+        it.put(KEY_LOCK_SETUP_PIN, "Configura PIN");
+        it.put(KEY_LOCK_CHANGE_PATTERN, "Modifica sequenza");
+        it.put(KEY_LOCK_CHANGE_PIN, "Modifica PIN");
+        it.put(KEY_LOCK_FINGERPRINT_TOGGLE, "Sblocco con impronta");
+        it.put(KEY_LOCK_FINGERPRINT_MANAGE, "Gestisci impronte");
+        it.put(KEY_LOCK_FINGERPRINT_ENROLLED_FMT, "%d impronte registrate");
+        it.put(KEY_LOCK_FINGERPRINT_NONE, "Nessuna impronta registrata");
+        it.put(KEY_LOCK_FINGERPRINT_UNSUPPORTED, "Hardware non disponibile");
+        it.put(KEY_LOCK_AOSP_SECURITY, "Sicurezza di sistema Android (AOSP)");
+        it.put(KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, "[ ◉ IMPRONTA O SCORRI ]");
+        it.put(KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, "[ ◉ IMPRONTA O SEQUENZA ]");
+        it.put(KEY_LOCK_HINT_FINGERPRINT_OR_PIN, "[ ◉ IMPRONTA O PIN ]");
+        it.put(KEY_LOCK_PATTERN_DRAW_HINT, "Disegna la sequenza (almeno 4 punti)");
+        it.put(KEY_LOCK_PATTERN_CONFIRM_HINT, "Conferma la sequenza (disegnala di nuovo)");
+        it.put(KEY_LOCK_PATTERN_MISMATCH, "Le sequenze non corrispondono.");
+        it.put(KEY_LOCK_PATTERN_TOO_SHORT, "La sequenza deve avere almeno 4 punti");
+        it.put(KEY_LOCK_PIN_ENTER_HINT, "Inserisci il PIN (da 4 a 8 cifre)");
+        it.put(KEY_LOCK_PIN_CONFIRM_HINT, "Conferma il PIN (inseriscilo di nuovo)");
+        it.put(KEY_LOCK_PIN_MISMATCH, "I PIN non corrispondono.");
+        it.put(KEY_LOCK_PIN_TOO_SHORT, "Il PIN deve avere almeno 4 cifre");
+        it.put(KEY_LOCK_PATTERN_PROMPT, "Disegna la sequenza di sblocco");
+        it.put(KEY_LOCK_PATTERN_WRONG, "SEQUENZA ERRATA. RIPROVA.");
+        it.put(KEY_LOCK_PIN_PROMPT, "Inserisci il PIN per sbloccare");
+        it.put(KEY_LOCK_PIN_WRONG, "PIN ERRATO. RIPROVA.");
+        it.put(KEY_LOCK_BACK_TO_CLOCK, "[ TORNA ALL'OROLOGIO ]");
+        it.put(KEY_LOCK_FINGERPRINT_ACTIVE_HINT, "Tocca il sensore di impronte");
+
         it.put(KEY_LOCK_TEST_BTN, "Prova schermata di blocco adesso");
         TRANSLATIONS.put("it", it);
 
@@ -2709,6 +2976,8 @@ public final class I18n {
         pt.put(KEY_SELECT_ALL, "[ SELECIONAR TODOS ]");
         pt.put(KEY_DESELECT_ALL, "[ DESMARCAR TODOS ]");
         pt.put(KEY_APPLY, "[ APLICAR ]");
+        pt.put(KEY_DONE, "[ CONCLUÍDO ]");
+        pt.put(KEY_RESET, "[ REINICIAR ]");
         pt.put(KEY_CONFIRM, "[ CONFIRMAR ]");
 
         pt.put(KEY_SETTINGS, "[ CONFIGURAÇÕES ]");
@@ -2916,6 +3185,9 @@ public final class I18n {
         pt.put(KEY_BOOTLOADER_WARNING_UNLOCK, "Esta aplicação não pode desbloquear o bootloader.");
         pt.put(KEY_BOOTLOADER_WARNING_LOCK, "Esta aplicação não pode bloquear o bootloader.");
         pt.put(KEY_SHADE_HEADER, "=== ULTRA ECONOMIA DE BATERIA ===");
+        pt.put(KEY_QUICK_SETTINGS_HEADER, "=== DEFINIÇÕES RÁPIDAS ===");
+        pt.put(KEY_TOGGLE_ULTRA_SAVER, "ULTRA ECONOMIA");
+        pt.put(KEY_ULTRA_SAVER_ACTIVE, "ULTRA ECONOMIA: [ ATIVO ]");
         pt.put(KEY_SHADE_ESTIMATE_FMT, "Bateria: %d%% · ~%dh restantes (Ultra Economia)");
         pt.put(KEY_TOGGLE_AIRPLANE, "MODO DE VOO");
         pt.put(KEY_TOGGLE_DND, "NÃO INCOMODAR");
@@ -2955,6 +3227,39 @@ public final class I18n {
         pt.put(KEY_LOCK_ACTION_BROWSER, "[ NAVEGADOR ]");
         pt.put(KEY_LOCK_ACTION_NONE, "Nenhum / Desativado");
         pt.put(KEY_LOCK_UNLOCK_HINT, "[ ^ DESLIZE OU TOQUE PARA DESBLOQUEAR ]");
+        pt.put(KEY_LOCK_SECURITY_HEADER, "=== SEGURANÇA DE BLOQUEIO ===");
+        pt.put(KEY_LOCK_SECURITY_TYPE, "Método de bloqueio");
+        pt.put(KEY_LOCK_TYPE_NONE, "Nenhum / Deslizar");
+        pt.put(KEY_LOCK_TYPE_PATTERN, "Padrão de desbloqueio");
+        pt.put(KEY_LOCK_TYPE_PIN, "PIN / Senha");
+        pt.put(KEY_LOCK_SETUP_PATTERN, "Configurar padrão");
+        pt.put(KEY_LOCK_SETUP_PIN, "Configurar PIN");
+        pt.put(KEY_LOCK_CHANGE_PATTERN, "Alterar padrão");
+        pt.put(KEY_LOCK_CHANGE_PIN, "Alterar PIN");
+        pt.put(KEY_LOCK_FINGERPRINT_TOGGLE, "Desbloqueio por impressão digital");
+        pt.put(KEY_LOCK_FINGERPRINT_MANAGE, "Gerenciar impressões digitais");
+        pt.put(KEY_LOCK_FINGERPRINT_ENROLLED_FMT, "%d impressões registradas");
+        pt.put(KEY_LOCK_FINGERPRINT_NONE, "Nenhuma impressão registrada");
+        pt.put(KEY_LOCK_FINGERPRINT_UNSUPPORTED, "Hardware não disponível");
+        pt.put(KEY_LOCK_AOSP_SECURITY, "Segurança do sistema Android (AOSP)");
+        pt.put(KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, "[ ◉ IMPRESSÃO OU DESLIZAR ]");
+        pt.put(KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, "[ ◉ IMPRESSÃO OU PADRÃO ]");
+        pt.put(KEY_LOCK_HINT_FINGERPRINT_OR_PIN, "[ ◉ IMPRESSÃO OU PIN ]");
+        pt.put(KEY_LOCK_PATTERN_DRAW_HINT, "Desenhe o padrão (ao menos 4 pontos)");
+        pt.put(KEY_LOCK_PATTERN_CONFIRM_HINT, "Confirme o padrão (desenhe novamente)");
+        pt.put(KEY_LOCK_PATTERN_MISMATCH, "Os padrões não coincidem.");
+        pt.put(KEY_LOCK_PATTERN_TOO_SHORT, "O padrão deve ter ao menos 4 pontos");
+        pt.put(KEY_LOCK_PIN_ENTER_HINT, "Digite o PIN (4 a 8 dígitos)");
+        pt.put(KEY_LOCK_PIN_CONFIRM_HINT, "Confirme o PIN (digite novamente)");
+        pt.put(KEY_LOCK_PIN_MISMATCH, "Os PINs não coincidem.");
+        pt.put(KEY_LOCK_PIN_TOO_SHORT, "O PIN deve ter ao menos 4 dígitos");
+        pt.put(KEY_LOCK_PATTERN_PROMPT, "Desenhe o padrão de desbloqueio");
+        pt.put(KEY_LOCK_PATTERN_WRONG, "PADRÃO INCORRETO. TENTE NOVAMENTE.");
+        pt.put(KEY_LOCK_PIN_PROMPT, "Digite o PIN para desbloquear");
+        pt.put(KEY_LOCK_PIN_WRONG, "PIN INCORRETO. TENTE NOVAMENTE.");
+        pt.put(KEY_LOCK_BACK_TO_CLOCK, "[ VOLTAR AO RELÓGIO ]");
+        pt.put(KEY_LOCK_FINGERPRINT_ACTIVE_HINT, "Toque no sensor de impressão digital");
+
         pt.put(KEY_LOCK_TEST_BTN, "Testar ecrã de bloqueio agora");
         TRANSLATIONS.put("pt", pt);
 

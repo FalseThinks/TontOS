@@ -125,10 +125,17 @@ public final class SettingsRowFactory {
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
+        labelView.setSingleLine(true);
+        labelView.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        labelView.setLayoutParams(labelLp);
         labelContainer.addView(labelView);
 
         View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
         if (helpBadge != null) {
+            LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            badgeLp.setMargins(dpToPx(context, 4), 0, 0, 0);
+            helpBadge.setLayoutParams(badgeLp);
             labelContainer.addView(helpBadge);
         }
         row.addView(labelContainer);
@@ -189,10 +196,17 @@ public final class SettingsRowFactory {
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
+        labelView.setSingleLine(true);
+        labelView.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        labelView.setLayoutParams(labelLp);
         labelContainer.addView(labelView);
 
         View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
         if (helpBadge != null) {
+            LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            badgeLp.setMargins(dpToPx(context, 4), 0, dpToPx(context, 4), 0);
+            helpBadge.setLayoutParams(badgeLp);
             labelContainer.addView(helpBadge);
         }
         row.addView(labelContainer);
@@ -248,10 +262,17 @@ public final class SettingsRowFactory {
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
+        labelView.setSingleLine(true);
+        labelView.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        labelView.setLayoutParams(labelLp);
         labelContainer.addView(labelView);
 
         View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
         if (helpBadge != null) {
+            LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            badgeLp.setMargins(dpToPx(context, 4), 0, dpToPx(context, 4), 0);
+            helpBadge.setLayoutParams(badgeLp);
             labelContainer.addView(helpBadge);
         }
         row.addView(labelContainer);
@@ -307,10 +328,15 @@ public final class SettingsRowFactory {
         labelView.setTypeface(Typeface.MONOSPACE);
         labelView.setSingleLine(true);
         labelView.setEllipsize(TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        labelView.setLayoutParams(labelLp);
         labelContainer.addView(labelView);
 
         View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, label, label);
         if (helpBadge != null) {
+            LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            badgeLp.setMargins(dpToPx(context, 4), 0, 0, 0);
+            helpBadge.setLayoutParams(badgeLp);
             labelContainer.addView(helpBadge);
         }
         row.addView(labelContainer);
@@ -362,10 +388,17 @@ public final class SettingsRowFactory {
         k.setTextColor(tokens.textMuted);
         k.setTextSize(11 * scale);
         k.setTypeface(Typeface.MONOSPACE);
+        LinearLayout.LayoutParams kLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        k.setLayoutParams(kLp);
+        k.setSingleLine(true);
+        k.setEllipsize(TextUtils.TruncateAt.END);
         labelContainer.addView(k);
 
         View helpBadge = SettingsDescriptions.createHelpBadge(context, tokens, key, key);
         if (helpBadge != null) {
+            LinearLayout.LayoutParams badgeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            badgeLp.setMargins(dpToPx(context, 4), 0, 0, 0);
+            helpBadge.setLayoutParams(badgeLp);
             labelContainer.addView(helpBadge);
         }
         row.addView(labelContainer);

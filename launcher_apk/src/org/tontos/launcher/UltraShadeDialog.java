@@ -86,9 +86,18 @@ public final class UltraShadeDialog {
         root.addView(dragHandle);
 
         // Header Title
-        TextView headerTitle = new TextView(activity);
-        headerTitle.setText(I18n.get(I18n.KEY_SHADE_HEADER, lang));
-        headerTitle.setTextColor(tokens.accent);
+        final TextView headerTitle = new TextView(activity);
+        final Runnable updateHeader = new Runnable() {
+            @Override
+            public void run() {
+                boolean isUltra = UltraBatterySaverManager.isUltraBatterySaverActive(activity);
+                headerTitle.setText(isUltra
+                    ? I18n.get(I18n.KEY_SHADE_HEADER, lang)
+                    : I18n.get(I18n.KEY_QUICK_SETTINGS_HEADER, lang));
+                headerTitle.setTextColor(isUltra ? (tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555")) : tokens.accent);
+            }
+        };
+        updateHeader.run();
         headerTitle.setTextSize(15);
         headerTitle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         headerTitle.setGravity(Gravity.CENTER);
@@ -148,26 +157,38 @@ public final class UltraShadeDialog {
         row3.addView(btnTorch);
         root.addView(row3);
 
-        // Row 4: NFC (hide if unsupported)
+        // Spacer between rows
+        root.addView(createVerticalSpacer(activity, dp8));
+
+        // Row 4: Ultra Battery Saver | NFC
+        LinearLayout row4 = createToggleRow(activity);
+        final Button btnUltra = createToggleButton(activity, tokens, dp48);
         final Button btnNfc = createToggleButton(activity, tokens, dp48);
         final boolean nfcSupported = UltraBatterySaverManager.getNfcState(activity) != UltraBatterySaverManager.ToggleState.UNKNOWN
                 || android.nfc.NfcAdapter.getDefaultAdapter(activity) != null;
+        row4.addView(btnUltra);
+        row4.addView(createSpacer(activity, dp8));
         if (nfcSupported) {
-            root.addView(createVerticalSpacer(activity, dp8));
-            LinearLayout row4 = createToggleRow(activity);
             row4.addView(btnNfc);
-            // spacer + invisible placeholder to keep 2-col alignment
-            row4.addView(createSpacer(activity, dp8));
+        } else {
             android.widget.Space ph = new android.widget.Space(activity);
             ph.setLayoutParams(new LinearLayout.LayoutParams(0, dp48, 1.0f));
             row4.addView(ph);
-            root.addView(row4);
         }
+        root.addView(row4);
 
         // Update states helper
         final Runnable stateRefresher = new Runnable() {
             @Override
             public void run() {
+                // Ultra Saver Mode
+                boolean isUltra = UltraBatterySaverManager.isUltraBatterySaverActive(activity);
+                updateToggleStyle(btnUltra, tokens,
+                    I18n.get(I18n.KEY_TOGGLE_ULTRA_SAVER, lang) + ": "
+                        + (isUltra ? "[ ON ]" : "[ OFF ]"),
+                    isUltra, density);
+                updateHeader.run();
+
                 // Airplane Mode
                 UltraBatterySaverManager.ToggleState airplaneState =
                     UltraBatterySaverManager.getAirplaneModeState(activity);
@@ -238,12 +259,30 @@ public final class UltraShadeDialog {
         };
 
         // Click listeners
+        btnUltra.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean active = UltraBatterySaverManager.isUltraBatterySaverActive(activity);
+                UltraBatterySaverManager.ActionResult result =
+                    UltraBatterySaverManager.setUltraBatterySaver(activity, !active);
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
+            }
+        });
+
         btnAirplane.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                handleActionResult(
-                    activity, dialog, v, stateRefresher, lang,
-                    UltraBatterySaverManager.openAirplaneModeSettings(activity));
+                if (LockScreenManager.isDeviceLocked(activity) && LockSecurityManager.getSecurityType(activity) != LockSecurityManager.SecurityType.NONE) {
+                    Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                    LockScreenManager.launchLockScreen(activity);
+                    return;
+                }
+                UltraBatterySaverManager.ToggleState cur = UltraBatterySaverManager.getAirplaneModeState(activity);
+                boolean enable = cur != UltraBatterySaverManager.ToggleState.ON;
+                UltraBatterySaverManager.ActionResult result =
+                    UltraBatterySaverManager.setAirplaneMode(activity, enable);
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
             }
         });
 
@@ -366,6 +405,11 @@ public final class UltraShadeDialog {
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
+                if (LockScreenManager.isDeviceLocked(activity) && LockScreenManager.isLockScreenEnabled(activity)) {
+                    Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
+                    LockScreenManager.launchLockScreen(activity);
+                    return;
+                }
                 activity.startActivity(new Intent(activity, SettingsActivity.class));
             }
         });
@@ -380,7 +424,7 @@ public final class UltraShadeDialog {
             window.setGravity(Gravity.TOP);
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            window.setWindowAnimations(android.R.style.Animation_Dialog);
+            window.setWindowAnimations(0); // Disable jarring default dialog scale-in
 
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
@@ -391,6 +435,23 @@ public final class UltraShadeDialog {
                 }
             } catch (Throwable ignored) {}
         }
+
+        dialog.setOnShowListener(new android.content.DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(android.content.DialogInterface d) {
+                root.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        root.setTranslationY(-root.getHeight());
+                        root.animate()
+                            .translationY(0f)
+                            .setDuration(220)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            .start();
+                    }
+                });
+            }
+        });
 
         dialog.show();
     }

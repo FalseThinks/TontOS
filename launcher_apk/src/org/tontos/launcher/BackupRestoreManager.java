@@ -80,8 +80,8 @@ public final class BackupRestoreManager {
         for (Map.Entry<String, ?> entry : all.entrySet()) {
             String key = entry.getKey();
             if (key == null) continue;
-            // Exclude temporary scroll positions or transient session states
-            if (key.startsWith("pref_last_settings_scroll")) continue;
+            // Exclude temporary scroll positions and security credentials (PIN/pattern/salt)
+            if (key.startsWith("pref_last_settings_scroll") || key.startsWith("pref_lock_")) continue;
             payload.put(key, entry.getValue());
         }
 
@@ -696,6 +696,8 @@ public final class BackupRestoreManager {
         java.util.Iterator<String> keys = payload.keys();
         while (keys.hasNext()) {
             String key = keys.next();
+            // Block tampering or injection of lock screen credentials via restored backups
+            if (key == null || key.startsWith("pref_lock_")) continue;
             Object val = payload.opt(key);
             if (val instanceof Boolean) {
                 editor.putBoolean(key, (Boolean) val);

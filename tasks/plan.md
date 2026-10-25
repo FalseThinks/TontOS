@@ -73,10 +73,29 @@ Current product slices:
 - [x] Task 17.2: Implement First-Startup Install Wizard (`SetupWizardActivity.java`) registered in `AndroidManifest.xml`.
 - [x] Task 17.3: Add FairEmail (`eu.faircode.email`) to default apps list and download/verify on emulator.
 
-### Checkpoint: Complete Verification — 2026-10-10 local static PASS, E2E runner pending
-- [x] `./bin/build_launcher_apk.sh && adb install -r launcher_apk/tontos-launcher.apk` succeeds.
-- [x] `cargo test --workspace` passes cleanly (39+ tests green).
-- [x] Live UI verification on emulator and screenshot artifacts collected.
+### Phase 25: ROM Integration, Setup Wizard, Detox Controls & FOSS Suite Hardening
+- [x] Task 25.1: AOSP Privileged Packaging & Native Boot (Bundle TontOSLauncher in `vendor/tontos/apps/prebuilts/Android.bp` with `privapp-permissions` and `default-permissions` so clean ROM boots straight into TontOS; disable stock AOSP lockscreen).
+- [x] Task 25.2: Typography Scaling & Setup Wizard Polish (Scale all buttons and triggers with `fontScale` in `SetupWizardActivity.java`; remove duplicate `[ SALTAR GUÍA ]` in `QuickStartGuideDialog.java`; force `SettingsActivity.java` to start on root dashboard).
+- [x] Task 25.3: AMOLED Monospace Dialogs & Layout Protection (Replace white `AlertDialog` in `SettingsDescriptions.java` with AMOLED `ThemeTokens` modal; fix long text wrapping around `(?)` badges in `SettingsRowFactory.java`).
+- [x] Task 25.4: Seamless Quick Settings & Ultra Battery Saver (Toggle Airplane mode via privileged command without jumping to system settings; make Silent mode functional; add Ultra Battery Saver toggle and show badge only when active; fix slide-down shade animation).
+- [x] Task 25.5: Automated App Sandbox Receiver & FOSS Suite Expansion (Create `PackageInstallReceiver` to auto-isolate new apps; debloat stock Files app; add FOSS document reader and NewPipe to `apps/`; clarify/bundle pure FOSS keyboard).
+
+### Phase 26: Lock Screen Security & Biometric Integration
+- [x] Task 26.1: Security Storage & Cryptographic Verifier (`LockSecurityManager.java`)
+- [x] Task 26.2: Tactile Pattern & PIN Keypad Views (`PatternView.java` & `PinUnlockView.java`)
+- [x] Task 26.3: Pattern & PIN Configuration Dialogs (`PatternSetupDialog.java` & `PinSetupDialog.java`)
+- [x] Task 26.4: Biometric Fingerprint Listener & Enrollment Bridge
+- [x] Task 26.5: LockScreenActivity & Settings Integration with full I18n translations.
+
+### Phase 27: Lock Screen Security Audit, Access Control & Exploit Hardening
+- [x] Task 27.1: Security Audit & Attack Surface Mapping
+- [x] Task 27.2: Access Control Gates in `SettingsActivity` & `MainActivity`
+- [x] Task 27.3: Quick Shade (`UltraShadeDialog`) & Anti-Theft Radio Hardening
+- [x] Task 27.4: Shortcut Privilege Separation & Persistent Boot State
+
+### Phase 28: BitChat P2P Mesh Integration into TontOS Curated FOSS Suite
+- [x] Task 28.1: Package Ingestion & Manifest Registration (`apps/bitchat.apk`, `AndroidManifest.xml`)
+- [x] Task 28.2: Debloat Retention & Live Device Integration (`bin/helpers/debloat_custom_rom.sh`)
 
 ## Phase 20+: Linux host with a real Android runtime
 

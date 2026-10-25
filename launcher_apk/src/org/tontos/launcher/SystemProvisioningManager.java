@@ -238,9 +238,7 @@ public final class SystemProvisioningManager {
                     } catch (Throwable ignored) {}
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "development_settings_enabled", "1");
 
-                    // 9. ROM-Wide Lock Screen: Completely disable stock AOSP keyguard service so TontOS LockScreenActivity is sole lock screen
-                    SafeCommandExecutor.executePrivileged("settings", "put", "secure", "lockscreen.disabled", "1");
-                    SafeCommandExecutor.executePrivileged("locksettings", "set-disabled", "--user", "0", "true");
+                    // 9. ROM Lock Screen & Power Policy: Preserve hardware AOSP keyguard & FBE encryption
                     SafeCommandExecutor.executePrivileged("cmd", "deviceidle", "whitelist", "+org.tontos.launcher");
                     SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "RUN_IN_BACKGROUND", "allow");
                     SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "SYSTEM_ALERT_WINDOW", "allow");

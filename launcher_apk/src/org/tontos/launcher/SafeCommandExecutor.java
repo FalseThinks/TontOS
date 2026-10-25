@@ -17,7 +17,7 @@ public final class SafeCommandExecutor {
 
     private static final String TAG = "SafeCommandExecutor";
     private static final Pattern VALID_PACKAGE_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
-    private static final Pattern SAFE_ARG_PATTERN = Pattern.compile("^[a-zA-Z0-9._/\\-:*#@=,]+$");
+    private static final Pattern SAFE_ARG_PATTERN = Pattern.compile("^[a-zA-Z0-9._/\\-:+@=,]+$");
     private static final long DEFAULT_TIMEOUT_MS = 3000;
 
     private SafeCommandExecutor() {}
@@ -94,31 +94,11 @@ public final class SafeCommandExecutor {
     }
 
     /**
-     * Executes a command directly, falling back to su privilege escalation if initial execution fails.
+     * Executes a system command with argument array using platform privileged capabilities.
+     * Enforces strict argument validation and executes directly without shell interpolation.
      */
     public static boolean executePrivileged(String... command) {
-        if (command == null || command.length == 0) return false;
-        if (execute(command)) {
-            return true;
-        }
-
-        for (String arg : command) {
-            if (!isSafeArgument(arg)) {
-                Log.w(TAG, "Refusing privileged execution with unsafe argument: " + arg);
-                return false;
-            }
-        }
-
-        try {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < command.length; i++) {
-                if (i > 0) sb.append(' ');
-                sb.append(command[i]);
-            }
-            return runRawProcess(new String[]{"su", "-c", sb.toString()});
-        } catch (Throwable t) {
-            return false;
-        }
+        return execute(command);
     }
 
     private static boolean runRawProcess(String[] command) {

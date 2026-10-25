@@ -234,6 +234,9 @@ public class MainActivity extends Activity {
         applyBackgroundPolicy(this);
         SystemProvisioningManager.executeInitialProvisioning(this);
         LockScreenManager.registerScreenReceiver(this);
+        if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
+            LockScreenManager.launchLockScreen(this);
+        }
 
         handler = new Handler(Looper.getMainLooper());
         screenTimeTodaySecs = prefs.getLong(KEY_SCREEN_TIME_SECS, 0L);
@@ -461,6 +464,16 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (LockScreenManager.isDeviceLocked() && LockScreenManager.isLockScreenEnabled(this)) {
+            Intent lockIntent = new Intent(this, LockScreenActivity.class);
+            lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_NO_ANIMATION
+                | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            startActivity(lockIntent);
+            return;
+        }
         try {
             Intent batIntent = registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
             if (batIntent != null) {
@@ -701,7 +714,8 @@ public class MainActivity extends Activity {
         for (ResolveInfo ri : activities) {
             String pkg = ri.activityInfo.packageName;
             if (pkg.equals(getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")
-                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")) {
+                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")
+                    || pkg.equals("com.android.documentsui")) {
                 continue;
             }
             String label = ri.loadLabel(pm).toString();
@@ -1141,7 +1155,6 @@ public class MainActivity extends Activity {
                 || pkg.equals("com.android.calculator2")
                 || pkg.equals("com.android.contacts")
                 || pkg.equals("com.android.calendar")
-                || pkg.equals("com.android.documentsui")
                 || DEFAULT_PINNED_PACKAGES.contains(pkg)) {
             return true;
         }

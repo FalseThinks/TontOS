@@ -247,9 +247,12 @@ public class SetupWizardActivity extends Activity {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
 
         rootLayout.setBackgroundColor(tokens.bg);
+        float fontScale = selectedFontScale / 100.0f;
         titleView.setText(I18n.get(I18n.KEY_WIZARD_TITLE, langCode));
+        titleView.setTextSize(20f * fontScale);
         titleView.setTextColor(tokens.accent);
         subtitleView.setText(I18n.get(I18n.KEY_WIZARD_SUBTITLE, langCode));
+        subtitleView.setTextSize(13f * fontScale);
         subtitleView.setTextColor(tokens.textMuted);
         dividerView.setBackgroundColor(tokens.border);
 
@@ -298,6 +301,10 @@ public class SetupWizardActivity extends Activity {
 
     private void updateNavDock(ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
+        prevButton.setTextSize(13f * fontScale);
+        nextButton.setTextSize(13f * fontScale);
+
         if (currentStep == WizardStep.WELCOME) {
             prevButton.setVisibility(View.INVISIBLE);
             prevButton.setEnabled(false);
@@ -337,12 +344,13 @@ public class SetupWizardActivity extends Activity {
 
     private void renderWelcome(ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader("TontOS v1.0-beta", tokens);
 
         TextView welcome = new TextView(this);
         welcome.setText(formatBulletText(I18n.get(I18n.KEY_WELCOME_BODY, langCode), tokens.accent));
         welcome.setTextColor(tokens.textPrimary);
-        welcome.setTextSize(14);
+        welcome.setTextSize(14f * fontScale);
         welcome.setTypeface(Typeface.MONOSPACE);
         welcome.setLineSpacing(4, 1.2f);
         contentContainer.addView(welcome);
@@ -350,12 +358,13 @@ public class SetupWizardActivity extends Activity {
 
     private void renderLanguageRegion(final ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader(I18n.get(I18n.KEY_STEP1_TITLE, langCode), tokens);
 
         TextView info = new TextView(this);
         info.setText(I18n.get(I18n.KEY_STEP1_DESC, langCode));
         info.setTextColor(tokens.textMuted);
-        info.setTextSize(13);
+        info.setTextSize(13f * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
         info.setPadding(0, 0, 0, dpToPx(16));
         contentContainer.addView(info);
@@ -475,6 +484,7 @@ public class SetupWizardActivity extends Activity {
 
     private void renderThemeSelection(final ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader(I18n.get(I18n.KEY_STEP2_TITLE, langCode), tokens);
 
         TextView info = new TextView(this);
@@ -485,7 +495,7 @@ public class SetupWizardActivity extends Activity {
             + "• SLATE: " + I18n.get(I18n.KEY_THEME_SLATE_DESC, langCode);
         info.setText(formatBulletText(themeDesc, tokens.accent));
         info.setTextColor(tokens.textMuted);
-        info.setTextSize(12);
+        info.setTextSize(12f * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
         info.setPadding(0, 0, 0, dpToPx(16));
         contentContainer.addView(info);
@@ -521,12 +531,13 @@ public class SetupWizardActivity extends Activity {
 
     private void renderBudgetSelection(final ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader(I18n.get(I18n.KEY_STEP3_TITLE, langCode), tokens);
 
         TextView info = new TextView(this);
         info.setText(I18n.get(I18n.KEY_STEP3_DESC, langCode));
         info.setTextColor(tokens.textMuted);
-        info.setTextSize(12);
+        info.setTextSize(12f * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
         info.setPadding(0, 0, 0, dpToPx(16));
         contentContainer.addView(info);
@@ -581,6 +592,7 @@ public class SetupWizardActivity extends Activity {
 
     private void renderSummary(ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader(I18n.get(I18n.KEY_STEP4_TITLE, langCode), tokens);
 
         String budgetLabel = (selectedBudgetMinutes <= 0)
@@ -600,27 +612,29 @@ public class SetupWizardActivity extends Activity {
         );
         summary.setText(formatBulletText(text, tokens.accent));
         summary.setTextColor(tokens.textPrimary);
-        summary.setTextSize(14);
+        summary.setTextSize(14f * fontScale);
         summary.setTypeface(Typeface.MONOSPACE);
         summary.setLineSpacing(4, 1.2f);
         contentContainer.addView(summary);
     }
 
     private void addHeader(String text, ThemeTokens tokens) {
+        float fontScale = selectedFontScale / 100.0f;
         TextView header = new TextView(this);
         header.setText(text);
         header.setTextColor(tokens.accent);
-        header.setTextSize(15);
+        header.setTextSize(15f * fontScale);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setPadding(0, 8, 0, 14);
         contentContainer.addView(header);
     }
 
     private void addSelectorRow(String label, String valueText, View.OnClickListener listener, ThemeTokens tokens) {
+        float fontScale = selectedFontScale / 100.0f;
         TextView labelView = new TextView(this);
         labelView.setText(label);
         labelView.setTextColor(tokens.textMuted);
-        labelView.setTextSize(13);
+        labelView.setTextSize(13f * fontScale);
         labelView.setTypeface(Typeface.MONOSPACE);
         labelView.setSingleLine(true);
         labelView.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -635,7 +649,7 @@ public class SetupWizardActivity extends Activity {
         TextView triggerBtn = new TextView(this);
         triggerBtn.setText("[ " + cleanVal + "  ▼ ]");
         triggerBtn.setTextColor(tokens.textPrimary);
-        triggerBtn.setTextSize(14);
+        triggerBtn.setTextSize(14f * fontScale);
         triggerBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         triggerBtn.setSingleLine(true);
         triggerBtn.setEllipsize(android.text.TextUtils.TruncateAt.END);

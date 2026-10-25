@@ -1,7 +1,8 @@
 android_app_import {
     name: "OrganicMaps",
     apk: "app.organicmaps.apk",
-    certificate: "platform",
+    preprocessed: true,
+    presigned: true,
     dex_preopt: {
         enabled: false,
     },
@@ -22,7 +23,8 @@ android_app_import {
 android_app_import {
     name: "FairEmail",
     apk: "eu.faircode.email.apk",
-    certificate: "platform",
+    preprocessed: true,
+    presigned: true,
     dex_preopt: {
         enabled: false,
     },

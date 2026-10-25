@@ -14,9 +14,11 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -29,11 +31,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
  * Minimalist Digital Detox Lock Screen Activity for TontOS.
- * Provides custom tactile clock layouts, detox indicators, and emergency shortcuts.
+ * Integrates custom tactile clocks, detox indicators, emergency shortcuts,
+ * and security authentication via Pattern, PIN, and Fingerprint biometrics.
  */
 public class LockScreenActivity extends Activity {
 
@@ -43,6 +47,7 @@ public class LockScreenActivity extends Activity {
     private LinearLayout rootLayout;
     private TextView headerTitle;
     private TextView batteryView;
+    private LinearLayout centerArea;
     private LinearLayout clockContainer;
     private TextView clockMain;
     private TextView clockSub;
@@ -53,6 +58,15 @@ public class LockScreenActivity extends Activity {
     private TextView leftShortcutBtn;
     private TextView unlockBtn;
     private TextView rightShortcutBtn;
+
+    // Security Input Views
+    private LinearLayout securityInputContainer;
+    private TextView securityPromptView;
+    private PatternView patternView;
+    private PinUnlockView pinUnlockView;
+    private TextView backToClockBtn;
+    private boolean isInSecurityInput = false;
+    private CancellationSignal fingerprintCancelSignal;
 
     private Handler handler;
     private Runnable tickRunnable;
@@ -92,15 +106,18 @@ public class LockScreenActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         // Configure window to display on top of keyguard and wake screen
+        getWindow().addFlags(
+            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
+            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+        );
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
-        } else {
-            getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
-                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-            );
+            KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+            if (km != null) {
+                km.requestDismissKeyguard(this, null);
+            }
         }
 
         tokens = LockScreenManager.getResolvedThemeTokens(this);
@@ -143,6 +160,8 @@ public class LockScreenActivity extends Activity {
         buildLockUI();
         updateTimeAndStats();
         setupBatteryReceiver();
+        startBiometricListener();
+
         if (handler != null && tickRunnable != null) {
             handler.removeCallbacks(tickRunnable);
             handler.post(tickRunnable);
@@ -152,6 +171,8 @@ public class LockScreenActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        stopBiometricListener();
+
         if (batteryReceiver != null) {
             try {
                 unregisterReceiver(batteryReceiver);
@@ -166,6 +187,8 @@ public class LockScreenActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        stopBiometricListener();
+
         if (batteryReceiver != null) {
             try {
                 unregisterReceiver(batteryReceiver);
@@ -174,7 +197,43 @@ public class LockScreenActivity extends Activity {
         }
     }
 
+    private void startBiometricListener() {
+        stopBiometricListener();
+        if (LockSecurityManager.isFingerprintEnabled(this) && LockSecurityManager.hasEnrolledFingerprints(this)) {
+            fingerprintCancelSignal = LockSecurityManager.startFingerprintListener(this, new LockSecurityManager.FingerprintAuthCallback() {
+                @Override
+                public void onAuthenticated() {
+                    LockSecurityManager.vibrateSuccess(LockScreenActivity.this);
+                    unlockDevice();
+                }
+
+                @Override
+                public void onFailed() {
+                    LockSecurityManager.vibrateError(LockScreenActivity.this);
+                    if (securityPromptView != null && isInSecurityInput) {
+                        securityPromptView.setText(I18n.get(I18n.KEY_LOCK_FINGERPRINT_ACTIVE_HINT, curLangCode));
+                    }
+                }
+
+                @Override
+                public void onError(String message) {
+                    Log.w("LockScreenActivity", "Biometric error: " + message);
+                }
+            });
+        }
+    }
+
+    private void stopBiometricListener() {
+        if (fingerprintCancelSignal != null) {
+            try {
+                fingerprintCancelSignal.cancel();
+            } catch (Throwable ignored) {}
+            fingerprintCancelSignal = null;
+        }
+    }
+
     private void unlockDevice() {
+        stopBiometricListener();
         LockScreenManager.setDeviceUnlocked();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
@@ -186,12 +245,47 @@ public class LockScreenActivity extends Activity {
         overridePendingTransition(0, 0);
     }
 
+    public void handleUnlockAction() {
+        LockSecurityManager.SecurityType secType = LockSecurityManager.getSecurityType(this);
+        if (secType == LockSecurityManager.SecurityType.NONE) {
+            unlockDevice();
+        } else {
+            showSecurityInput();
+        }
+    }
+
+    private void showSecurityInput() {
+        isInSecurityInput = true;
+        if (centerArea != null) centerArea.setVisibility(View.GONE);
+        if (bottomDock != null) bottomDock.setVisibility(View.GONE);
+        if (securityInputContainer != null) {
+            securityInputContainer.setVisibility(View.VISIBLE);
+            LockSecurityManager.SecurityType secType = LockSecurityManager.getSecurityType(this);
+            if (secType == LockSecurityManager.SecurityType.PATTERN) {
+                securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PATTERN_PROMPT, curLangCode));
+                securityPromptView.setTextColor(tokens.accent);
+                if (patternView != null) patternView.clearPattern();
+            } else if (secType == LockSecurityManager.SecurityType.PIN) {
+                securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PIN_PROMPT, curLangCode));
+                securityPromptView.setTextColor(tokens.accent);
+                if (pinUnlockView != null) pinUnlockView.clearPin();
+            }
+        }
+    }
+
+    private void showClockView() {
+        isInSecurityInput = false;
+        if (securityInputContainer != null) securityInputContainer.setVisibility(View.GONE);
+        if (centerArea != null) centerArea.setVisibility(View.VISIBLE);
+        if (bottomDock != null) bottomDock.setVisibility(View.VISIBLE);
+    }
+
     private void setupGestureDetector() {
         gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
                 if (e1 != null && e2 != null && (e1.getY() - e2.getY()) > dpToPx(80) && Math.abs(velocityY) > 200) {
-                    unlockDevice();
+                    handleUnlockAction();
                     return true;
                 }
                 return false;
@@ -206,7 +300,7 @@ public class LockScreenActivity extends Activity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (gestureDetector != null && gestureDetector.onTouchEvent(event)) {
+        if (!isInSecurityInput && gestureDetector != null && gestureDetector.onTouchEvent(event)) {
             return true;
         }
         return super.onTouchEvent(event);
@@ -214,6 +308,10 @@ public class LockScreenActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (isInSecurityInput) {
+            showClockView();
+            return;
+        }
         // Intentionally ignore back press on lock screen to prevent unauthorized bypass
     }
 
@@ -257,12 +355,12 @@ public class LockScreenActivity extends Activity {
         rootLayout.setBackgroundColor(tokens.bg);
         rootLayout.setPadding(dpToPx(24), dpToPx(36), dpToPx(24), dpToPx(24));
 
+        final float fontScale = LockScreenManager.getFontScale(this);
+
         // Top Status Header
         LinearLayout headerRow = new LinearLayout(this);
         headerRow.setOrientation(LinearLayout.HORIZONTAL);
         headerRow.setGravity(Gravity.CENTER_VERTICAL);
-
-        final float fontScale = LockScreenManager.getFontScale(this);
 
         headerTitle = new TextView(this);
         headerTitle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -282,7 +380,7 @@ public class LockScreenActivity extends Activity {
         rootLayout.addView(headerRow);
 
         // Center Content Area (Clock + Date + Detox + Message)
-        LinearLayout centerArea = new LinearLayout(this);
+        centerArea = new LinearLayout(this);
         centerArea.setOrientation(LinearLayout.VERTICAL);
         centerArea.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams centerLp = new LinearLayout.LayoutParams(
@@ -339,6 +437,10 @@ public class LockScreenActivity extends Activity {
 
         rootLayout.addView(centerArea);
 
+        // Security Input Container (Pattern / PIN)
+        buildSecurityInputContainer(fontScale);
+        rootLayout.addView(securityInputContainer);
+
         // Bottom Quick Access Dock
         buildBottomDock();
         rootLayout.addView(bottomDock);
@@ -353,6 +455,106 @@ public class LockScreenActivity extends Activity {
                 );
             }
         } catch (Throwable ignored) {}
+    }
+
+    private void buildSecurityInputContainer(float fontScale) {
+        securityInputContainer = new LinearLayout(this);
+        securityInputContainer.setOrientation(LinearLayout.VERTICAL);
+        securityInputContainer.setGravity(Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams secLp = new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f);
+        securityInputContainer.setLayoutParams(secLp);
+        securityInputContainer.setVisibility(View.GONE);
+
+        securityPromptView = new TextView(this);
+        securityPromptView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        securityPromptView.setTextSize(14 * fontScale);
+        securityPromptView.setTextColor(tokens.accent);
+        securityPromptView.setGravity(Gravity.CENTER);
+        securityPromptView.setPadding(0, dpToPx(8), 0, dpToPx(12));
+        securityInputContainer.addView(securityPromptView);
+
+        LockSecurityManager.SecurityType secType = LockSecurityManager.getSecurityType(this);
+        if (secType == LockSecurityManager.SecurityType.PATTERN) {
+            patternView = new PatternView(this, tokens);
+            LinearLayout.LayoutParams pLp = new LinearLayout.LayoutParams(dpToPx(270), dpToPx(270));
+            pLp.setMargins(0, 0, 0, dpToPx(16));
+            securityInputContainer.addView(patternView, pLp);
+
+            patternView.setOnPatternListener(new PatternView.OnPatternListener() {
+                @Override
+                public void onPatternDetected(List<Integer> pattern) {
+                    if (LockSecurityManager.verifyPattern(LockScreenActivity.this, pattern)) {
+                        patternView.setDisplayMode(PatternView.DisplayMode.CORRECT);
+                        LockSecurityManager.vibrateSuccess(LockScreenActivity.this);
+                        securityPromptView.setText(I18n.get(I18n.KEY_DONE, curLangCode));
+                        unlockDevice();
+                    } else {
+                        patternView.setDisplayMode(PatternView.DisplayMode.ERROR);
+                        LockSecurityManager.vibrateError(LockScreenActivity.this);
+                        securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PATTERN_WRONG, curLangCode));
+                        securityPromptView.setTextColor(Color.parseColor("#FF5252"));
+                        patternView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PATTERN_PROMPT, curLangCode));
+                                securityPromptView.setTextColor(tokens.accent);
+                                patternView.clearPattern();
+                            }
+                        }, 800L);
+                    }
+                }
+
+                @Override
+                public void onPatternCleared() {}
+            });
+        } else if (secType == LockSecurityManager.SecurityType.PIN) {
+            pinUnlockView = new PinUnlockView(this, tokens);
+            pinUnlockView.setRequiredLength(4);
+            LinearLayout.LayoutParams pinLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            securityInputContainer.addView(pinUnlockView, pinLp);
+
+            pinUnlockView.setOnPinListener(new PinUnlockView.OnPinListener() {
+                @Override
+                public void onPinEntered(String pin) {
+                    if (LockSecurityManager.verifyPin(LockScreenActivity.this, pin)) {
+                        LockSecurityManager.vibrateSuccess(LockScreenActivity.this);
+                        unlockDevice();
+                    } else {
+                        LockSecurityManager.vibrateError(LockScreenActivity.this);
+                        pinUnlockView.showError(I18n.get(I18n.KEY_LOCK_PIN_WRONG, curLangCode));
+                        securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PIN_WRONG, curLangCode));
+                        securityPromptView.setTextColor(Color.parseColor("#FF5252"));
+                        securityPromptView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PIN_PROMPT, curLangCode));
+                                securityPromptView.setTextColor(tokens.accent);
+                            }
+                        }, 800L);
+                    }
+                }
+
+                @Override
+                public void onPinCleared() {}
+            });
+        }
+
+        backToClockBtn = new TextView(this);
+        backToClockBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        backToClockBtn.setTextSize(12 * fontScale);
+        backToClockBtn.setTextColor(tokens.textMuted);
+        backToClockBtn.setText(I18n.get(I18n.KEY_LOCK_BACK_TO_CLOCK, curLangCode));
+        backToClockBtn.setGravity(Gravity.CENTER);
+        backToClockBtn.setPadding(dpToPx(16), dpToPx(10), dpToPx(16), dpToPx(10));
+        backToClockBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showClockView();
+            }
+        });
+        securityInputContainer.addView(backToClockBtn);
     }
 
     private String getThemeLockHeader(ThemeTokens tokens) {
@@ -400,14 +602,37 @@ public class LockScreenActivity extends Activity {
         unlockBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         unlockBtn.setTextSize(12 * fontScale);
         unlockBtn.setTextColor(tokens.navAccent);
-        unlockBtn.setText(I18n.get(I18n.KEY_LOCK_UNLOCK_HINT, curLangCode));
+
+        LockSecurityManager.SecurityType secType = LockSecurityManager.getSecurityType(this);
+        boolean hasBiometric = LockSecurityManager.isFingerprintEnabled(this) && LockSecurityManager.hasEnrolledFingerprints(this);
+
+        String unlockHint;
+        if (hasBiometric) {
+            if (secType == LockSecurityManager.SecurityType.PATTERN) {
+                unlockHint = I18n.get(I18n.KEY_LOCK_HINT_FINGERPRINT_OR_PATTERN, curLangCode);
+            } else if (secType == LockSecurityManager.SecurityType.PIN) {
+                unlockHint = I18n.get(I18n.KEY_LOCK_HINT_FINGERPRINT_OR_PIN, curLangCode);
+            } else {
+                unlockHint = I18n.get(I18n.KEY_LOCK_HINT_FINGERPRINT_OR_SWIPE, curLangCode);
+            }
+        } else {
+            if (secType == LockSecurityManager.SecurityType.PATTERN) {
+                unlockHint = "[ " + I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, curLangCode).toUpperCase(Locale.getDefault()) + " ]";
+            } else if (secType == LockSecurityManager.SecurityType.PIN) {
+                unlockHint = "[ " + I18n.get(I18n.KEY_LOCK_TYPE_PIN, curLangCode).toUpperCase(Locale.getDefault()) + " ]";
+            } else {
+                unlockHint = I18n.get(I18n.KEY_LOCK_UNLOCK_HINT, curLangCode);
+            }
+        }
+
+        unlockBtn.setText(unlockHint);
         unlockBtn.setGravity(Gravity.CENTER);
         unlockBtn.setMinimumHeight(dpToPx(MIN_TOUCH_TARGET_DP));
         unlockBtn.setPadding(dpToPx(8), dpToPx(10), dpToPx(8), dpToPx(10));
         unlockBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                unlockDevice();
+                handleUnlockAction();
             }
         });
         LinearLayout.LayoutParams unlockLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
