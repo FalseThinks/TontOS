@@ -17,7 +17,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsetsController;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -232,58 +231,10 @@ public final class SandboxManager {
     ) {
         if (activity == null || activity.isFinishing()) return;
 
-        final Dialog dialog = new Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(tokens.bg));
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
-                    window.getInsetsController().setSystemBarsAppearance(
-                        tokens.isLight ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    );
-                }
-            } catch (Throwable ignored) {}
-            GrayscaleManager.applyGrayscaleToWindow(window, GrayscaleManager.isGrayscaleEnabled(activity));
-        }
-
-        final float density = activity.getResources().getDisplayMetrics().density;
-        final int pad = (int) (20 * density + 0.5f);
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(tokens.bg);
-        root.setPadding(pad, pad, pad, pad);
-
-        // Header Title
-        TextView header = new TextView(activity);
-        header.setText(I18n.get(I18n.KEY_SANDBOX_TITLE, curLangCode).toUpperCase(Locale.ROOT));
-        header.setTextColor(tokens.accent);
-        header.setTextSize(17);
-        header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        header.setPadding(0, 0, 0, (int) (6 * density));
-        root.addView(header);
-
-        // Divider
-        View divider = new View(activity);
-        LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (int) (1 * density + 0.5f)
-        );
-        divParams.setMargins(0, 0, 0, (int) (16 * density));
-        divider.setLayoutParams(divParams);
-        divider.setBackgroundColor(tokens.border);
-        root.addView(divider);
-
-        // Scroll Container
-        ScrollView scroll = new ScrollView(activity);
-        scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
-
-        LinearLayout container = new LinearLayout(activity);
-        container.setOrientation(LinearLayout.VERTICAL);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_SANDBOX_TITLE, curLangCode));
+        final float density = dlg.getDensity();
+        final ThemeTokens themeTokens = dlg.getTokens();
+        final LinearLayout container = dlg.getContentContainer();
 
         final ProfileState state = getSandboxState(activity);
         final int userId = getSandboxUserId(activity);
@@ -366,7 +317,7 @@ public final class SandboxManager {
                         if (ok) {
                             Toast.makeText(activity, "Sandbox profile initialized", Toast.LENGTH_SHORT).show();
                             if (onStateChanged != null) onStateChanged.run();
-                            dialog.dismiss();
+                            dlg.dismiss();
                             showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
                         } else {
                             Toast.makeText(activity, "Failed to create sandbox profile", Toast.LENGTH_LONG).show();
@@ -390,7 +341,7 @@ public final class SandboxManager {
                     public void onClick(View v) {
                         startSandboxProfile(activity, userId);
                         if (onStateChanged != null) onStateChanged.run();
-                        dialog.dismiss();
+                        dlg.dismiss();
                         showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
                     }
                 }
@@ -443,7 +394,7 @@ public final class SandboxManager {
                                     if (confirmed) {
                                         destroySandboxProfile(activity, userId);
                                         if (onStateChanged != null) onStateChanged.run();
-                                        dialog.dismiss();
+                                        dlg.dismiss();
                                         showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
                                     }
                                 }
@@ -470,7 +421,7 @@ public final class SandboxManager {
                     public void onClick(View v) {
                         pauseSandboxProfile(activity, userId);
                         if (onStateChanged != null) onStateChanged.run();
-                        dialog.dismiss();
+                        dlg.dismiss();
                         showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
                     }
                 }
@@ -523,7 +474,7 @@ public final class SandboxManager {
                                     if (confirmed) {
                                         destroySandboxProfile(activity, userId);
                                         if (onStateChanged != null) onStateChanged.run();
-                                        dialog.dismiss();
+                                        dlg.dismiss();
                                         showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
                                     }
                                 }
@@ -538,32 +489,22 @@ public final class SandboxManager {
         }
 
         container.addView(actionsLayout);
-        scroll.addView(container);
-        root.addView(scroll);
 
         // Bottom Dismiss Button
-        TextView backBtn = createActionButton(
-            activity,
+        dlg.addActionButton(
             "[ <-- " + I18n.get(I18n.KEY_BACK, curLangCode).toUpperCase(Locale.ROOT) + " ]",
-            tokens.navAccent,
-            tokens.navAccent,
-            Color.TRANSPARENT,
-            tokens.controlBgPressed,
-            density,
+            themeTokens.navAccent,
+            themeTokens.border,
+            true,
             new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    dialog.dismiss();
+                    dlg.dismiss();
                 }
             }
         );
-        LinearLayout.LayoutParams backLp = (LinearLayout.LayoutParams) backBtn.getLayoutParams();
-        backLp.setMargins(0, (int) (12 * density), 0, 0);
-        root.addView(backBtn);
 
-        dialog.setContentView(root);
-        dialog.setCancelable(true);
-        dialog.show();
+        dlg.show();
     }
 
     private static TextView createActionButton(
@@ -577,7 +518,7 @@ public final class SandboxManager {
         View.OnClickListener onClick
     ) {
         TextView btn = new TextView(ctx);
-        btn.setText(text);
+        btn.setText(TactileUi.ensureBrackets(text));
         btn.setTextColor(textColor);
         btn.setTextSize(13);
         btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -586,26 +527,7 @@ public final class SandboxManager {
         btn.setPadding((int) (12 * density), (int) (10 * density), (int) (12 * density), (int) (10 * density));
         btn.setClickable(true);
         btn.setFocusable(true);
-
-        StateListDrawable sld = new StateListDrawable();
-
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setShape(GradientDrawable.RECTANGLE);
-        pressed.setColor(pressedColor);
-        pressed.setStroke((int) (2 * density), strokeColor);
-        pressed.setCornerRadius((int) (4 * density));
-
-        GradientDrawable normal = new GradientDrawable();
-        normal.setShape(GradientDrawable.RECTANGLE);
-        normal.setColor(bgColor);
-        normal.setStroke((int) (1 * density), strokeColor);
-        normal.setCornerRadius((int) (4 * density));
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-
-        btn.setBackground(sld);
+        btn.setBackground(TactileUi.createButtonDrawable(bgColor, pressedColor, strokeColor, Math.max(1, (int) (1 * density + 0.5f)), (int) (4 * density + 0.5f)));
         btn.setLayoutParams(new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ));

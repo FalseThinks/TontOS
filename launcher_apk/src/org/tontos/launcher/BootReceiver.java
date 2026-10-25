@@ -36,5 +36,8 @@ public class BootReceiver extends BroadcastReceiver {
 
         // 3. Run initial provisioning and debloating
         SystemProvisioningManager.executeInitialProvisioning(context);
+
+        // 4. Restore active network firewall rules
+        AppNetworkFirewall.restoreFirewallRules(context);
     }
 }

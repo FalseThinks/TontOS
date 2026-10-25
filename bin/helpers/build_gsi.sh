@@ -147,8 +147,8 @@ stage_vendor_files() {
     fi
 
     # 3. Permissions XMLs
-    if [[ -d "$ROOT_DIR/platform/config" ]]; then
-        cp -f "$ROOT_DIR/platform/config/"*.xml "$vendor_dir/products/" 2>/dev/null || true
+    if [[ -d "$ROOT_DIR/platform/products" ]]; then
+        cp -f "$ROOT_DIR/platform/products/"*.xml "$vendor_dir/products/" 2>/dev/null || true
     fi
 
     # 4. FOSS prebuilts if present

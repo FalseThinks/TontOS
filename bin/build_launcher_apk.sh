@@ -51,7 +51,7 @@ javac --release 17 -cp "$PLATFORM_JAR" -d "$BUILD_DIR/classes" \
     $(find "$SRC_DIR/src" -name "*.java")
 "$BUILD_TOOLS/d8" --lib "$PLATFORM_JAR" --output "$BUILD_DIR" \
     $(find "$BUILD_DIR/classes" -name "*.class")
-(cd "$BUILD_DIR" && jar -uf unaligned.apk classes.dex)
+(cd "$BUILD_DIR" && jar -u0f unaligned.apk classes.dex)
 "$BUILD_TOOLS/zipalign" -f -p 4 "$BUILD_DIR/unaligned.apk" "$BUILD_DIR/aligned.apk"
 
 PLATFORM_PK8="${PLATFORM_PK8:-/home/paproka/aosp/tontos/build/make/target/product/security/platform.pk8}"

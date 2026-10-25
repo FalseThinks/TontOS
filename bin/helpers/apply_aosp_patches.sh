@@ -61,7 +61,7 @@ echo "[*] Synchronizing TontOS vendor tree ($AOSP_DIR/vendor/tontos)..."
 mkdir -p "$AOSP_DIR/vendor/tontos/products" "$AOSP_DIR/vendor/tontos/apps/prebuilts"
 
 cp -f "$ROOT_DIR/platform/AndroidProducts.mk" "$AOSP_DIR/vendor/tontos/"
-cp -f "$ROOT_DIR/platform/products/"*.mk "$AOSP_DIR/vendor/tontos/products/"
+cp -f "$ROOT_DIR/platform/products/"*.mk "$ROOT_DIR/platform/products/"*.xml "$AOSP_DIR/vendor/tontos/products/"
 cp -f "$ROOT_DIR/platform/apps/prebuilts/Android.bp" "$AOSP_DIR/vendor/tontos/apps/prebuilts/"
 if [[ -d "$ROOT_DIR/apps" ]]; then
     cp -f "$ROOT_DIR/apps/"*.apk "$AOSP_DIR/vendor/tontos/apps/prebuilts/" 2>/dev/null || true

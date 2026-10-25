@@ -6,8 +6,12 @@
 # ==============================================================================
 set -euo pipefail
 
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 AOSP_DIR="${AOSP_DIR:-$HOME/aosp/tontos}"
-HOST_OUT="$AOSP_DIR/out/host/linux-x86"
+HOST_OUT="$ROOT_DIR/out/host/linux-x86"
+if [[ ! -x "$HOST_OUT/bin/stop_cvd" && -x "$AOSP_DIR/out/host/linux-x86/bin/stop_cvd" ]]; then
+    HOST_OUT="$AOSP_DIR/out/host/linux-x86"
+fi
 
 echo "=========================================================="
 echo " Stopping Cuttlefish Virtual Device (TontOS)..."

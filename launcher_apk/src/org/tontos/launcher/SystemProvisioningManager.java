@@ -134,6 +134,16 @@ public final class SystemProvisioningManager {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE",
             "android.permission.POST_NOTIFICATIONS"
+        },
+        {
+            "com.bitchat.droid",
+            "android.permission.BLUETOOTH_CONNECT",
+            "android.permission.BLUETOOTH_SCAN",
+            "android.permission.BLUETOOTH_ADVERTISE",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.ACCESS_COARSE_LOCATION",
+            "android.permission.POST_NOTIFICATIONS",
+            "android.permission.FOREGROUND_SERVICE"
         }
     };
 
@@ -247,8 +257,19 @@ public final class SystemProvisioningManager {
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "development_settings_enabled", "1");
 
                     // 9. ROM Lock Screen & Power Policy: Preserve hardware AOSP keyguard & FBE encryption
-                    SafeCommandExecutor.executePrivileged("cmd", "deviceidle", "whitelist", "+org.tontos.launcher");
-                    SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "RUN_IN_BACKGROUND", "allow");
+                    String[] bgWhitelistedApps = {
+                        "org.tontos.launcher",
+                        "com.bitchat.droid",
+                        "eu.faircode.email",
+                        "helium314.keyboard",
+                        "org.fossify.phone",
+                        "org.fossify.messages"
+                    };
+                    for (String app : bgWhitelistedApps) {
+                        SafeCommandExecutor.executePrivileged("cmd", "deviceidle", "whitelist", "+" + app);
+                        SafeCommandExecutor.executePrivileged("cmd", "appops", "set", app, "RUN_IN_BACKGROUND", "allow");
+                        SafeCommandExecutor.executePrivileged("cmd", "appops", "set", app, "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS", "allow");
+                    }
                     SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "SYSTEM_ALERT_WINDOW", "allow");
                     LockScreenManager.registerScreenReceiver(appContext);
 

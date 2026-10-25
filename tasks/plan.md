@@ -97,6 +97,14 @@ Current product slices:
 - [x] Task 28.1: Package Ingestion & Manifest Registration (`apps/bitchat.apk`, `AndroidManifest.xml`)
 - [x] Task 28.2: Debloat Retention & Live Device Integration (`bin/helpers/debloat_custom_rom.sh`)
 
+### Phase 29: Minimalist AMOLED UX, Battery Restoration & Settings Override
+- [x] Task 29.1: Text Fitting & Bracket Sanitization in Setup Wizard & Settings (`SetupWizardActivity.java`, `SettingsRowFactory.java`)
+- [x] Task 29.2: Ultra Battery Saver Previous State Restoration & Background Triggers (`UltraBatterySaverManager.java`, `SystemProvisioningManager.java`, `MainActivity.java`)
+- [x] Task 29.3: Native Lock Screen Security & Elimination of Stock AOSP Face/Pattern Redirects (`SettingsActivity.java`, `LockSecurityManager.java`, `I18n.java`)
+- [x] Task 29.4: Spanish Locale Default & Essential Features Guide in First Tab (`SettingsActivity.java`, `MainActivity.java`, `I18n.java`)
+- [x] Task 29.5: Native AMOLED Keyboard (IME) Selector & Bootloader Status Clarity (`SettingsActivity.java`, `BootloaderManager.java`, `I18n.java`)
+- [x] Task 29.6: Launcher & Settings UI Performance Optimization & Live Emulator Verification (`MainActivity.java`, `bin/run_full_suite.sh`)
+
 ## Phase 20+: Linux host with a real Android runtime
 
 ### Goal and constraints

@@ -19,5 +19,10 @@
         <permission name="android.permission.CHANGE_COMPONENT_ENABLED_STATE" />
         <permission name="android.permission.START_ACTIVITIES_FROM_BACKGROUND" />
         <permission name="android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED" />
+        <permission name="android.permission.MODIFY_PHONE_STATE" />
+        <permission name="android.permission.NETWORK_SETTINGS" />
+        <permission name="android.permission.PACKAGE_USAGE_STATS" />
+        <permission name="android.permission.SET_ACTIVITY_WATCHER" />
+        <permission name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     </privapp-permissions>
 </permissions>

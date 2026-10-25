@@ -23,10 +23,14 @@ public class UltraShadeActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
+            finish();
+            return;
+        }
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = MainActivity.getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         String themeId = prefs.getString("selected_theme", "AMOLED");
         ThemeTokens tokens = ThemeTokens.get(themeId);
 

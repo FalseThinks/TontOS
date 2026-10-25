@@ -1,6 +1,7 @@
 package org.tontos.launcher;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import java.util.HashMap;
@@ -394,6 +395,10 @@ public final class I18n {
     public static final String KEY_GUIDE_SKIP = "guide_skip";
     public static final String KEY_GUIDE_START = "guide_start";
     public static final String KEY_GUIDE_SETTINGS_ROW = "guide_settings_row";
+    public static final String KEY_KEYBOARD = "keyboard";
+    public static final String KEY_INPUT_METHOD = "input_method";
+    public static final String KEY_CONFIGURE = "configure";
+    public static final String KEY_LOCK_TEST_ACTION = "lock_test_action";
 
     // Backup & Restore
     public static final String KEY_BACKUP_CREATE_TITLE = "backup_create_title";
@@ -520,6 +525,8 @@ public final class I18n {
     public static final String KEY_EQ_BAND_3 = KEY_EQ_BAND_910HZ;
     public static final String KEY_EQ_BAND_4 = KEY_EQ_BAND_3_6KHZ;
     public static final String KEY_EQ_BAND_5 = KEY_EQ_BAND_14KHZ;
+    public static final String KEY_APK = "apk";
+    public static final String KEY_INSTALL_PACKAGE = "install_package";
 
     private static final Map<String, Map<String, String>> TRANSLATIONS = new HashMap<>();
     static {
@@ -647,8 +654,8 @@ public final class I18n {
         en.put(KEY_SUB_SYS_INFO_DESC, "Hardware model, Android version, kernel & build ID");
         en.put(KEY_SUB_SYS_UPDATES, "System Updates (OTA)");
         en.put(KEY_SUB_SYS_UPDATES_DESC, "Release channels, update check & local package install");
-        en.put(KEY_SUB_SYS_BACKUP, "Cryptographic Backup");
-        en.put(KEY_SUB_SYS_BACKUP_DESC, "Create and restore verifiable encrypted device snapshots");
+        en.put(KEY_SUB_SYS_BACKUP, "Backup & Restore");
+        en.put(KEY_SUB_SYS_BACKUP_DESC, "Back up and restore your settings and layout");
         en.put(KEY_SUB_SYS_ADVANCED, "Advanced & Developer Tools");
         en.put(KEY_SUB_SYS_ADVANCED_DESC, "Setup wizard, developer options & hardware tests");
         en.put(KEY_MEDIA_VOL, "Media Volume");
@@ -776,7 +783,7 @@ public final class I18n {
         en.put(KEY_NO_BACKUP_FOUND, "No backup file found");
         en.put(KEY_APP_BROWSER, "FOSS Browser");
         en.put(KEY_GRAYSCALE_MODE, "Monochrome / Grayscale Mode");
-        en.put(KEY_GRAYSCALE_DESC, "KMS/AOSP system-wide monochromacy to eliminate visual dopamine");
+        en.put(KEY_GRAYSCALE_DESC, "Black and white screen to reduce visual distractions");
         en.put(KEY_FRICTION_TITLE, "Mindful App Launch Delay");
         en.put(KEY_FRICTION_OFF, "Off / Direct Launch");
         en.put(KEY_FRICTION_3S, "3s");
@@ -805,7 +812,7 @@ public final class I18n {
         en.put(KEY_BOOTLOADER_HEADER, "=== BOOTLOADER STATUS (READ-ONLY) ===");
         en.put(KEY_BOOTLOADER_LOCK_STATUS, "Android-reported bootloader status");
         en.put(KEY_BOOTLOADER_LOCKED, "Reported locked (not attested by this app)");
-        en.put(KEY_BOOTLOADER_UNLOCKED, "Reported unlocked (not attested by this app)");
+        en.put(KEY_BOOTLOADER_UNLOCKED, "Reported unlocked (dev/virtual build)");
         en.put(KEY_BOOTLOADER_UNKNOWN, "Unknown; Android did not report a value");
         en.put(KEY_BOOTLOADER_ACTION_LOCK, "Unavailable in this app");
         en.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Unavailable in this app");
@@ -904,18 +911,22 @@ public final class I18n {
         en.put(KEY_GUIDE_CARD2_TITLE, "2. BACKGROUND APP TERMINATION");
         en.put(KEY_GUIDE_CARD2_DESC, "Returning home halts app processes immediately to reclaim RAM and preserve privacy, unless explicitly whitelisted in Settings > Connectivity.");
         en.put(KEY_GUIDE_CARD3_TITLE, "3. MINDFUL LAUNCH PAUSE");
-        en.put(KEY_GUIDE_CARD3_DESC, "Intentional countdown delay before opening distracting applications with a mindful pause to break dopamine-seeking loops.");
+        en.put(KEY_GUIDE_CARD3_DESC, "Brief countdown pause before opening apps to prevent mindless scrolling.");
         en.put(KEY_GUIDE_CARD4_TITLE, "4. DETOX BUDGET & GRAYSCALE");
-        en.put(KEY_GUIDE_CARD4_DESC, "Track daily screen time budget in top bar. Activate system-wide grayscale in Settings to remove dopamine-inducing colors.");
+        en.put(KEY_GUIDE_CARD4_DESC, "Track daily screen time budget in top bar. Turn on grayscale to remove distracting colors.");
         en.put(KEY_GUIDE_CARD5_TITLE, "5. ULTRA SHADE ACCESS");
         en.put(KEY_GUIDE_CARD5_DESC, "Tap the clock or battery percentage on top bar to open the minimalist Ultra Shade for quick Wi-Fi, Bluetooth, Torch and DND toggles.");
         en.put(KEY_GUIDE_SKIP, "[ SKIP GUIDE ]");
         en.put(KEY_GUIDE_START, "[ GET STARTED ]");
         en.put(KEY_GUIDE_SETTINGS_ROW, "Essential Features Guide");
+        en.put(KEY_KEYBOARD, "Keyboard");
+        en.put(KEY_INPUT_METHOD, "Input Method");
+        en.put(KEY_CONFIGURE, "CONFIGURE");
+        en.put(KEY_LOCK_TEST_ACTION, "TEST");
 
         // Backup & Restore
         en.put(KEY_BACKUP_CREATE_TITLE, "=== CREATE BACKUP SNAPSHOT ===");
-        en.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Cryptographic snapshot of %d preferences (theme, apps, sound, radios).");
+        en.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Backup snapshot of %d settings (%s).");
         en.put(KEY_BACKUP_FILE_NAME_LABEL, "Backup File Name:");
         en.put(KEY_BACKUP_DEST_LABEL, "Storage Destination:");
         en.put(KEY_BACKUP_DEST_DOWNLOADS, "Downloads (/sdcard/Download)");
@@ -1031,6 +1042,8 @@ public final class I18n {
         en.put(KEY_ACTION_WAITING, "Waiting for the system state to update.");
         en.put(KEY_STATE_UNKNOWN, "UNKNOWN");
 
+                en.put(KEY_APK, "APK");
+        en.put(KEY_INSTALL_PACKAGE, "Install package");
         TRANSLATIONS.put("en", en);
     }
 
@@ -1144,8 +1157,8 @@ public final class I18n {
         de.put(KEY_SUB_SYS_INFO_DESC, "Hardwaremodell, Android-Version, Kernel & Build-ID");
         de.put(KEY_SUB_SYS_UPDATES, "System-Updates (OTA)");
         de.put(KEY_SUB_SYS_UPDATES_DESC, "Update-Kanäle, Prüfung & lokale Installation");
-        de.put(KEY_SUB_SYS_BACKUP, "Kryptographisches Backup");
-        de.put(KEY_SUB_SYS_BACKUP_DESC, "Verschlüsselte Snapshots erstellen und wiederherstellen");
+        de.put(KEY_SUB_SYS_BACKUP, "Sicherung & Wiederherstellung");
+        de.put(KEY_SUB_SYS_BACKUP_DESC, "Einstellungen und Layout sichern und wiederherstellen");
         de.put(KEY_SUB_SYS_ADVANCED, "Entwickler- & Hardware-Tools");
         de.put(KEY_SUB_SYS_ADVANCED_DESC, "Einrichtungsassistent, Entwickleroptionen & Tests");
         de.put(KEY_MEDIA_VOL, "Medienlautstärke");
@@ -1273,7 +1286,7 @@ public final class I18n {
         de.put(KEY_NO_BACKUP_FOUND, "Keine Sicherungsdatei gefunden");
         de.put(KEY_APP_BROWSER, "FOSS Browser");
         de.put(KEY_GRAYSCALE_MODE, "Graustufen-Modus");
-        de.put(KEY_GRAYSCALE_DESC, "Systemweites Monochrom (KMS/AOSP) zur Reduzierung visueller Dopaminreize");
+        de.put(KEY_GRAYSCALE_DESC, "Schwarz-Weiß-Bildschirm zur Reduzierung von Ablenkungen");
         de.put(KEY_FRICTION_TITLE, "Achtsamkeits-Verzögerung");
         de.put(KEY_FRICTION_OFF, "0s (Aus / Direkt)");
         de.put(KEY_FRICTION_3S, "3s");
@@ -1302,7 +1315,7 @@ public final class I18n {
         de.put(KEY_BOOTLOADER_HEADER, "=== BOOTLOADER-STATUS (NUR LESEN) ===");
         de.put(KEY_BOOTLOADER_LOCK_STATUS, "Von Android gemeldeter Bootloader-Status");
         de.put(KEY_BOOTLOADER_LOCKED, "Als gesperrt gemeldet (von dieser App nicht attestiert)");
-        de.put(KEY_BOOTLOADER_UNLOCKED, "Als entsperrt gemeldet (von dieser App nicht attestiert)");
+        de.put(KEY_BOOTLOADER_UNLOCKED, "Entsperrt (Entwicklung/virtuell)");
         de.put(KEY_BOOTLOADER_UNKNOWN, "Unbekannt (kein Android-Status verfügbar)");
         de.put(KEY_BOOTLOADER_ACTION_LOCK, "In dieser App nicht verfügbar");
         de.put(KEY_BOOTLOADER_ACTION_UNLOCK, "In dieser App nicht verfügbar");
@@ -1479,7 +1492,11 @@ public final class I18n {
         de.put(KEY_GUIDE_CARD5_DESC, "Keine Tracker, keine Telemetrie, volle Kontrolle.");
         de.put(KEY_GUIDE_CARD5_TITLE, "5. Privatsphäre & Sicherheit");
         de.put(KEY_GUIDE_HEADER, "=== SCHNELLSTART-ANLEITUNG ===");
-        de.put(KEY_GUIDE_SETTINGS_ROW, "TontOS Schnellstart-Anleitung anzeigen");
+        de.put(KEY_GUIDE_SETTINGS_ROW, "Leitfaden für wesentliche Funktionen");
+        de.put(KEY_KEYBOARD, "Tastatur");
+        de.put(KEY_INPUT_METHOD, "Eingabemethode");
+        de.put(KEY_CONFIGURE, "KONFIGURIEREN");
+        de.put(KEY_LOCK_TEST_ACTION, "TESTEN");
         de.put(KEY_GUIDE_SKIP, "[ ÜBERSPRINGEN ]");
         de.put(KEY_GUIDE_START, "[ BEGINNEN ]");
         de.put(KEY_GUIDE_SUBTITLE, "Grundprinzipien von TontOS");
@@ -1522,6 +1539,8 @@ public final class I18n {
         de.put(KEY_RESTORE_SUCCESS, "Backup erfolgreich wiederhergestellt!");
         de.put(KEY_RESTORE_TITLE, "=== BACKUP WIEDERHERSTELLEN ===");
 
+                de.put(KEY_APK, "APK");
+        de.put(KEY_INSTALL_PACKAGE, "Paket installieren");
         TRANSLATIONS.put("de", de);
     }
 
@@ -1635,8 +1654,8 @@ public final class I18n {
         pl.put(KEY_SUB_SYS_INFO_DESC, "Model sprzętu, wersja Androida, jądro i numer kompilacji");
         pl.put(KEY_SUB_SYS_UPDATES, "Aktualizacje systemu (OTA)");
         pl.put(KEY_SUB_SYS_UPDATES_DESC, "Kanały aktualizacji, sprawdzanie i instalacja lokalna");
-        pl.put(KEY_SUB_SYS_BACKUP, "Kopia kryptograficzna");
-        pl.put(KEY_SUB_SYS_BACKUP_DESC, "Tworzenie i przywracanie szyfrowanych kopii urządzenia");
+        pl.put(KEY_SUB_SYS_BACKUP, "Kopia zapasowa");
+        pl.put(KEY_SUB_SYS_BACKUP_DESC, "Tworzenie i przywracanie kopii zapasowej ustawień");
         pl.put(KEY_SUB_SYS_ADVANCED, "Narzędzia zaawansowane i programistyczne");
         pl.put(KEY_SUB_SYS_ADVANCED_DESC, "Kreator konfiguracji, opcje programisty i testy");
         pl.put(KEY_MEDIA_VOL, "Głośność multimediów");
@@ -1764,7 +1783,7 @@ public final class I18n {
         pl.put(KEY_NO_BACKUP_FOUND, "Nie znaleziono pliku kopii zapasowej");
         pl.put(KEY_APP_BROWSER, "Przeglądarka FOSS");
         pl.put(KEY_GRAYSCALE_MODE, "Tryb skali szarości");
-        pl.put(KEY_GRAYSCALE_DESC, "Systemowy tryb monochromatyczny eliminujący bodźce dopaminowe");
+        pl.put(KEY_GRAYSCALE_DESC, "Czarno-biały ekran zmniejszający rozproszenie uwagi");
         pl.put(KEY_FRICTION_TITLE, "Świadome opóźnienie uruchamiania");
         pl.put(KEY_FRICTION_OFF, "0s (Wyłączone)");
         pl.put(KEY_FRICTION_3S, "3s");
@@ -1793,7 +1812,7 @@ public final class I18n {
         pl.put(KEY_BOOTLOADER_HEADER, "=== STAN BOOTLOADERA (TYLKO ODCZYT) ===");
         pl.put(KEY_BOOTLOADER_LOCK_STATUS, "Stan bootloadera zgłoszony przez Androida");
         pl.put(KEY_BOOTLOADER_LOCKED, "Zgłoszony jako zablokowany (bez atestacji przez tę aplikację)");
-        pl.put(KEY_BOOTLOADER_UNLOCKED, "Zgłoszony jako odblokowany (bez atestacji przez tę aplikację)");
+        pl.put(KEY_BOOTLOADER_UNLOCKED, "Odblokowany (obraz testowy)");
         pl.put(KEY_BOOTLOADER_UNKNOWN, "Nieznany (brak danych Androida)");
         pl.put(KEY_BOOTLOADER_ACTION_LOCK, "Niedostępne w tej aplikacji");
         pl.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Niedostępne w tej aplikacji");
@@ -1970,7 +1989,11 @@ public final class I18n {
         pl.put(KEY_GUIDE_CARD5_DESC, "Brak trackerów, brak telemetrii, pełna kontrola.");
         pl.put(KEY_GUIDE_CARD5_TITLE, "5. Prywatność i bezpieczeństwo");
         pl.put(KEY_GUIDE_HEADER, "=== PRZEWODNIK SZYBKIEGO STARTU ===");
-        pl.put(KEY_GUIDE_SETTINGS_ROW, "Pokaż przewodnik szybkiego startu");
+        pl.put(KEY_GUIDE_SETTINGS_ROW, "Przewodnik po kluczowych funkcjach");
+        pl.put(KEY_KEYBOARD, "Klawiatura");
+        pl.put(KEY_INPUT_METHOD, "Metoda wprowadzania");
+        pl.put(KEY_CONFIGURE, "KONFIGURUJ");
+        pl.put(KEY_LOCK_TEST_ACTION, "TESTUJ");
         pl.put(KEY_GUIDE_SKIP, "[ POMIŃ ]");
         pl.put(KEY_GUIDE_START, "[ ROZPOCZNIJ ]");
         pl.put(KEY_GUIDE_SUBTITLE, "Podstawowe zasady TontOS");
@@ -2013,6 +2036,8 @@ public final class I18n {
         pl.put(KEY_RESTORE_SUCCESS, "Kopia zapasowa przywrócona pomyślnie!");
         pl.put(KEY_RESTORE_TITLE, "=== PRZYWRÓĆ KOPIĘ ZAPASOWĄ ===");
 
+                pl.put(KEY_APK, "APK");
+        pl.put(KEY_INSTALL_PACKAGE, "Zainstaluj pakiet");
         TRANSLATIONS.put("pl", pl);
     }
 
@@ -2126,8 +2151,8 @@ public final class I18n {
         es.put(KEY_SUB_SYS_INFO_DESC, "Modelo, versión Android, kernel y número de compilación");
         es.put(KEY_SUB_SYS_UPDATES, "Actualizaciones del sistema (OTA)");
         es.put(KEY_SUB_SYS_UPDATES_DESC, "Canales de actualización, comprobación e instalación local");
-        es.put(KEY_SUB_SYS_BACKUP, "Copia de seguridad criptográfica");
-        es.put(KEY_SUB_SYS_BACKUP_DESC, "Crear y restaurar instantáneas cifradas verificables");
+        es.put(KEY_SUB_SYS_BACKUP, "Copia de seguridad");
+        es.put(KEY_SUB_SYS_BACKUP_DESC, "Guarda y restaura tus ajustes de TontOS");
         es.put(KEY_SUB_SYS_ADVANCED, "Herramientas y desarrollo");
         es.put(KEY_SUB_SYS_ADVANCED_DESC, "Asistente de configuración, opciones de desarrollo y pruebas");
         es.put(KEY_MEDIA_VOL, "Volumen de medios");
@@ -2255,7 +2280,7 @@ public final class I18n {
         es.put(KEY_NO_BACKUP_FOUND, "No se encontró archivo de copia");
         es.put(KEY_APP_BROWSER, "Navegador FOSS");
         es.put(KEY_GRAYSCALE_MODE, "Modo escala de grises");
-        es.put(KEY_GRAYSCALE_DESC, "Monocromía del sistema para eliminar dopamina visual");
+        es.put(KEY_GRAYSCALE_DESC, "Pantalla en blanco y negro para reducir distracciones");
         es.put(KEY_FRICTION_TITLE, "Pausa reflexiva al abrir apps");
         es.put(KEY_FRICTION_OFF, "0s (Desactivada)");
         es.put(KEY_FRICTION_3S, "3s");
@@ -2284,7 +2309,7 @@ public final class I18n {
         es.put(KEY_BOOTLOADER_HEADER, "=== ESTADO DEL BOOTLOADER (SOLO LECTURA) ===");
         es.put(KEY_BOOTLOADER_LOCK_STATUS, "Estado del bootloader informado por Android");
         es.put(KEY_BOOTLOADER_LOCKED, "Informado como bloqueado (sin atestación de esta aplicación)");
-        es.put(KEY_BOOTLOADER_UNLOCKED, "Informado como desbloqueado (sin atestación de esta aplicación)");
+        es.put(KEY_BOOTLOADER_UNLOCKED, "Desbloqueado (desarrollo/virtual)");
         es.put(KEY_BOOTLOADER_UNKNOWN, "Desconocido (Android no informó del estado)");
         es.put(KEY_BOOTLOADER_ACTION_LOCK, "No disponible en esta aplicación");
         es.put(KEY_BOOTLOADER_ACTION_UNLOCK, "No disponible en esta aplicación");
@@ -2383,18 +2408,22 @@ public final class I18n {
         es.put(KEY_GUIDE_CARD2_TITLE, "2. CIERRE AGRESIVO EN SEGUNDO PLANO");
         es.put(KEY_GUIDE_CARD2_DESC, "Al volver al inicio, TontOS cierra automáticamente los procesos de la app para ahorrar batería y proteger tu privacidad, a menos que esté en la lista blanca de Ajustes > Conectividad.");
         es.put(KEY_GUIDE_CARD3_TITLE, "3. PAUSA CONSCIENTE (FRICCIÓN)");
-        es.put(KEY_GUIDE_CARD3_DESC, "Retardo voluntario antes de abrir aplicaciones distractoras con temporizador de respiración para frenar el impulso compulsivo.");
+        es.put(KEY_GUIDE_CARD3_DESC, "Breve pausa antes de abrir apps para evitar abrirlas por inercia.");
         es.put(KEY_GUIDE_CARD4_TITLE, "4. PRESUPUESTO DETOX & ESCALA DE GRISES");
-        es.put(KEY_GUIDE_CARD4_DESC, "Controla el tiempo total de pantalla diario en la cabecera. Activa el modo monocromo en Ajustes para eliminar los colores hiperestimulantes.");
+        es.put(KEY_GUIDE_CARD4_DESC, "Controla el tiempo de uso en la barra superior. Activa la escala de grises para reducir distracciones.");
         es.put(KEY_GUIDE_CARD5_TITLE, "5. CORTINA ULTRA SHADE");
         es.put(KEY_GUIDE_CARD5_DESC, "Toca la hora o el porcentaje de batería en la barra superior para abrir la cortina minimalista con controles de Wi-Fi, Bluetooth, Linterna y No Molestar.");
         es.put(KEY_GUIDE_SKIP, "[ SALTAR GUÍA ]");
         es.put(KEY_GUIDE_START, "[ COMENZAR ]");
         es.put(KEY_GUIDE_SETTINGS_ROW, "Guía de funciones esenciales");
+        es.put(KEY_KEYBOARD, "Teclado");
+        es.put(KEY_INPUT_METHOD, "Método de entrada");
+        es.put(KEY_CONFIGURE, "CONFIGURAR");
+        es.put(KEY_LOCK_TEST_ACTION, "PROBAR");
 
         // Backup & Restore
         es.put(KEY_BACKUP_CREATE_TITLE, "=== CREAR COPIA DE SEGURIDAD ===");
-        es.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Respaldo criptográfico de %d ajustes (tema, launcher, audio, redes).");
+        es.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Copia de seguridad de %d ajustes (%s).");
         es.put(KEY_BACKUP_FILE_NAME_LABEL, "Nombre del archivo:");
         es.put(KEY_BACKUP_DEST_LABEL, "Ruta / Destino de guardado:");
         es.put(KEY_BACKUP_DEST_DOWNLOADS, "Carpeta Descargas (/sdcard/Download)");
@@ -2510,6 +2539,8 @@ public final class I18n {
         es.put(KEY_ACTION_WAITING, "Esperando a que se actualice el estado del sistema.");
         es.put(KEY_STATE_UNKNOWN, "DESCONOCIDO");
 
+                es.put(KEY_APK, "APK");
+        es.put(KEY_INSTALL_PACKAGE, "Instalar paquete");
         TRANSLATIONS.put("es", es);
     }
 
@@ -2705,7 +2736,7 @@ public final class I18n {
         fr.put(KEY_NO_BACKUP_FOUND, "Aucun fichier de sauvegarde trouvé");
         fr.put(KEY_APP_BROWSER, "Navigateur FOSS");
         fr.put(KEY_GRAYSCALE_MODE, "Mode niveaux de gris");
-        fr.put(KEY_GRAYSCALE_DESC, "Monochromie système KMS/AOSP pour éliminer la dopamine visuelle");
+        fr.put(KEY_GRAYSCALE_DESC, "Écran noir et blanc pour réduire les distractions");
         fr.put(KEY_FRICTION_TITLE, "Pause réflexive à l'ouverture");
         fr.put(KEY_FRICTION_OFF, "0s (Désactivée)");
         fr.put(KEY_FRICTION_3S, "3s");
@@ -2732,7 +2763,7 @@ public final class I18n {
         fr.put(KEY_BOOTLOADER_HEADER, "=== ÉTAT DU BOOTLOADER (LECTURE SEULE) ===");
         fr.put(KEY_BOOTLOADER_LOCK_STATUS, "État du bootloader signalé par Android");
         fr.put(KEY_BOOTLOADER_LOCKED, "Signalé verrouillé (non attesté par cette application)");
-        fr.put(KEY_BOOTLOADER_UNLOCKED, "Signalé déverrouillé (non attesté par cette application)");
+        fr.put(KEY_BOOTLOADER_UNLOCKED, "Déverrouillé (dév/virtuel)");
         fr.put(KEY_BOOTLOADER_UNKNOWN, "Inconnu (Android n'a pas fourni d'information)");
         fr.put(KEY_BOOTLOADER_ACTION_LOCK, "Indisponible dans cette application");
         fr.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Indisponible dans cette application");
@@ -2859,7 +2890,7 @@ public final class I18n {
         fr.put(KEY_GMS_USER_INSTALLED, "Installé par l'utilisateur");
         fr.put(KEY_GUIDE_CARD1_DESC, "Réduit les distractions à l'essentiel.");
         fr.put(KEY_GUIDE_CARD1_TITLE, "1. Focus minimaliste");
-        fr.put(KEY_GUIDE_CARD2_DESC, "Monochrome pur pour préserver les yeux et la dopamine.");
+        fr.put(KEY_GUIDE_CARD2_DESC, "Monochrome pur pour préserver les yeux et réduire les distractions.");
         fr.put(KEY_GUIDE_CARD2_TITLE, "2. AMOLED & E-Ink");
         fr.put(KEY_GUIDE_CARD3_DESC, "Budget quotidien pour éviter le défilement compulsif.");
         fr.put(KEY_GUIDE_CARD3_TITLE, "3. Budget temps d'écran");
@@ -2868,7 +2899,11 @@ public final class I18n {
         fr.put(KEY_GUIDE_CARD5_DESC, "Zéro pistage, zéro télémétrie, contrôle total.");
         fr.put(KEY_GUIDE_CARD5_TITLE, "5. Vie privée & Sécurité");
         fr.put(KEY_GUIDE_HEADER, "=== GUIDE DE DÉMARRAGE RAPIDE ===");
-        fr.put(KEY_GUIDE_SETTINGS_ROW, "Afficher le guide de démarrage rapide");
+        fr.put(KEY_GUIDE_SETTINGS_ROW, "Guide des fonctionnalités essentielles");
+        fr.put(KEY_KEYBOARD, "Clavier");
+        fr.put(KEY_INPUT_METHOD, "Méthode de saisie");
+        fr.put(KEY_CONFIGURE, "CONFIGURER");
+        fr.put(KEY_LOCK_TEST_ACTION, "TESTER");
         fr.put(KEY_GUIDE_SKIP, "[ IGNORER ]");
         fr.put(KEY_GUIDE_START, "[ COMMENCER ]");
         fr.put(KEY_GUIDE_SUBTITLE, "Principes fondamentaux de TontOS");
@@ -2927,7 +2962,7 @@ public final class I18n {
         fr.put(KEY_PERM_STORAGE_TITLE, "Fichiers & Médias");
         fr.put(KEY_PRIVACY_CONFIGURE, "[ CONFIGURER PERMISSIONS ]");
         fr.put(KEY_PRIVACY_STANDARD, "Profil standard");
-        fr.put(KEY_PRIVACY_SUMMARY_FMT, "%d permissions accordées");
+        fr.put(KEY_PRIVACY_SUMMARY_FMT, "%d apps · %d avec restrictions de confidentialité");
         fr.put(KEY_PRIVACY_TAG_BG, "Arrière-plan");
         fr.put(KEY_PRIVACY_TAG_CAM_MIC, "Caméra/Mic");
         fr.put(KEY_PRIVACY_TAG_CONTACTS, "Contacts");
@@ -2988,12 +3023,14 @@ public final class I18n {
         fr.put(KEY_SUB_SYS_ADVANCED, "Paramètres avancés");
         fr.put(KEY_SUB_SYS_ADVANCED_DESC, "Options de développement, tests matériels");
         fr.put(KEY_SUB_SYS_BACKUP, "Sauvegarde & Restauration");
-        fr.put(KEY_SUB_SYS_BACKUP_DESC, "Instantanés cryptographiques des réglages");
+        fr.put(KEY_SUB_SYS_BACKUP_DESC, "Sauvegardez et restaurez vos réglages");
         fr.put(KEY_SUB_SYS_INFO, "Informations sur l'appareil");
         fr.put(KEY_SUB_SYS_INFO_DESC, "Modèle, version Android, noyau, build");
         fr.put(KEY_SUB_SYS_UPDATES, "Mises à jour système");
         fr.put(KEY_SUB_SYS_UPDATES_DESC, "Canal OTA et recherche de nouvelles versions");
 
+                fr.put(KEY_APK, "APK");
+        fr.put(KEY_INSTALL_PACKAGE, "Installer le paquet");
         TRANSLATIONS.put("fr", fr);
     }
 
@@ -3189,7 +3226,7 @@ public final class I18n {
         it.put(KEY_NO_BACKUP_FOUND, "Nessun file di backup trovato");
         it.put(KEY_APP_BROWSER, "Browser FOSS");
         it.put(KEY_GRAYSCALE_MODE, "Modalità scala di grigi");
-        it.put(KEY_GRAYSCALE_DESC, "Monocromia di sistema KMS/AOSP per eliminare la dopamina visiva");
+        it.put(KEY_GRAYSCALE_DESC, "Schermo in bianco e nero per ridurre le distrazioni");
         it.put(KEY_FRICTION_TITLE, "Pausa riflessiva apertura app");
         it.put(KEY_FRICTION_OFF, "0s (Disattivata)");
         it.put(KEY_FRICTION_3S, "3s");
@@ -3216,7 +3253,7 @@ public final class I18n {
         it.put(KEY_BOOTLOADER_HEADER, "=== STATO BOOTLOADER (SOLO LETTURA) ===");
         it.put(KEY_BOOTLOADER_LOCK_STATUS, "Stato bootloader segnalato da Android");
         it.put(KEY_BOOTLOADER_LOCKED, "Segnalato bloccato (non attestato da questa app)");
-        it.put(KEY_BOOTLOADER_UNLOCKED, "Segnalato sbloccato (non attestato da questa app)");
+        it.put(KEY_BOOTLOADER_UNLOCKED, "Sbloccato (sviluppo/virtuale)");
         it.put(KEY_BOOTLOADER_UNKNOWN, "Sconosciuto (Android non ha fornito informazioni)");
         it.put(KEY_BOOTLOADER_ACTION_LOCK, "Non disponibile in questa app");
         it.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Non disponibile in questa app");
@@ -3343,7 +3380,7 @@ public final class I18n {
         it.put(KEY_GMS_USER_INSTALLED, "Installato dall'utente");
         it.put(KEY_GUIDE_CARD1_DESC, "Riduce le distrazioni all'essenziale.");
         it.put(KEY_GUIDE_CARD1_TITLE, "1. Concentrazione minimalista");
-        it.put(KEY_GUIDE_CARD2_DESC, "Monocromia pura per proteggere occhi e dopamina.");
+        it.put(KEY_GUIDE_CARD2_DESC, "Monocromia pura per proteggere gli occhi e ridurre le distrazioni.");
         it.put(KEY_GUIDE_CARD2_TITLE, "2. AMOLED ed E-Ink");
         it.put(KEY_GUIDE_CARD3_DESC, "Limite giornaliero per prevenire l'uso compulsivo.");
         it.put(KEY_GUIDE_CARD3_TITLE, "3. Budget tempo di schermo");
@@ -3352,7 +3389,11 @@ public final class I18n {
         it.put(KEY_GUIDE_CARD5_DESC, "Nessun tracciatore, telemetria zero, controllo totale.");
         it.put(KEY_GUIDE_CARD5_TITLE, "5. Privacy e Sicurezza");
         it.put(KEY_GUIDE_HEADER, "=== GUIDA RAPIDA ALL'USO ===");
-        it.put(KEY_GUIDE_SETTINGS_ROW, "Mostra guida rapida di TontOS");
+        it.put(KEY_GUIDE_SETTINGS_ROW, "Guida alle funzionalità essenziali");
+        it.put(KEY_KEYBOARD, "Tastiera");
+        it.put(KEY_INPUT_METHOD, "Metodo di inserimento");
+        it.put(KEY_CONFIGURE, "CONFIGURA");
+        it.put(KEY_LOCK_TEST_ACTION, "PROVA");
         it.put(KEY_GUIDE_SKIP, "[ SALTA ]");
         it.put(KEY_GUIDE_START, "[ INIZIA ]");
         it.put(KEY_GUIDE_SUBTITLE, "Principi fondamentali di TontOS");
@@ -3411,7 +3452,7 @@ public final class I18n {
         it.put(KEY_PERM_STORAGE_TITLE, "File e Memoria");
         it.put(KEY_PRIVACY_CONFIGURE, "[ CONFIGURA AUTORIZZAZIONI ]");
         it.put(KEY_PRIVACY_STANDARD, "Profilo standard");
-        it.put(KEY_PRIVACY_SUMMARY_FMT, "%d autorizzazioni concesse");
+        it.put(KEY_PRIVACY_SUMMARY_FMT, "%d app · %d con restrizioni sulla privacy");
         it.put(KEY_PRIVACY_TAG_BG, "Background");
         it.put(KEY_PRIVACY_TAG_CAM_MIC, "Fotocamera/Mic");
         it.put(KEY_PRIVACY_TAG_CONTACTS, "Contatti");
@@ -3472,12 +3513,14 @@ public final class I18n {
         it.put(KEY_SUB_SYS_ADVANCED, "Impostazioni avanzate");
         it.put(KEY_SUB_SYS_ADVANCED_DESC, "Opzioni sviluppatore, diagnostica hardware");
         it.put(KEY_SUB_SYS_BACKUP, "Backup e Ripristino");
-        it.put(KEY_SUB_SYS_BACKUP_DESC, "Istantanee crittografiche delle impostazioni");
+        it.put(KEY_SUB_SYS_BACKUP_DESC, "Salva e ripristina le tue impostazioni");
         it.put(KEY_SUB_SYS_INFO, "Info dispositivo");
         it.put(KEY_SUB_SYS_INFO_DESC, "Modello, versione Android, kernel, build");
         it.put(KEY_SUB_SYS_UPDATES, "Aggiornamenti di sistema");
         it.put(KEY_SUB_SYS_UPDATES_DESC, "Canale OTA e ricerca nuove versioni");
 
+                it.put(KEY_APK, "APK");
+        it.put(KEY_INSTALL_PACKAGE, "Installa pacchetto");
         TRANSLATIONS.put("it", it);
     }
 
@@ -3673,7 +3716,7 @@ public final class I18n {
         pt.put(KEY_NO_BACKUP_FOUND, "Nenhum ficheiro de cópia encontrado");
         pt.put(KEY_APP_BROWSER, "Navegador FOSS");
         pt.put(KEY_GRAYSCALE_MODE, "Modo escala de cinza");
-        pt.put(KEY_GRAYSCALE_DESC, "Monocromia do sistema KMS/AOSP para eliminar a dopamina visual");
+        pt.put(KEY_GRAYSCALE_DESC, "Ecrã a preto e branco para reduzir distrações");
         pt.put(KEY_FRICTION_TITLE, "Pausa reflexiva ao abrir apps");
         pt.put(KEY_FRICTION_OFF, "0s (Desativada)");
         pt.put(KEY_FRICTION_3S, "3s");
@@ -3700,7 +3743,7 @@ public final class I18n {
         pt.put(KEY_BOOTLOADER_HEADER, "=== ESTADO DO BOOTLOADER (APENAS LEITURA) ===");
         pt.put(KEY_BOOTLOADER_LOCK_STATUS, "Estado do bootloader informado pelo Android");
         pt.put(KEY_BOOTLOADER_LOCKED, "Reportado bloqueado (não atestado por esta app)");
-        pt.put(KEY_BOOTLOADER_UNLOCKED, "Reportado desbloqueado (não atestado por esta app)");
+        pt.put(KEY_BOOTLOADER_UNLOCKED, "Desbloqueado (desenvolvimento/virtual)");
         pt.put(KEY_BOOTLOADER_UNKNOWN, "Desconhecido (Android não informou o estado)");
         pt.put(KEY_BOOTLOADER_ACTION_LOCK, "Indisponível nesta aplicação");
         pt.put(KEY_BOOTLOADER_ACTION_UNLOCK, "Indisponível nesta aplicação");
@@ -3794,8 +3837,8 @@ public final class I18n {
         pt.put(KEY_ACTION_UNINSTALL, "[ DESINSTALAR APLICAÇÃO ]");
         pt.put(KEY_ACTION_UNSUPPORTED, "Não suportado neste dispositivo.");
         pt.put(KEY_ACTION_WAITING, "A aguardar atualização do estado.");
-        pt.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Instantâneo criptográfico de %d preferências (tema, apps, áudio, redes).");
-        pt.put(KEY_BACKUP_CREATE_TITLE, "=== CRIAR BACKUP CRIPTOGRÁFICO ===");
+        pt.put(KEY_BACKUP_CREATE_SUMMARY_FMT, "Cópia de segurança de %d preferências (%s).");
+        pt.put(KEY_BACKUP_CREATE_TITLE, "=== CRIAR CÓPIA DE SEGURANÇA ===");
         pt.put(KEY_BACKUP_DEST_APP, "Pasta TontOS (/backup)");
         pt.put(KEY_BACKUP_DEST_DOWNLOADS, "Downloads (/sdcard/Download)");
         pt.put(KEY_BACKUP_DEST_LABEL, "Destino de armazenamento:");
@@ -3827,7 +3870,7 @@ public final class I18n {
         pt.put(KEY_GMS_USER_INSTALLED, "Instalado pelo utilizador");
         pt.put(KEY_GUIDE_CARD1_DESC, "Reduz distrações ao estritamente essencial.");
         pt.put(KEY_GUIDE_CARD1_TITLE, "1. Foco minimalista");
-        pt.put(KEY_GUIDE_CARD2_DESC, "Monocromático puro para preservar a visão e dopamina.");
+        pt.put(KEY_GUIDE_CARD2_DESC, "Monocromático puro para preservar a visão e reduzir distrações.");
         pt.put(KEY_GUIDE_CARD2_TITLE, "2. AMOLED & E-Ink");
         pt.put(KEY_GUIDE_CARD3_DESC, "Limite diário para evitar navegação compulsiva.");
         pt.put(KEY_GUIDE_CARD3_TITLE, "3. Orçamento de ecrã");
@@ -3836,7 +3879,11 @@ public final class I18n {
         pt.put(KEY_GUIDE_CARD5_DESC, "Zero rastreadores, zero telemetria, controlo total.");
         pt.put(KEY_GUIDE_CARD5_TITLE, "5. Privacidade & Segurança");
         pt.put(KEY_GUIDE_HEADER, "=== GUIA DE INÍCIO RÁPIDO ===");
-        pt.put(KEY_GUIDE_SETTINGS_ROW, "Mostrar guia de início rápido do TontOS");
+        pt.put(KEY_GUIDE_SETTINGS_ROW, "Guia de funcionalidades essenciais");
+        pt.put(KEY_KEYBOARD, "Teclado");
+        pt.put(KEY_INPUT_METHOD, "Método de entrada");
+        pt.put(KEY_CONFIGURE, "CONFIGURAR");
+        pt.put(KEY_LOCK_TEST_ACTION, "TESTAR");
         pt.put(KEY_GUIDE_SKIP, "[ IGNORAR ]");
         pt.put(KEY_GUIDE_START, "[ COMEÇAR ]");
         pt.put(KEY_GUIDE_SUBTITLE, "Princípios fundamentais do TontOS");
@@ -3895,7 +3942,7 @@ public final class I18n {
         pt.put(KEY_PERM_STORAGE_TITLE, "Ficheiros & Armazenamento");
         pt.put(KEY_PRIVACY_CONFIGURE, "[ CONFIGURAR PERMISSÕES ]");
         pt.put(KEY_PRIVACY_STANDARD, "Perfil padrão");
-        pt.put(KEY_PRIVACY_SUMMARY_FMT, "%d permissões concedidas");
+        pt.put(KEY_PRIVACY_SUMMARY_FMT, "%d apps · %d com restrições de privacidade");
         pt.put(KEY_PRIVACY_TAG_BG, "Segundo plano");
         pt.put(KEY_PRIVACY_TAG_CAM_MIC, "Câmara/Mic");
         pt.put(KEY_PRIVACY_TAG_CONTACTS, "Contactos");
@@ -3955,13 +4002,15 @@ public final class I18n {
         pt.put(KEY_SUB_SOUND_VOLUMES_DESC, "Toque, multimédia, notificações, silêncio");
         pt.put(KEY_SUB_SYS_ADVANCED, "Definições avançadas");
         pt.put(KEY_SUB_SYS_ADVANCED_DESC, "Opções de programador, testes de hardware");
-        pt.put(KEY_SUB_SYS_BACKUP, "Backup & Restauração");
-        pt.put(KEY_SUB_SYS_BACKUP_DESC, "Instantâneos criptográficos de definições");
+        pt.put(KEY_SUB_SYS_BACKUP, "Cópia de segurança");
+        pt.put(KEY_SUB_SYS_BACKUP_DESC, "Guarde e restaure as suas definições");
         pt.put(KEY_SUB_SYS_INFO, "Informações do dispositivo");
         pt.put(KEY_SUB_SYS_INFO_DESC, "Modelo, versão Android, kernel, build");
         pt.put(KEY_SUB_SYS_UPDATES, "Atualizações de sistema");
         pt.put(KEY_SUB_SYS_UPDATES_DESC, "Canal OTA e procura de novas versões");
 
+                pt.put(KEY_APK, "APK");
+        pt.put(KEY_INSTALL_PACKAGE, "Instalar pacote");
         TRANSLATIONS.put("pt", pt);
     }
 
@@ -4155,7 +4204,7 @@ public final class I18n {
         ru.put(KEY_NO_BACKUP_FOUND, "Файл резервной копии не найден");
         ru.put(KEY_APP_BROWSER, "Браузер FOSS");
         ru.put(KEY_GRAYSCALE_MODE, "Режим оттенков серого");
-        ru.put(KEY_GRAYSCALE_DESC, "Системный монохромный режим KMS/AOSP для снижения визуального дофамина");
+        ru.put(KEY_GRAYSCALE_DESC, "Черно-белый экран для снижения отвлекающих факторов");
         ru.put(KEY_FRICTION_TITLE, "Осознанная пауза запуска");
         ru.put(KEY_FRICTION_OFF, "0s (Отключено)");
         ru.put(KEY_FRICTION_3S, "3s");
@@ -4268,7 +4317,11 @@ public final class I18n {
         ru.put(KEY_GUIDE_CARD5_DESC, "Без трекеров, без телеметрии, полный контроль данных.");
         ru.put(KEY_GUIDE_CARD5_TITLE, "5. Приватность и безопасность");
         ru.put(KEY_GUIDE_HEADER, "=== БЫСТРЫЙ СТАРТ ===");
-        ru.put(KEY_GUIDE_SETTINGS_ROW, "Показать руководство TontOS");
+        ru.put(KEY_GUIDE_SETTINGS_ROW, "Руководство по основным функциям");
+        ru.put(KEY_KEYBOARD, "Клавиатура");
+        ru.put(KEY_INPUT_METHOD, "Способ ввода");
+        ru.put(KEY_CONFIGURE, "НАСТРОИТЬ");
+        ru.put(KEY_LOCK_TEST_ACTION, "ПРОВЕРИТЬ");
         ru.put(KEY_GUIDE_SKIP, "[ ПРОПУСТИТЬ ]");
         ru.put(KEY_GUIDE_START, "[ НАЧАТЬ ]");
         ru.put(KEY_GUIDE_SUBTITLE, "Базовые принципы TontOS");
@@ -4360,7 +4413,7 @@ public final class I18n {
         ru.put(KEY_PERM_STORAGE_TITLE, "Файлы и Хранилище");
         ru.put(KEY_PRIVACY_CONFIGURE, "[ НАСТРОИТЬ РАЗРЕШЕНИЯ ]");
         ru.put(KEY_PRIVACY_STANDARD, "Стандартный профиль");
-        ru.put(KEY_PRIVACY_SUMMARY_FMT, "Выдано разрешений: %d");
+        ru.put(KEY_PRIVACY_SUMMARY_FMT, "%d приложений · %d с ограничениями конфиденциальности");
         ru.put(KEY_PRIVACY_TAG_BG, "Фон");
         ru.put(KEY_PRIVACY_TAG_CAM_MIC, "Камера/Мик");
         ru.put(KEY_PRIVACY_TAG_CONTACTS, "Контакты");
@@ -4395,7 +4448,7 @@ public final class I18n {
         ru.put(KEY_SANDBOX_STATUS_RUNNING, "Активен / Работает");
         ru.put(KEY_SANDBOX_TITLE, "Изолированная песочница");
         ru.put(KEY_SHADE_CLOSE, "[ ЗАКРЫТЬ ШТОРКУ ]");
-        ru.put(KEY_SHADE_ESTIMATE_FMT, "Осталось: ~%d ч %02d мин");
+        ru.put(KEY_SHADE_ESTIMATE_FMT, "Батарея: %d%% · осталось ~%d ч (Ультра-экономия)");
         ru.put(KEY_SHADE_HEADER, "ЭКСТРЕМАЛЬНОЕ ЭНЕРГОСБЕРЕЖЕНИЕ");
         ru.put(KEY_SHADE_SETTINGS, "[ НАСТРОЙКИ СИСТЕМЫ ]");
         ru.put(KEY_SHADE_TILES_TITLE, "Плитки шторки энергосбережения");
@@ -4430,7 +4483,7 @@ public final class I18n {
         ru.put(KEY_SUB_SYS_ADVANCED, "Расширенные настройки");
         ru.put(KEY_SUB_SYS_ADVANCED_DESC, "Для разработчиков, инженерное меню");
         ru.put(KEY_SUB_SYS_BACKUP, "Резервное копирование");
-        ru.put(KEY_SUB_SYS_BACKUP_DESC, "Криптографические снимки настроек");
+        ru.put(KEY_SUB_SYS_BACKUP_DESC, "Сохранение и восстановление настроек");
         ru.put(KEY_SUB_SYS_INFO, "Об устройстве");
         ru.put(KEY_SUB_SYS_INFO_DESC, "Модель, версия Android, ядро, сборка");
         ru.put(KEY_SUB_SYS_UPDATES, "Обновление системы");
@@ -4445,6 +4498,8 @@ public final class I18n {
         ru.put(KEY_TOGGLE_WIFI, "Wi-Fi");
         ru.put(KEY_ULTRA_SAVER_ACTIVE, "[ УЛЬТРА-СБЕРЕЖЕНИЕ ВКЛЮЧЕНО ]");
 
+                ru.put(KEY_APK, "APK");
+        ru.put(KEY_INSTALL_PACKAGE, "Установить пакет");
         TRANSLATIONS.put("ru", ru);
     }
 
@@ -4638,7 +4693,7 @@ public final class I18n {
         uk.put(KEY_NO_BACKUP_FOUND, "Файл резервної копії не знайдено");
         uk.put(KEY_APP_BROWSER, "Браузер FOSS");
         uk.put(KEY_GRAYSCALE_MODE, "Режим відтінків сірого");
-        uk.put(KEY_GRAYSCALE_DESC, "Системний монохромний режим KMS/AOSP для зменшення візуального дофаміну");
+        uk.put(KEY_GRAYSCALE_DESC, "Чорно-білий екран для зменшення відволікань");
         uk.put(KEY_FRICTION_TITLE, "Усвідомлена пауза запуску");
         uk.put(KEY_FRICTION_OFF, "0s (Вимкнено)");
         uk.put(KEY_FRICTION_3S, "3s");
@@ -4751,7 +4806,11 @@ public final class I18n {
         uk.put(KEY_GUIDE_CARD5_DESC, "Жодних трекерів чи телеметрії, повний контроль.");
         uk.put(KEY_GUIDE_CARD5_TITLE, "5. Приватність і Безпека");
         uk.put(KEY_GUIDE_HEADER, "=== ШВИДКИЙ СТАРТ ===");
-        uk.put(KEY_GUIDE_SETTINGS_ROW, "Показати посібник TontOS");
+        uk.put(KEY_GUIDE_SETTINGS_ROW, "Посібник із ключових функцій");
+        uk.put(KEY_KEYBOARD, "Клавіатура");
+        uk.put(KEY_INPUT_METHOD, "Спосіб введення");
+        uk.put(KEY_CONFIGURE, "НАЛАШТУВАТИ");
+        uk.put(KEY_LOCK_TEST_ACTION, "ТЕСТУВАТИ");
         uk.put(KEY_GUIDE_SKIP, "[ ПРОПУСТИТИ ]");
         uk.put(KEY_GUIDE_START, "[ РОЗПОЧАТИ ]");
         uk.put(KEY_GUIDE_SUBTITLE, "Базові принципи TontOS");
@@ -4843,7 +4902,7 @@ public final class I18n {
         uk.put(KEY_PERM_STORAGE_TITLE, "Файли та Сховище");
         uk.put(KEY_PRIVACY_CONFIGURE, "[ НАЛАШТУВАТИ ДОЗВОЛИ ]");
         uk.put(KEY_PRIVACY_STANDARD, "Стандартний профіль");
-        uk.put(KEY_PRIVACY_SUMMARY_FMT, "Надано дозволів: %d");
+        uk.put(KEY_PRIVACY_SUMMARY_FMT, "%d додатків · %d з обмеженнями конфіденційності");
         uk.put(KEY_PRIVACY_TAG_BG, "Фон");
         uk.put(KEY_PRIVACY_TAG_CAM_MIC, "Камера/Мік");
         uk.put(KEY_PRIVACY_TAG_CONTACTS, "Контакти");
@@ -4878,7 +4937,7 @@ public final class I18n {
         uk.put(KEY_SANDBOX_STATUS_RUNNING, "Активний / Працює");
         uk.put(KEY_SANDBOX_TITLE, "Ізольована пісочниця");
         uk.put(KEY_SHADE_CLOSE, "[ ЗАКРИТИ ШТОРКУ ]");
-        uk.put(KEY_SHADE_ESTIMATE_FMT, "Залишилось: ~%d год %02d хв");
+        uk.put(KEY_SHADE_ESTIMATE_FMT, "Батарея: %d%% · залишилось ~%d год (Ультра-економія)");
         uk.put(KEY_SHADE_HEADER, "ЕКСТРЕМАЛЬНЕ ЕНЕРГОЗБЕРЕЖЕННЯ");
         uk.put(KEY_SHADE_SETTINGS, "[ НАЛАШТУВАННЯ СИСТЕМИ ]");
         uk.put(KEY_SHADE_TILES_TITLE, "Плитки шторки енергозбереження");
@@ -4913,7 +4972,7 @@ public final class I18n {
         uk.put(KEY_SUB_SYS_ADVANCED, "Розширені налаштування");
         uk.put(KEY_SUB_SYS_ADVANCED_DESC, "Для розробників, інженерне меню");
         uk.put(KEY_SUB_SYS_BACKUP, "Резервне копіювання");
-        uk.put(KEY_SUB_SYS_BACKUP_DESC, "Криптографічні знімки налаштувань");
+        uk.put(KEY_SUB_SYS_BACKUP_DESC, "Збереження та відновлення налаштувань");
         uk.put(KEY_SUB_SYS_INFO, "Про пристрій");
         uk.put(KEY_SUB_SYS_INFO_DESC, "Модель, версія Android, ядро, збірка");
         uk.put(KEY_SUB_SYS_UPDATES, "Оновлення системи");
@@ -4928,6 +4987,8 @@ public final class I18n {
         uk.put(KEY_TOGGLE_WIFI, "Wi-Fi");
         uk.put(KEY_ULTRA_SAVER_ACTIVE, "[ УЛЬТРА-ЗБЕРЕЖЕННЯ УВІМКНЕНО ]");
 
+                uk.put(KEY_APK, "APK");
+        uk.put(KEY_INSTALL_PACKAGE, "Встановити пакет");
         TRANSLATIONS.put("uk", uk);
     }
 
@@ -5121,7 +5182,7 @@ public final class I18n {
         zh.put(KEY_NO_BACKUP_FOUND, "未找到备份文件");
         zh.put(KEY_APP_BROWSER, "FOSS 极简浏览器");
         zh.put(KEY_GRAYSCALE_MODE, "黑白灰度模式");
-        zh.put(KEY_GRAYSCALE_DESC, "KMS/AOSP 系统级黑白灰度以消除视觉多巴胺刺激");
+        zh.put(KEY_GRAYSCALE_DESC, "黑白屏幕显示，减少视觉干扰");
         zh.put(KEY_FRICTION_TITLE, "应用启动专注延迟");
         zh.put(KEY_FRICTION_OFF, "0s (已关闭)");
         zh.put(KEY_FRICTION_3S, "3s");
@@ -5234,7 +5295,11 @@ public final class I18n {
         zh.put(KEY_GUIDE_CARD5_DESC, "无追踪、零遥测、完全掌控个人数据。");
         zh.put(KEY_GUIDE_CARD5_TITLE, "5. 隐私与安全");
         zh.put(KEY_GUIDE_HEADER, "=== 快速上手指南 ===");
-        zh.put(KEY_GUIDE_SETTINGS_ROW, "显示 TontOS 快速上手指南");
+        zh.put(KEY_GUIDE_SETTINGS_ROW, "核心功能指南");
+        zh.put(KEY_KEYBOARD, "键盘");
+        zh.put(KEY_INPUT_METHOD, "输入法");
+        zh.put(KEY_CONFIGURE, "配置");
+        zh.put(KEY_LOCK_TEST_ACTION, "测试");
         zh.put(KEY_GUIDE_SKIP, "[ 跳过 ]");
         zh.put(KEY_GUIDE_START, "[ 开始体验 ]");
         zh.put(KEY_GUIDE_SUBTITLE, "TontOS 核心设计原则");
@@ -5326,7 +5391,7 @@ public final class I18n {
         zh.put(KEY_PERM_STORAGE_TITLE, "文件与存储");
         zh.put(KEY_PRIVACY_CONFIGURE, "[ 配置应用权限 ]");
         zh.put(KEY_PRIVACY_STANDARD, "标准权限配置");
-        zh.put(KEY_PRIVACY_SUMMARY_FMT, "已授予 %d 项权限");
+        zh.put(KEY_PRIVACY_SUMMARY_FMT, "%d 个应用 · %d 个设置了隐私限制");
         zh.put(KEY_PRIVACY_TAG_BG, "后台");
         zh.put(KEY_PRIVACY_TAG_CAM_MIC, "相机/麦克风");
         zh.put(KEY_PRIVACY_TAG_CONTACTS, "联系人");
@@ -5361,7 +5426,7 @@ public final class I18n {
         zh.put(KEY_SANDBOX_STATUS_RUNNING, "运行中");
         zh.put(KEY_SANDBOX_TITLE, "隔离沙盒配置文件");
         zh.put(KEY_SHADE_CLOSE, "[ 关闭快捷菜单 ]");
-        zh.put(KEY_SHADE_ESTIMATE_FMT, "预计剩余时间：~%d 小时 %02d 分");
+        zh.put(KEY_SHADE_ESTIMATE_FMT, "电量：%d%% · 预计剩余约 %d 小时（超级省电）");
         zh.put(KEY_SHADE_HEADER, "超级省电快捷控制");
         zh.put(KEY_SHADE_SETTINGS, "[ 桌面完整设置 ]");
         zh.put(KEY_SHADE_TILES_TITLE, "超级省电面板瓷贴开关");
@@ -5395,8 +5460,8 @@ public final class I18n {
         zh.put(KEY_SUB_SOUND_VOLUMES_DESC, "来电铃声、多媒体、通知提示、静音模式");
         zh.put(KEY_SUB_SYS_ADVANCED, "高级系统选项");
         zh.put(KEY_SUB_SYS_ADVANCED_DESC, "开发者选项入口与硬件工程测试模式");
-        zh.put(KEY_SUB_SYS_BACKUP, "备份与数据恢复");
-        zh.put(KEY_SUB_SYS_BACKUP_DESC, "系统与桌面配置的加密快照归档");
+        zh.put(KEY_SUB_SYS_BACKUP, "备份与恢复");
+        zh.put(KEY_SUB_SYS_BACKUP_DESC, "备份并恢复系统与桌面设置");
         zh.put(KEY_SUB_SYS_INFO, "关于设备与硬件");
         zh.put(KEY_SUB_SYS_INFO_DESC, "设备型号、Android 版本、Linux 内核");
         zh.put(KEY_SUB_SYS_UPDATES, "系统在线更新");
@@ -5411,6 +5476,8 @@ public final class I18n {
         zh.put(KEY_TOGGLE_WIFI, "Wi-Fi 无线网络");
         zh.put(KEY_ULTRA_SAVER_ACTIVE, "[ 超级省电已激活运行 ]");
 
+                zh.put(KEY_APK, "APK");
+        zh.put(KEY_INSTALL_PACKAGE, "安装安装包");
         TRANSLATIONS.put("zh", zh);
     }
 
@@ -5604,7 +5671,7 @@ public final class I18n {
         ja.put(KEY_NO_BACKUP_FOUND, "バックアップファイルが見つかりません");
         ja.put(KEY_APP_BROWSER, "FOSS ブラウザ");
         ja.put(KEY_GRAYSCALE_MODE, "グレースケールモード");
-        ja.put(KEY_GRAYSCALE_DESC, "視覚的ドーパミンを抑制するKMS/AOSPシステム全域グレースケール");
+        ja.put(KEY_GRAYSCALE_DESC, "画面を白黒にして集中力を高める");
         ja.put(KEY_FRICTION_TITLE, "アプリ起動前のマインドフル待機");
         ja.put(KEY_FRICTION_OFF, "0s (無効)");
         ja.put(KEY_FRICTION_3S, "3s");
@@ -5717,7 +5784,11 @@ public final class I18n {
         ja.put(KEY_GUIDE_CARD5_DESC, "トラッカーなし、テレメトリなし、完全な制御。");
         ja.put(KEY_GUIDE_CARD5_TITLE, "5. プライバシーとセキュリティ");
         ja.put(KEY_GUIDE_HEADER, "=== クイックスタートガイド ===");
-        ja.put(KEY_GUIDE_SETTINGS_ROW, "TontOSクイックスタートガイドを表示");
+        ja.put(KEY_GUIDE_SETTINGS_ROW, "主要機能ガイド");
+        ja.put(KEY_KEYBOARD, "キーボード");
+        ja.put(KEY_INPUT_METHOD, "入力方法");
+        ja.put(KEY_CONFIGURE, "設定");
+        ja.put(KEY_LOCK_TEST_ACTION, "テスト");
         ja.put(KEY_GUIDE_SKIP, "[ スキップ ]");
         ja.put(KEY_GUIDE_START, "[ 開始する ]");
         ja.put(KEY_GUIDE_SUBTITLE, "TontOSの基本原則");
@@ -5809,7 +5880,7 @@ public final class I18n {
         ja.put(KEY_PERM_STORAGE_TITLE, "ストレージとファイル");
         ja.put(KEY_PRIVACY_CONFIGURE, "[ 権限を設定 ]");
         ja.put(KEY_PRIVACY_STANDARD, "標準プロファイル");
-        ja.put(KEY_PRIVACY_SUMMARY_FMT, "%d 件の権限が許可されています");
+        ja.put(KEY_PRIVACY_SUMMARY_FMT, "%d 個のアプリ · %d 個にプライバシー制限を設定");
         ja.put(KEY_PRIVACY_TAG_BG, "バックグラウンド");
         ja.put(KEY_PRIVACY_TAG_CAM_MIC, "カメラ/マイク");
         ja.put(KEY_PRIVACY_TAG_CONTACTS, "連絡先");
@@ -5844,7 +5915,7 @@ public final class I18n {
         ja.put(KEY_SANDBOX_STATUS_RUNNING, "実行中");
         ja.put(KEY_SANDBOX_TITLE, "隔離サンドボックス");
         ja.put(KEY_SHADE_CLOSE, "[ パネルを閉じる ]");
-        ja.put(KEY_SHADE_ESTIMATE_FMT, "残り時間: 約%d時間%02d分");
+        ja.put(KEY_SHADE_ESTIMATE_FMT, "バッテリー: %d%% · 残り約%d時間（ウルトラ省電力）");
         ja.put(KEY_SHADE_HEADER, "ウルトラバッテリーセーバー");
         ja.put(KEY_SHADE_SETTINGS, "[ システム詳細設定 ]");
         ja.put(KEY_SHADE_TILES_TITLE, "省電力パネルタイル設定");
@@ -5878,8 +5949,8 @@ public final class I18n {
         ja.put(KEY_SUB_SOUND_VOLUMES_DESC, "着信音、メディア、通知音、サイレント");
         ja.put(KEY_SUB_SYS_ADVANCED, "詳細システム設定");
         ja.put(KEY_SUB_SYS_ADVANCED_DESC, "開発者向けオプション、ハードウェア診断");
-        ja.put(KEY_SUB_SYS_BACKUP, "バックアップ & 復元");
-        ja.put(KEY_SUB_SYS_BACKUP_DESC, "暗号化スナップショットアーカイブ");
+        ja.put(KEY_SUB_SYS_BACKUP, "バックアップと復元");
+        ja.put(KEY_SUB_SYS_BACKUP_DESC, "設定とレイアウトの保存と復元");
         ja.put(KEY_SUB_SYS_INFO, "端末情報");
         ja.put(KEY_SUB_SYS_INFO_DESC, "モデル、Androidバージョン、カーネル、ビルド");
         ja.put(KEY_SUB_SYS_UPDATES, "システムアップデート");
@@ -5894,6 +5965,8 @@ public final class I18n {
         ja.put(KEY_TOGGLE_WIFI, "Wi-Fi");
         ja.put(KEY_ULTRA_SAVER_ACTIVE, "[ ウルトラ省電力有効 ]");
 
+                ja.put(KEY_APK, "APK");
+        ja.put(KEY_INSTALL_PACKAGE, "パッケージのインストール");
         TRANSLATIONS.put("ja", ja);
     }
 
@@ -6087,7 +6160,7 @@ public final class I18n {
         nl.put(KEY_NO_BACKUP_FOUND, "Geen back-upbestand gevonden");
         nl.put(KEY_APP_BROWSER, "FOSS Browser");
         nl.put(KEY_GRAYSCALE_MODE, "Grijswaardenmodus");
-        nl.put(KEY_GRAYSCALE_DESC, "Systeembrede KMS/AOSP-monochromie om visuele dopamine te verminderen");
+        nl.put(KEY_GRAYSCALE_DESC, "Zwart-witscherm om afleidingen te verminderen");
         nl.put(KEY_FRICTION_TITLE, "Aandachtige startvertraging");
         nl.put(KEY_FRICTION_OFF, "0s (Uitgeschakeld)");
         nl.put(KEY_FRICTION_3S, "3s");
@@ -6191,7 +6264,7 @@ public final class I18n {
         nl.put(KEY_GMS_USER_INSTALLED, "Door gebruiker geïnstalleerd");
         nl.put(KEY_GUIDE_CARD1_DESC, "Vermindert afleiding tot het essentiële.");
         nl.put(KEY_GUIDE_CARD1_TITLE, "1. Minimalistische focus");
-        nl.put(KEY_GUIDE_CARD2_DESC, "Puur monochroom beschermt ogen en dopamine.");
+        nl.put(KEY_GUIDE_CARD2_DESC, "Puur monochroom beschermt de ogen en vermindert afleiding.");
         nl.put(KEY_GUIDE_CARD2_TITLE, "2. AMOLED & E-Ink");
         nl.put(KEY_GUIDE_CARD3_DESC, "Dagelijks schermbudget voorkomt doelloos scrollen.");
         nl.put(KEY_GUIDE_CARD3_TITLE, "3. Schermtijdbudget");
@@ -6200,7 +6273,11 @@ public final class I18n {
         nl.put(KEY_GUIDE_CARD5_DESC, "Geen trackers, geen telemetrie, volledige controle.");
         nl.put(KEY_GUIDE_CARD5_TITLE, "5. Privacy & Veiligheid");
         nl.put(KEY_GUIDE_HEADER, "=== SNELSTARTGIDS ===");
-        nl.put(KEY_GUIDE_SETTINGS_ROW, "Toon TontOS snelstartgids");
+        nl.put(KEY_GUIDE_SETTINGS_ROW, "Gids voor essentiële functies");
+        nl.put(KEY_KEYBOARD, "Toetsenbord");
+        nl.put(KEY_INPUT_METHOD, "Invoermethode");
+        nl.put(KEY_CONFIGURE, "CONFIGUREREN");
+        nl.put(KEY_LOCK_TEST_ACTION, "TESTEN");
         nl.put(KEY_GUIDE_SKIP, "[ OVERSLAAN ]");
         nl.put(KEY_GUIDE_START, "[ BEGINNEN ]");
         nl.put(KEY_GUIDE_SUBTITLE, "Kernprincipes van TontOS");
@@ -6292,7 +6369,7 @@ public final class I18n {
         nl.put(KEY_PERM_STORAGE_TITLE, "Bestanden & Opslag");
         nl.put(KEY_PRIVACY_CONFIGURE, "[ MACHTIGINGEN INSTELLEN ]");
         nl.put(KEY_PRIVACY_STANDARD, "Standaardprofiel");
-        nl.put(KEY_PRIVACY_SUMMARY_FMT, "%d machtigingen verleend");
+        nl.put(KEY_PRIVACY_SUMMARY_FMT, "%d apps · %d met privacybeperkingen");
         nl.put(KEY_PRIVACY_TAG_BG, "Achtergrond");
         nl.put(KEY_PRIVACY_TAG_CAM_MIC, "Camera/Mic");
         nl.put(KEY_PRIVACY_TAG_CONTACTS, "Contacten");
@@ -6327,7 +6404,7 @@ public final class I18n {
         nl.put(KEY_SANDBOX_STATUS_RUNNING, "Actief / Uitvoerend");
         nl.put(KEY_SANDBOX_TITLE, "Geïsoleerd sandboxprofiel");
         nl.put(KEY_SHADE_CLOSE, "[ PANEEL SLUITEN ]");
-        nl.put(KEY_SHADE_ESTIMATE_FMT, "Resterend: ~%d u %02d m");
+        nl.put(KEY_SHADE_ESTIMATE_FMT, "Batterij: %d%% · ~%du resterend (Ultra-besparing)");
         nl.put(KEY_SHADE_HEADER, "ULTRA BATTERIJSBESPARING");
         nl.put(KEY_SHADE_SETTINGS, "[ SYSTEEMINSTELLINGEN ]");
         nl.put(KEY_SHADE_TILES_TITLE, "Tegels voor besparingspaneel");
@@ -6361,8 +6438,8 @@ public final class I18n {
         nl.put(KEY_SUB_SOUND_VOLUMES_DESC, "Beltoon, media, meldingen, stil");
         nl.put(KEY_SUB_SYS_ADVANCED, "Geavanceerde opties");
         nl.put(KEY_SUB_SYS_ADVANCED_DESC, "Ontwikkelaarsopties, hardwaretests");
-        nl.put(KEY_SUB_SYS_BACKUP, "Backup & Herstel");
-        nl.put(KEY_SUB_SYS_BACKUP_DESC, "Cryptografische momentopnamen van instellingen");
+        nl.put(KEY_SUB_SYS_BACKUP, "Back-up en herstel");
+        nl.put(KEY_SUB_SYS_BACKUP_DESC, "Instellingen en indeling opslaan en herstellen");
         nl.put(KEY_SUB_SYS_INFO, "Apparaatgegevens");
         nl.put(KEY_SUB_SYS_INFO_DESC, "Model, Android-versie, kernel, build");
         nl.put(KEY_SUB_SYS_UPDATES, "Systeemupdates");
@@ -6377,6 +6454,8 @@ public final class I18n {
         nl.put(KEY_TOGGLE_WIFI, "Wi-Fi");
         nl.put(KEY_ULTRA_SAVER_ACTIVE, "[ ULTRA BESPARING ACTIEF ]");
 
+                nl.put(KEY_APK, "APK");
+        nl.put(KEY_INSTALL_PACKAGE, "Pakket installeren");
         TRANSLATIONS.put("nl", nl);
     }
 
@@ -6428,7 +6507,13 @@ public final class I18n {
      * Updates Android runtime Context Resources, default Locale, and fontScale.
      */
     public static void applyLocale(Context context, String languageCode, String regionCode) {
-        applyLocaleAndScale(context, languageCode, regionCode, 1.0f);
+        float scale = 1.0f;
+        if (context != null) {
+            SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+            int scaleInt = prefs.getInt("pref_font_scale", 100);
+            scale = scaleInt / 100.0f;
+        }
+        applyLocaleAndScale(context, languageCode, regionCode, scale);
     }
 
     public static void applyLocaleAndScale(Context context, String languageCode, String regionCode, float fontScale) {
@@ -6454,5 +6539,20 @@ public final class I18n {
         }
 
         LocaleManager.applySystemWideLocale(context, languageCode, regionCode);
+    }
+
+    public static boolean isSupportedLanguage(String langCode) {
+        if (langCode == null || langCode.trim().isEmpty()) return false;
+        String clean = langCode.trim();
+        String base = clean.contains("-") ? clean.substring(0, clean.indexOf('-')) : clean;
+        return TRANSLATIONS.containsKey(base.toLowerCase(Locale.ROOT));
+    }
+
+    public static String resolveLanguage(String langCode) {
+        if (langCode == null || langCode.trim().isEmpty()) return "en";
+        String clean = langCode.trim();
+        String base = clean.contains("-") ? clean.substring(0, clean.indexOf('-')) : clean;
+        base = base.toLowerCase(Locale.ROOT);
+        return TRANSLATIONS.containsKey(base) ? base : "en";
     }
 }

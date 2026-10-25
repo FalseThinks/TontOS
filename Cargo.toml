@@ -11,7 +11,6 @@ members = [
     "crates/tont-sensors",
     "crates/tont-input",
     "crates/tont-settings",
-    "crates/tont-settings-app",
     "crates/tont-backup",
     "crates/tont-init",
     "crates/tont-romctl",
@@ -19,7 +18,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.0.3"
+version = "0.0.4"
 edition = "2024"
 authors = ["FalseThinks <paproken@protonmail.com>"]
 license = "MIT OR Apache-2.0"
@@ -33,3 +32,10 @@ thiserror = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 sha2 = "0.11"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

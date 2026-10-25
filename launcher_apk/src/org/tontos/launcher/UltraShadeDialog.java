@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsetsController;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -79,6 +78,7 @@ public final class UltraShadeDialog {
         dragHandle.setTextColor(tokens.border);
         dragHandle.setGravity(Gravity.CENTER);
         dragHandle.setTextSize(14);
+        dragHandle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         dragHandle.setPadding(0, 0, 0, dp8);
         dragHandle.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { try { dialog.dismiss(); } catch (Throwable ignored) {} }
@@ -126,8 +126,8 @@ public final class UltraShadeDialog {
         // Grid of Quick Toggles (2 rows x 3 columns or 3 rows x 2 columns)
         // Row 1: Modo Avión | Modo No Molestar
         LinearLayout row1 = createToggleRow(activity);
-        final Button btnAirplane = createToggleButton(activity, tokens, dp48);
-        final Button btnDnd = createToggleButton(activity, tokens, dp48);
+        final TextView btnAirplane = createToggleButton(activity, tokens, dp48);
+        final TextView btnDnd = createToggleButton(activity, tokens, dp48);
         row1.addView(btnAirplane);
         row1.addView(createSpacer(activity, dp8));
         row1.addView(btnDnd);
@@ -138,8 +138,8 @@ public final class UltraShadeDialog {
 
         // Row 2: Wi-Fi | Datos Móviles
         LinearLayout row2 = createToggleRow(activity);
-        final Button btnWifi = createToggleButton(activity, tokens, dp48);
-        final Button btnData = createToggleButton(activity, tokens, dp48);
+        final TextView btnWifi = createToggleButton(activity, tokens, dp48);
+        final TextView btnData = createToggleButton(activity, tokens, dp48);
         row2.addView(btnWifi);
         row2.addView(createSpacer(activity, dp8));
         row2.addView(btnData);
@@ -150,8 +150,8 @@ public final class UltraShadeDialog {
 
         // Row 3: Bluetooth | Linterna
         LinearLayout row3 = createToggleRow(activity);
-        final Button btnBluetooth = createToggleButton(activity, tokens, dp48);
-        final Button btnTorch = createToggleButton(activity, tokens, dp48);
+        final TextView btnBluetooth = createToggleButton(activity, tokens, dp48);
+        final TextView btnTorch = createToggleButton(activity, tokens, dp48);
         row3.addView(btnBluetooth);
         row3.addView(createSpacer(activity, dp8));
         row3.addView(btnTorch);
@@ -162,8 +162,8 @@ public final class UltraShadeDialog {
 
         // Row 4: Ultra Battery Saver | NFC
         LinearLayout row4 = createToggleRow(activity);
-        final Button btnUltra = createToggleButton(activity, tokens, dp48);
-        final Button btnNfc = createToggleButton(activity, tokens, dp48);
+        final TextView btnUltra = createToggleButton(activity, tokens, dp48);
+        final TextView btnNfc = createToggleButton(activity, tokens, dp48);
         final boolean nfcSupported = UltraBatterySaverManager.getNfcState(activity) != UltraBatterySaverManager.ToggleState.UNKNOWN
                 || android.nfc.NfcAdapter.getDefaultAdapter(activity) != null;
         row4.addView(btnUltra);
@@ -185,7 +185,7 @@ public final class UltraShadeDialog {
                 boolean isUltra = UltraBatterySaverManager.isUltraBatterySaverActive(activity);
                 updateToggleStyle(btnUltra, tokens,
                     I18n.get(I18n.KEY_TOGGLE_ULTRA_SAVER, lang) + ": "
-                        + (isUltra ? "[ ON ]" : "[ OFF ]"),
+                        + (isUltra ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
                     isUltra, density);
                 updateHeader.run();
 
@@ -375,11 +375,14 @@ public final class UltraShadeDialog {
         LinearLayout bottomRow = new LinearLayout(activity);
         bottomRow.setOrientation(LinearLayout.HORIZONTAL);
 
-        Button btnClose = new Button(activity);
-        btnClose.setText(I18n.get(I18n.KEY_SHADE_CLOSE, lang));
+        TextView btnClose = new TextView(activity);
+        btnClose.setText(ensureBrackets(I18n.get(I18n.KEY_SHADE_CLOSE, lang)));
         btnClose.setTextColor(tokens.textMuted);
         btnClose.setTextSize(13);
         btnClose.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        btnClose.setGravity(Gravity.CENTER);
+        btnClose.setClickable(true);
+        btnClose.setFocusable(true);
         btnClose.setBackground(createButtonDrawable(tokens.controlBgNormal, tokens.border, (int) (1 * density), (int) (4 * density)));
         LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(0, dp48, 1.0f);
         btnClose.setLayoutParams(closeLp);
@@ -393,11 +396,14 @@ public final class UltraShadeDialog {
 
         bottomRow.addView(createSpacer(activity, dp8));
 
-        Button btnSettings = new Button(activity);
-        btnSettings.setText(I18n.get(I18n.KEY_SHADE_SETTINGS, lang));
+        TextView btnSettings = new TextView(activity);
+        btnSettings.setText(ensureBrackets(I18n.get(I18n.KEY_SHADE_SETTINGS, lang)));
         btnSettings.setTextColor(tokens.navAccent);
         btnSettings.setTextSize(13);
         btnSettings.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        btnSettings.setGravity(Gravity.CENTER);
+        btnSettings.setClickable(true);
+        btnSettings.setFocusable(true);
         btnSettings.setBackground(createButtonDrawable(tokens.controlBgNormal, tokens.navAccent, (int) (1 * density), (int) (4 * density)));
         LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(0, dp48, 1.0f);
         btnSettings.setLayoutParams(settingsLp);
@@ -456,6 +462,10 @@ public final class UltraShadeDialog {
         dialog.show();
     }
 
+    private static String ensureBrackets(String val) {
+        return TactileUi.ensureBrackets(val);
+    }
+
     private static boolean isTileEnabled(java.util.Set<String> tilesOrder, String id) {
         if (tilesOrder == null || tilesOrder.isEmpty()) return true;
         return tilesOrder.contains(id);
@@ -490,17 +500,19 @@ public final class UltraShadeDialog {
         return row;
     }
 
-    private static Button createToggleButton(Context context, ThemeTokens tokens, int height) {
-        Button btn = new Button(context);
+    private static TextView createToggleButton(Context context, ThemeTokens tokens, int height) {
+        TextView btn = new TextView(context);
         btn.setLayoutParams(new LinearLayout.LayoutParams(0, height, 1.0f));
         btn.setTextSize(12);
         btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         btn.setGravity(Gravity.CENTER);
         btn.setPadding(4, 0, 4, 0);
+        btn.setClickable(true);
+        btn.setFocusable(true);
         return btn;
     }
 
-    private static void updateToggleStyle(Button btn, ThemeTokens tokens, String text, boolean isActive, float density) {
+    private static void updateToggleStyle(TextView btn, ThemeTokens tokens, String text, boolean isActive, float density) {
         btn.setText(text);
         if (isActive) {
             btn.setTextColor(tokens.activeSelectionText);
@@ -524,19 +536,6 @@ public final class UltraShadeDialog {
     }
 
     private static StateListDrawable createButtonDrawable(int normalBg, int strokeColor, int strokeWidth, int cornerRadius) {
-        GradientDrawable normal = new GradientDrawable();
-        normal.setColor(normalBg);
-        normal.setStroke(strokeWidth, strokeColor);
-        normal.setCornerRadius(cornerRadius);
-
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(strokeColor);
-        pressed.setStroke(strokeWidth, strokeColor);
-        pressed.setCornerRadius(cornerRadius);
-
-        StateListDrawable sld = new StateListDrawable();
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{}, normal);
-        return sld;
+        return TactileUi.createButtonDrawable(normalBg, strokeColor, strokeColor, strokeWidth, cornerRadius);
     }
 }

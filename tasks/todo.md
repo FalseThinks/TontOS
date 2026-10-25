@@ -309,3 +309,52 @@
   - Acceptance: Whitelist `com.bitchat.droid` in `bin/helpers/debloat_custom_rom.sh`; install on Cuttlefish device; verify presence in TontOS App Drawer and successful launch.
   - Verify: App listed in drawer under `--- [ B ] ---` and launches on tap.
   - Files: `bin/helpers/debloat_custom_rom.sh`, `apps/bitchat.apk`.
+
+## Phase 29: Minimalist AMOLED UX, Battery Restoration & Settings Override
+- [x] Task 29.1: Text Fitting & Bracket Sanitization in Setup Wizard & Settings
+  - Acceptance: Wizard next button displays compact action `[ SIGUIENTE > ]` / `[ FINALIZAR ]` without wrapping to 2 lines; `addButtonRow` and `addToggleRow` strip double brackets (`[ [ ... ] ]` -> `[ ... ]`); row titles allow 2 lines (`maxLines=2`) to prevent truncation.
+  - Verify: Buttons fit on a single line; double brackets eliminated.
+  - Files: `launcher_apk/src/org/tontos/launcher/SetupWizardActivity.java`, `launcher_apk/src/org/tontos/launcher/SettingsRowFactory.java`.
+- [x] Task 29.2: Ultra Battery Saver Previous State Restoration & Background Triggers
+  - Acceptance: Save `pre_ultra_timeout` alongside `pre_ultra_brightness` and `pref_grayscale_enabled`; on disable, restore exact saved timeout (`applyGlobalScreenTimeout`), brightness, and grayscale; re-trigger `SystemProvisioningManager.ensureSystemTuning()` to restore background sync and Doze states; whitelist `com.bitchat.droid` and `eu.faircode.email` in `deviceidle` and `appops` (`RUN_IN_BACKGROUND allow`) to eliminate battery popups.
+  - Verify: Exiting ultra saver restores previous timeout; BitChat background prompt no longer appears.
+  - Files: `launcher_apk/src/org/tontos/launcher/UltraBatterySaverManager.java`, `launcher_apk/src/org/tontos/launcher/SystemProvisioningManager.java`, `launcher_apk/src/org/tontos/launcher/MainActivity.java`.
+- [x] Task 29.3: Native Lock Screen Security & Elimination of Stock AOSP Face/Pattern Redirects
+  - Acceptance: Remove stock AOSP `ChooseLockGeneric` / `launchAospLockSettings` redirects; bind pattern/PIN directly to native AMOLED `PatternSetupDialog` and `PinSetupDialog`; allow user to choose Pattern, PIN, Fingerprint, or None without ever prompting or requiring Face Unlock; replace hardcoded strings (`"[ CONFIGURAR ]"`, `"TEST"`) with localized `I18n.get(...)`.
+  - Verify: Lock screen configuration operates 100% within native AMOLED UI without launching AOSP Face unlock.
+  - Files: `launcher_apk/src/org/tontos/launcher/SettingsActivity.java`, `launcher_apk/src/org/tontos/launcher/LockSecurityManager.java`, `launcher_apk/src/org/tontos/launcher/I18n.java`.
+- [x] Task 29.4: Spanish Locale Default & Essential Features Guide in First Tab
+  - Acceptance: Default language resolution to system locale / Spanish (`es`) rather than hardcoded `"en"` across `SettingsActivity.java`, `MainActivity.java`, and dialogs; move Essential Features Guide (`QuickStartGuideDialog`) to Section 1 (Display, Themes & Security) as a prominent card.
+  - Verify: Launcher and Settings open in Spanish; Essential Features Guide accessible directly in Section 1.
+  - Files: `launcher_apk/src/org/tontos/launcher/SettingsActivity.java`, `launcher_apk/src/org/tontos/launcher/MainActivity.java`, `launcher_apk/src/org/tontos/launcher/I18n.java`.
+- [x] Task 29.5: Native AMOLED Keyboard (IME) Selector & Bootloader Status Clarity
+  - Acceptance: Replace non-functional `imm.showInputMethodPicker()` with native AMOLED `SingleChoiceSelectorDialog` populated from `imm.getEnabledInputMethodList()`; selecting an IME applies it via `SafeCommandExecutor`; localize keyboard row; clarify bootloader status in `BootloaderManager.java` with verified boot state.
+  - Verify: Tapping keyboard displays list of installed IMEs (e.g. HeliBoard) and selects them; bootloader status displays clearly.
+  - Files: `launcher_apk/src/org/tontos/launcher/SettingsActivity.java`, `launcher_apk/src/org/tontos/launcher/BootloaderManager.java`, `launcher_apk/src/org/tontos/launcher/I18n.java`.
+- [x] Task 29.6: Launcher & Settings UI Performance Optimization & Emulator Verification
+  - Acceptance: Eliminate redundant `PackageManager` queries in `MainActivity.onResume()` when `cachedInstalledApps` is already populated; optimize background policy application thread; verify full suite (`./bin/run_full_suite.sh --fast`); push updated launcher to running Cuttlefish emulator and capture screenshots.
+  - Verify: App drawer and home screen load without stutter; tests pass.
+  - Files: `launcher_apk/src/org/tontos/launcher/MainActivity.java`, `bin/run_full_suite.sh`.
+
+## Phase 30: Architecture, Folder Organization & Design Pattern Deduplication
+- [x] Task 30.1: Orphan Directory Cleanup & Platform Directory Consolidation
+  - Acceptance: Purge empty root `.build/` orphan directory; consolidate `platform/config/` into `platform/products/` with verified sysapp permissions XMLs; synchronize makefiles and patches.
+  - Verify: No orphan directories in root; `apply_aosp_patches.sh` and `build_gsi.sh` reference `platform/products`.
+  - Files: `platform/products/`, `bin/helpers/build_gsi.sh`, `bin/helpers/apply_aosp_patches.sh`.
+- [x] Task 30.2: Rust Workspace Consolidation
+  - Acceptance: Merge `tont-settings-app` into `tont-settings`; clean up `Cargo.toml` members from 14 down to 13; move test suite.
+  - Verify: `cargo test --all` passes (100/100 tests).
+  - Files: `Cargo.toml`, `crates/tont-settings/src/lib.rs`, `crates/tont-settings/tests/settings_app_tests.rs`.
+- [x] Task 30.3: Centralized AmoledDialog Builder Pattern & Tactile UI Deduplication
+  - Acceptance: Eliminate repeated window flags, full-screen insets, and monochrome daltonizer setup with `AmoledDialog` builder; centralize selection row background (`createSelectionRowBg`) and button states in `TactileUi`; refactor `SingleChoiceSelectorDialog`, `MultiChoiceSelectorDialog`, `LanguagePickerDialog`, `RegionPickerDialog`, `AppPrivacyGuard`, `AppNetworkFirewall`, and `SettingsRowFactory`.
+  - Verify: Zero occurrences of `new Dialog(` outside `AmoledDialog` and `UltraShadeDialog`; launcher APK shrinks to 688K.
+  - Files: `launcher_apk/src/org/tontos/launcher/TactileUi.java`, `launcher_apk/src/org/tontos/launcher/AmoledDialog.java`, `launcher_apk/src/org/tontos/launcher/SingleChoiceSelectorDialog.java`, `launcher_apk/src/org/tontos/launcher/LanguagePickerDialog.java`, `launcher_apk/src/org/tontos/launcher/RegionPickerDialog.java`, `launcher_apk/src/org/tontos/launcher/MultiChoiceSelectorDialog.java`, `launcher_apk/src/org/tontos/launcher/SettingsRowFactory.java`, `launcher_apk/src/org/tontos/launcher/AppPrivacyGuard.java`, `launcher_apk/src/org/tontos/launcher/AppNetworkFirewall.java`.
+- [x] Task 30.4: SettingsActivity Navigation & Menu Loop Modernization
+  - Acceptance: Replace repetitive 50-line category card callbacks with declarative loop over `SettingsSection` in `SettingsActivity.buildSettingsUI()`; introduce `addSubSectionCard` helper eliminating ~150 lines of boilerplate callback classes across 5 subsections.
+  - Verify: Settings menu navigates cleanly; APK size reduced; all 51 test suites pass with JaCoCo >= 95.5%.
+  - Files: `launcher_apk/src/org/tontos/launcher/SettingsActivity.java`.
+- [x] Task 30.5: Full Verification & Live Cuttlefish Proof
+  - Acceptance: Deploy updated 688K APK to Cuttlefish; verify Section 1 Essential Guide, Section 5 Absence of Guide, Theme Picker dialog, and Help badge popups in live screenshots.
+  - Verify: Screenshots captured; `run_full_suite.sh --fast` passes 100%.
+  - Files: `tasks/todo.md`, `tasks/plan.md`.
+

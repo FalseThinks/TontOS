@@ -1,9 +1,8 @@
 package org.tontos.launcher;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -11,12 +10,14 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.view.Window;
+import android.view.WindowInsetsController;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -27,6 +28,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -65,11 +67,11 @@ public final class OtaUpdateManager {
     private OtaUpdateManager() {}
 
     public static String getInstalledVersion(Context context) {
-        if (context == null) return "0.0.1";
+        if (context == null) return "0.0.4";
         try {
             return context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
         } catch (Throwable ignored) {
-            return "0.0.1";
+            return "0.0.4";
         }
     }
 
@@ -260,58 +262,32 @@ public final class OtaUpdateManager {
         final ReleaseInfo release,
         final UpdateChannel channel
     ) {
-        float density = activity.getResources().getDisplayMetrics().density;
+        if (activity == null || activity.isFinishing()) return;
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            activity,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding((int) (20 * density), (int) (18 * density), (int) (20 * density), (int) (18 * density));
-        root.setBackgroundColor(tokens.bg);
-
-        TextView title = new TextView(activity);
-        title.setText(I18n.get(I18n.KEY_OTA_NEW_VERSION_TITLE, langCode));
-        title.setTextColor(tokens.accent);
-        title.setTextSize(15);
-        title.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        title.setPadding(0, 0, 0, (int) (8 * density));
-        root.addView(title);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_OTA_NEW_VERSION_TITLE, langCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
 
         TextView versionHeader = new TextView(activity);
         String vText = I18n.get(I18n.KEY_OTA_VERSION_LABEL, langCode) + release.tagName
             + " [" + channel.getCode() + "]\n"
             + I18n.get(I18n.KEY_OTA_CURRENT_LABEL, langCode) + curVersion;
         versionHeader.setText(vText);
-        versionHeader.setTextColor(tokens.textPrimary);
-        versionHeader.setTextSize(13);
+        versionHeader.setTextColor(themeTokens.textPrimary);
+        versionHeader.setTextSize(13 * fontScale);
         versionHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         versionHeader.setPadding(0, 0, 0, (int) (12 * density));
-        root.addView(versionHeader);
-
-        // Changelog scrollview
-        ScrollView scroll = new ScrollView(activity);
-        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (int) (160 * density)
-        );
-        scroll.setLayoutParams(scrollLp);
+        dlg.getContentContainer().addView(versionHeader);
 
         TextView bodyText = new TextView(activity);
         String cleanBody = formatChangelogSummary(release.body);
         bodyText.setText(cleanBody.isEmpty() ? I18n.get(I18n.KEY_OTA_NO_NOTES, langCode) : cleanBody);
-        bodyText.setTextColor(tokens.textMuted);
-        bodyText.setTextSize(12);
+        bodyText.setTextColor(themeTokens.textMuted);
+        bodyText.setTextSize(12 * fontScale);
         bodyText.setTypeface(Typeface.MONOSPACE);
-        scroll.addView(bodyText);
-        root.addView(scroll);
-
-        // Action Buttons dock
-        LinearLayout btnDock = new LinearLayout(activity);
-        btnDock.setOrientation(LinearLayout.VERTICAL);
-        btnDock.setPadding(0, (int) (14 * density), 0, 0);
+        bodyText.setLineSpacing(0, 1.3f);
+        dlg.getContentContainer().addView(bodyText);
 
         final String downloadTarget = (release.apkUrl != null && !release.apkUrl.isEmpty())
             ? release.apkUrl
@@ -321,34 +297,35 @@ public final class OtaUpdateManager {
             ? I18n.get(I18n.KEY_OTA_DOWNLOAD_APK, langCode)
             : I18n.get(I18n.KEY_OTA_VIEW_GITHUB, langCode);
 
-        Button downloadBtn = new Button(activity);
-        downloadBtn.setText(actionLabel);
-        downloadBtn.setTextColor(tokens.isLight ? Color.WHITE : tokens.navAccent);
-        downloadBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        downloadBtn.setBackground(createButtonBg(tokens.navAccent, tokens.isLight ? tokens.navAccent : tokens.navBg, (int) density));
-        downloadBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openUrl(activity, downloadTarget);
+        // Dismiss Button
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_OTA_DISMISS, langCode),
+            themeTokens.textMuted,
+            themeTokens.border,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
             }
-        });
-        btnDock.addView(downloadBtn);
+        );
 
-        root.addView(btnDock);
+        // Download / Action Button
+        dlg.addActionButton(
+            actionLabel,
+            themeTokens.accent,
+            themeTokens.accent,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    openUrl(activity, downloadTarget);
+                }
+            }
+        );
 
-        builder.setView(root);
-        builder.setNegativeButton(I18n.get(I18n.KEY_OTA_DISMISS, langCode), null);
-
-        final AlertDialog dialog = builder.create();
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
-        Button pBtn = dialog.getButton(DialogInterface.BUTTON_NEGATIVE);
-        if (pBtn != null) {
-            pBtn.setTextColor(tokens.textMuted);
-            pBtn.setTypeface(Typeface.MONOSPACE);
-        }
+        dlg.show();
     }
 
     private static void showUpToDateDialog(
@@ -359,12 +336,6 @@ public final class OtaUpdateManager {
         UpdateChannel channel,
         String remoteTag
     ) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            activity,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-        builder.setTitle(I18n.get(I18n.KEY_OTA_UP_TO_DATE_TITLE, langCode));
-
         String msg = I18n.format(
             I18n.KEY_OTA_UP_TO_DATE_MSG_FMT,
             langCode,
@@ -372,19 +343,15 @@ public final class OtaUpdateManager {
             curVersion,
             (remoteTag != null ? remoteTag : "v" + curVersion)
         );
-
-        builder.setMessage(msg);
-        builder.setPositiveButton(I18n.get(I18n.KEY_DONE, langCode), null);
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
-        Button pBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
-        if (pBtn != null) {
-            pBtn.setTextColor(tokens.accent);
-            pBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        }
+        BooleanSelectorDialog.show(
+            activity,
+            tokens,
+            I18n.get(I18n.KEY_OTA_UP_TO_DATE_TITLE, langCode),
+            msg,
+            I18n.get(I18n.KEY_DONE, langCode),
+            null,
+            null
+        );
     }
 
     private static void showErrorDialog(
@@ -393,24 +360,16 @@ public final class OtaUpdateManager {
         String langCode,
         String errorDetail
     ) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            activity,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-        builder.setTitle(I18n.get(I18n.KEY_OTA_ERROR_TITLE, langCode));
         String msg = I18n.format(I18n.KEY_OTA_ERROR_MSG_FMT, langCode, errorDetail);
-        builder.setMessage(msg);
-        builder.setPositiveButton(I18n.get(I18n.KEY_DONE, langCode), null);
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
-        Button pBtn = dialog.getButton(DialogInterface.BUTTON_POSITIVE);
-        if (pBtn != null) {
-            pBtn.setTextColor(tokens.accent);
-            pBtn.setTypeface(Typeface.MONOSPACE);
-        }
+        BooleanSelectorDialog.show(
+            activity,
+            tokens,
+            I18n.get(I18n.KEY_OTA_ERROR_TITLE, langCode),
+            msg,
+            I18n.get(I18n.KEY_DONE, langCode),
+            null,
+            null
+        );
     }
 
     private static String formatChangelogSummary(String raw) {
@@ -441,21 +400,5 @@ public final class OtaUpdateManager {
         } catch (Throwable t) {
             Toast.makeText(context, "URL: " + url, Toast.LENGTH_LONG).show();
         }
-    }
-
-    private static StateListDrawable createButtonBg(int strokeColor, int bgColor, int density) {
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(strokeColor);
-        pressed.setCornerRadius(4 * density);
-
-        GradientDrawable normal = new GradientDrawable();
-        normal.setColor(bgColor);
-        normal.setStroke(Math.max(1, density), strokeColor);
-        normal.setCornerRadius(4 * density);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{}, normal);
-        return sld;
     }
 }

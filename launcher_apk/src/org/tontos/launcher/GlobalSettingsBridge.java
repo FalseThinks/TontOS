@@ -13,10 +13,8 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 /**
- * Universal System-Wide Configuration Bridge for TontOS.
- * Ensures all preference updates (Font Scale, Audio, Language, Display Timeout,
- * Lock Screen privacy/owner metadata) are broadcast and enforced globally to the
- * entire Android OS and third-party apps, rather than isolated to launcher preferences.
+ * System settings bridge for TontOS.
+ * Synchronizes launcher preferences with Android system settings.
  */
 public final class GlobalSettingsBridge {
 

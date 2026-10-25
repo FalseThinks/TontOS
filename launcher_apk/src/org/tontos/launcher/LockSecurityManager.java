@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Lock Screen Security & Biometric Manager for TontOS.
@@ -142,7 +143,8 @@ public final class LockSecurityManager {
     private static boolean verifyCredentialMatch(String credential, String salt, String savedHash) {
         if (savedHash == null || savedHash.isEmpty()) return false;
         if (savedHash.startsWith("pbkdf2$") || savedHash.startsWith("sha256$")) {
-            return savedHash.equals(hashCredential(credential, salt));
+            String computed = hashCredential(credential, salt);
+            return MessageDigest.isEqual(savedHash.getBytes(StandardCharsets.UTF_8), computed.getBytes(StandardCharsets.UTF_8));
         }
         // Legacy single-round SHA-256 migration
         try {
@@ -154,7 +156,7 @@ public final class LockSecurityManager {
                 sb.append(Character.forDigit((b >> 4) & 0xF, 16));
                 sb.append(Character.forDigit(b & 0xF, 16));
             }
-            return savedHash.equalsIgnoreCase(sb.toString());
+            return MessageDigest.isEqual(savedHash.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.UTF_8), sb.toString().getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             return false;
         }

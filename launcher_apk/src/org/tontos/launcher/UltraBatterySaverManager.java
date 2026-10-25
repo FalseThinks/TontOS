@@ -102,6 +102,11 @@ public final class UltraBatterySaverManager {
     public static ActionResult setUltraBatterySaver(Context context, boolean enable) {
         if (context == null) return ActionResult.FAILED;
         android.content.SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        boolean current = prefs.getBoolean("pref_ultra_battery_saver", false);
+        if (current == enable) {
+            return ActionResult.APPLIED;
+        }
+
         prefs.edit().putBoolean("pref_ultra_battery_saver", enable).apply();
 
         if (enable) {
@@ -109,19 +114,65 @@ public final class UltraBatterySaverManager {
                 int curB = Settings.System.getInt(context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 128);
                 prefs.edit().putInt("pre_ultra_brightness", curB).apply();
             } catch (Throwable ignored) {}
-            GlobalSettingsBridge.applyGlobalBrightness(context, 25);
-            GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15000);
+            try {
+                int curT = Settings.System.getInt(context.getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 60000);
+                prefs.edit().putInt("pre_ultra_timeout", curT).apply();
+            } catch (Throwable ignored) {}
+            try {
+                boolean curGray = prefs.getBoolean("pref_grayscale_enabled", false);
+                prefs.edit().putBoolean("pre_ultra_grayscale", curGray).apply();
+            } catch (Throwable ignored) {}
+
+            // Save and duty-cycle radios
+            try {
+                boolean wifiOn = getWifiState(context) == ToggleState.ON;
+                prefs.edit().putBoolean("pre_ultra_wifi", wifiOn).apply();
+                if (wifiOn) {
+                    SafeCommandExecutor.executePrivileged("cmd", "wifi", "set-wifi-enabled", "disabled");
+                }
+            } catch (Throwable ignored) {}
+            try {
+                boolean btOn = getBluetoothState(context) == ToggleState.ON;
+                prefs.edit().putBoolean("pre_ultra_bt", btOn).apply();
+                if (btOn) {
+                    SafeCommandExecutor.executePrivileged("cmd", "bluetooth_manager", "disable");
+                }
+            } catch (Throwable ignored) {}
+
+            GlobalSettingsBridge.applyGlobalBrightness(context, 4);
+            GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15);
             SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", "1");
             SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", "1");
             GrayscaleManager.setGrayscaleEnabled(context, true);
         } else {
-            int prevB = prefs.getInt("pre_ultra_brightness", 100);
-            GlobalSettingsBridge.applyGlobalBrightness(context, prevB);
-            GlobalSettingsBridge.applyGlobalScreenTimeout(context, 60000);
+            int rawB = prefs.getInt("pre_ultra_brightness", 128);
+            int pctB = Math.max(0, Math.min(100, Math.round((rawB / 255.0f) * 100.0f)));
+            int timeoutMs = prefs.getInt("pre_ultra_timeout", 60000);
+            int timeoutSecs = Math.max(15, timeoutMs / 1000);
+
+            GlobalSettingsBridge.applyGlobalBrightness(context, pctB);
+            GlobalSettingsBridge.applyGlobalScreenTimeout(context, timeoutSecs);
             SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", "0");
             SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", "0");
-            boolean userGrayscale = prefs.getBoolean("pref_grayscale_enabled", false);
+
+            boolean userGrayscale = prefs.getBoolean("pre_ultra_grayscale", false);
+            prefs.edit().putBoolean("pref_grayscale_enabled", userGrayscale).apply();
             GrayscaleManager.setGrayscaleEnabled(context, userGrayscale);
+
+            // Restore radios
+            try {
+                if (prefs.getBoolean("pre_ultra_wifi", false)) {
+                    SafeCommandExecutor.executePrivileged("cmd", "wifi", "set-wifi-enabled", "enabled");
+                }
+            } catch (Throwable ignored) {}
+            try {
+                if (prefs.getBoolean("pre_ultra_bt", false)) {
+                    SafeCommandExecutor.executePrivileged("cmd", "bluetooth_manager", "enable");
+                }
+            } catch (Throwable ignored) {}
+
+            SystemProvisioningManager.executeInitialProvisioning(context);
+            MainActivity.applyBackgroundPolicy(context);
         }
         return ActionResult.APPLIED;
     }

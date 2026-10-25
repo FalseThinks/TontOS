@@ -30,7 +30,13 @@ public final class SettingsRowFactory {
     private SettingsRowFactory() {}
 
     public static float getFontScale(Context context) {
-        return GlobalSettingsBridge.getFontScale(context);
+        // config.fontScale is already applied to DisplayMetrics.scaledDensity in attachBaseContext.
+        // Returning 1.0f prevents compound quadratic scaling (fontScale^2).
+        return 1.0f;
+    }
+
+    public static String ensureBrackets(String val) {
+        return TactileUi.ensureBrackets(val);
     }
 
     public static void addBackHeader(
@@ -42,12 +48,16 @@ public final class SettingsRowFactory {
     ) {
         float scale = getFontScale(context);
         TextView backBtn = new TextView(context);
-        backBtn.setText(I18n.get(I18n.KEY_BACK_TO_SETTINGS, langCode));
+        backBtn.setText(ensureBrackets(I18n.get(I18n.KEY_BACK_TO_SETTINGS, langCode)));
         backBtn.setTextColor(tokens.navAccent);
         backBtn.setTextSize(14 * scale);
         backBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        int minTargetPx = dpToPx(context, MIN_TOUCH_TARGET_HEIGHT_DP);
+        backBtn.setMinHeight(minTargetPx);
+        backBtn.setMinimumHeight(minTargetPx);
+        backBtn.setGravity(Gravity.CENTER_VERTICAL);
         backBtn.setBackground(createTouchFeedbackDrawable(context, tokens));
-        backBtn.setPadding(0, 0, 0, dpToPx(context, 14));
+        backBtn.setPadding(0, dpToPx(context, 8), 0, dpToPx(context, 8));
         backBtn.setOnClickListener(onBack);
         container.addView(backBtn);
     }
@@ -167,6 +177,15 @@ public final class SettingsRowFactory {
         container.addView(row);
     }
 
+    private static String formatBracketText(String raw) {
+        if (raw == null) return "[  ]";
+        String clean = raw.trim();
+        while (clean.startsWith("[") && clean.endsWith("]")) {
+            clean = clean.substring(1, clean.length() - 1).trim();
+        }
+        return "[ " + clean + " ]";
+    }
+
     public static void addToggleRow(
         Context context,
         LinearLayout container,
@@ -196,7 +215,7 @@ public final class SettingsRowFactory {
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
-        labelView.setSingleLine(true);
+        labelView.setMaxLines(2);
         labelView.setEllipsize(TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
         labelView.setLayoutParams(labelLp);
@@ -212,9 +231,7 @@ public final class SettingsRowFactory {
         row.addView(labelContainer);
 
         TextView actionBtn = new TextView(context);
-        String btnText = (actionText != null && actionText.startsWith("[") && actionText.endsWith("]"))
-                ? actionText : "[ " + actionText + " ]";
-        actionBtn.setText(btnText);
+        actionBtn.setText(formatBracketText(actionText));
         int btnColor = isPositive ? tokens.navAccent : (tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555"));
         actionBtn.setTextColor(btnColor);
         actionBtn.setTextSize(13 * scale);
@@ -262,7 +279,7 @@ public final class SettingsRowFactory {
         labelView.setTextColor(tokens.textPrimary);
         labelView.setTextSize(14 * scale);
         labelView.setTypeface(Typeface.MONOSPACE);
-        labelView.setSingleLine(true);
+        labelView.setMaxLines(2);
         labelView.setEllipsize(TextUtils.TruncateAt.END);
         LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
         labelView.setLayoutParams(labelLp);
@@ -278,7 +295,7 @@ public final class SettingsRowFactory {
         row.addView(labelContainer);
 
         TextView actionBtn = new TextView(context);
-        actionBtn.setText("[ " + buttonText + " ]");
+        actionBtn.setText(formatBracketText(buttonText));
         actionBtn.setTextColor(buttonTextColor != 0 ? buttonTextColor : tokens.navAccent);
         actionBtn.setTextSize(13 * scale);
         actionBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -415,16 +432,7 @@ public final class SettingsRowFactory {
     }
 
     public static Drawable createTouchFeedbackDrawable(Context context, ThemeTokens tokens) {
-        StateListDrawable states = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius(dpToPx(context, 4));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-        states.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        states.addState(new int[]{android.R.attr.state_focused}, pressed);
-        states.addState(new int[]{}, normal);
-        return states;
+        return TactileUi.createTouchFeedbackDrawable(context, tokens);
     }
 
     public static TextView createReorderButton(
@@ -451,22 +459,13 @@ public final class SettingsRowFactory {
         btn.setMinWidth(minWidthPx);
         btn.setMinimumWidth(minWidthPx);
         btn.setPadding((int) (6 * density), (int) (4 * density), (int) (6 * density), (int) (4 * density));
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-
-        GradientDrawable normal = new GradientDrawable();
-        normal.setColor(tokens.controlBgNormal);
-        normal.setStroke((int) (1 * density + 0.5f), tokens.border);
-        normal.setCornerRadius((int) (4 * density));
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-
-        btn.setBackground(sld);
+        btn.setBackground(TactileUi.createButtonDrawable(
+            tokens.controlBgNormal,
+            tokens.controlBgPressed,
+            tokens.border,
+            Math.max(1, (int) (1 * density + 0.5f)),
+            (int) (4 * density)
+        ));
         btn.setClickable(true);
         btn.setFocusable(true);
         btn.setOnClickListener(listener);

@@ -79,13 +79,32 @@ public class LockScreenActivity extends Activity {
     private LockClockStyle clockStyle;
     private String curLangCode;
 
-    private final SimpleDateFormat timeFormat24 = new SimpleDateFormat("HH:mm", Locale.getDefault());
-    private final SimpleDateFormat timeFormatSec = new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
-    private final SimpleDateFormat timeFormatHour = new SimpleDateFormat("HH", Locale.getDefault());
-    private final SimpleDateFormat timeFormatMin = new SimpleDateFormat("mm", Locale.getDefault());
-    private final SimpleDateFormat dateFormatFull = new SimpleDateFormat("EEEE, d MMMM", Locale.getDefault());
-    private final SimpleDateFormat dateFormatIso = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    private SimpleDateFormat timeFormat;
+    private SimpleDateFormat timeFormatSec;
+    private SimpleDateFormat timeFormatHour;
+    private SimpleDateFormat timeFormatMin;
+    private SimpleDateFormat dateFormatFull;
+    private SimpleDateFormat dateFormatIso;
     private final Date now = new Date();
+
+    private void refreshFormatters() {
+        SharedPreferences sp = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean is24 = sp.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
+        String lang = sp.getString("system_language", "en");
+        String reg = sp.getString("system_region", "US");
+        Locale loc = new Locale(lang, reg);
+
+        String timePat = is24 ? "HH:mm" : "hh:mm a";
+        String timeSecPat = is24 ? "HH:mm:ss" : "hh:mm:ss a";
+        String hourPat = is24 ? "HH" : "hh";
+
+        timeFormat = new SimpleDateFormat(timePat, loc);
+        timeFormatSec = new SimpleDateFormat(timeSecPat, loc);
+        timeFormatHour = new SimpleDateFormat(hourPat, loc);
+        timeFormatMin = new SimpleDateFormat("mm", loc);
+        dateFormatFull = new SimpleDateFormat("EEEE, d MMMM", loc);
+        dateFormatIso = new SimpleDateFormat("yyyy-MM-dd", loc);
+    }
 
     private int dpToPx(int dp) {
         return (int) (dp * getResources().getDisplayMetrics().density);
@@ -114,15 +133,12 @@ public class LockScreenActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
-            KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-            if (km != null) {
-                km.requestDismissKeyguard(this, null);
-            }
         }
 
         tokens = LockScreenManager.getResolvedThemeTokens(this);
         clockStyle = LockScreenManager.getClockStyle(this);
         curLangCode = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("system_language", "en");
+        refreshFormatters();
 
         buildLockUI();
         setupGestureDetector();
@@ -147,6 +163,7 @@ public class LockScreenActivity extends Activity {
         tokens = LockScreenManager.getResolvedThemeTokens(this);
         clockStyle = LockScreenManager.getClockStyle(this);
         curLangCode = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("system_language", "en");
+        refreshFormatters();
         buildLockUI();
         updateTimeAndStats();
     }
@@ -157,6 +174,7 @@ public class LockScreenActivity extends Activity {
         tokens = LockScreenManager.getResolvedThemeTokens(this);
         clockStyle = LockScreenManager.getClockStyle(this);
         curLangCode = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("system_language", "en");
+        refreshFormatters();
         buildLockUI();
         updateTimeAndStats();
         setupBatteryReceiver();
@@ -230,6 +248,44 @@ public class LockScreenActivity extends Activity {
             } catch (Throwable ignored) {}
             fingerprintCancelSignal = null;
         }
+    }
+
+    private static final String PREF_LOCK_FAILED_ATTEMPTS = "pref_lock_failed_attempts";
+    private static final String PREF_LOCKOUT_DEADLINE = "pref_lockout_deadline_epoch";
+
+    private boolean isLockoutActive() {
+        long deadline = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getLong(PREF_LOCKOUT_DEADLINE, 0L);
+        long now = System.currentTimeMillis();
+        if (now < deadline) {
+            long remainingSecs = Math.max(1, (deadline - now) / 1000L);
+            if (securityPromptView != null) {
+                securityPromptView.setText(I18n.format(I18n.KEY_FRICTION_BREATHE_FMT, curLangCode, "...", remainingSecs));
+                securityPromptView.setTextColor(tokens.accent);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void handleCredentialFailure() {
+        SharedPreferences sp = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        int fails = sp.getInt(PREF_LOCK_FAILED_ATTEMPTS, 0) + 1;
+        SharedPreferences.Editor ed = sp.edit().putInt(PREF_LOCK_FAILED_ATTEMPTS, fails);
+        if (fails >= 5) {
+            long lockoutMs = System.currentTimeMillis() + 30000L;
+            ed.putLong(PREF_LOCKOUT_DEADLINE, lockoutMs);
+        }
+        ed.apply();
+    }
+
+    private void handleCredentialSuccess() {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putInt(PREF_LOCK_FAILED_ATTEMPTS, 0)
+                .putLong(PREF_LOCKOUT_DEADLINE, 0L)
+                .apply();
+        unlockDevice();
     }
 
     private void unlockDevice() {
@@ -484,12 +540,18 @@ public class LockScreenActivity extends Activity {
             patternView.setOnPatternListener(new PatternView.OnPatternListener() {
                 @Override
                 public void onPatternDetected(List<Integer> pattern) {
+                    if (isLockoutActive()) {
+                        patternView.clearPattern();
+                        LockSecurityManager.vibrateError(LockScreenActivity.this);
+                        return;
+                    }
                     if (LockSecurityManager.verifyPattern(LockScreenActivity.this, pattern)) {
                         patternView.setDisplayMode(PatternView.DisplayMode.CORRECT);
                         LockSecurityManager.vibrateSuccess(LockScreenActivity.this);
                         securityPromptView.setText(I18n.get(I18n.KEY_DONE, curLangCode));
-                        unlockDevice();
+                        handleCredentialSuccess();
                     } else {
+                        handleCredentialFailure();
                         patternView.setDisplayMode(PatternView.DisplayMode.ERROR);
                         LockSecurityManager.vibrateError(LockScreenActivity.this);
                         securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PATTERN_WRONG, curLangCode));
@@ -518,10 +580,16 @@ public class LockScreenActivity extends Activity {
             pinUnlockView.setOnPinListener(new PinUnlockView.OnPinListener() {
                 @Override
                 public void onPinEntered(String pin) {
+                    if (isLockoutActive()) {
+                        pinUnlockView.clearPin();
+                        LockSecurityManager.vibrateError(LockScreenActivity.this);
+                        return;
+                    }
                     if (LockSecurityManager.verifyPin(LockScreenActivity.this, pin)) {
                         LockSecurityManager.vibrateSuccess(LockScreenActivity.this);
-                        unlockDevice();
+                        handleCredentialSuccess();
                     } else {
+                        handleCredentialFailure();
                         LockSecurityManager.vibrateError(LockScreenActivity.this);
                         pinUnlockView.showError(I18n.get(I18n.KEY_LOCK_PIN_WRONG, curLangCode));
                         securityPromptView.setText(I18n.get(I18n.KEY_LOCK_PIN_WRONG, curLangCode));
@@ -737,7 +805,7 @@ public class LockScreenActivity extends Activity {
                 clockMain.setTextSize(26 * fontScale);
                 clockMain.setTextColor(tokens.textPrimary);
                 clockSub.setVisibility(View.GONE);
-                clockMain.setText(timeFormat24.format(now) + " · " + dateFormatFull.format(now));
+                clockMain.setText(timeFormat.format(now) + " · " + dateFormatFull.format(now));
                 break;
 
             case BIG_MONOSPACE:
@@ -745,7 +813,7 @@ public class LockScreenActivity extends Activity {
                 clockMain.setTextSize(74 * fontScale);
                 clockMain.setTextColor(tokens.accent);
                 clockSub.setVisibility(View.GONE);
-                clockMain.setText(timeFormat24.format(now));
+                clockMain.setText(timeFormat.format(now));
                 break;
 
             case MINIMAL_DATE_ONLY:
@@ -772,7 +840,7 @@ public class LockScreenActivity extends Activity {
                     clockMain.setTextColor(tokens.accent);
                 }
                 clockSub.setVisibility(View.GONE);
-                clockMain.setText(timeFormat24.format(now));
+                clockMain.setText(timeFormat.format(now));
                 break;
         }
 

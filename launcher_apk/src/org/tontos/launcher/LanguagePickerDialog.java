@@ -5,39 +5,33 @@ import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
-import android.os.Build;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowInsetsController;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Pure AMOLED (#000000) All-Languages Selector Dialog.
- * Features real-time search filtering, 48dp minimum touch targets,
- * monospace typography, and active language [x] indicator.
+ * AMOLED modal dialog for selecting system language.
+ * Features real-time search filtering, accent-insensitive search, and minimum 48dp touch targets.
+ * Built with AmoledDialog template.
  */
 public final class LanguagePickerDialog {
 
-    public interface OnLocaleSelectedListener {
-        void onLocaleSelected(LocaleItem item);
-    }
-
     private static final int MIN_TOUCH_TARGET_DP = 48;
     private static final int MAX_DISPLAY_COUNT = 150;
+
+    public interface OnLocaleSelectedListener {
+        void onLocaleSelected(LocaleItem selected);
+    }
 
     private LanguagePickerDialog() {}
 
@@ -51,147 +45,53 @@ public final class LanguagePickerDialog {
             return null;
         }
 
-        final Dialog dialog = new Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCancelable(true);
-        dialog.setCanceledOnTouchOutside(true);
-
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && dialog.getWindow().getInsetsController() != null) {
-                    dialog.getWindow().getInsetsController().setSystemBarsAppearance(
-                        tokens.isLight ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    );
-                }
-            } catch (Throwable ignored) {}
-            GrayscaleManager.applyGrayscaleToWindow(dialog.getWindow(), GrayscaleManager.isGrayscaleEnabled(activity));
-        }
-
-        int screenWidthPx = activity.getResources().getDisplayMetrics().widthPixels;
-        float density = activity.getResources().getDisplayMetrics().density;
-        int screenWidthDp = (int) (screenWidthPx / density);
-        int padH = screenWidthDp < 360 ? dpToPx(activity, 14) : dpToPx(activity, 20);
-        int padV = dpToPx(activity, 20);
-
-        LinearLayout outer = new LinearLayout(activity);
-        outer.setOrientation(LinearLayout.VERTICAL);
-        outer.setBackgroundColor(tokens.bg);
-        outer.setGravity(Gravity.CENTER_HORIZONTAL);
-        outer.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(tokens.bg);
-        root.setPadding(padH, padV, padH, padV);
-
-        if (screenWidthDp > 520) {
-            root.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(activity, 480), ViewGroup.LayoutParams.MATCH_PARENT));
-        } else {
-            root.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        }
-
         final String langCode = currentItem != null ? currentItem.getTag() : "en";
-        final float fontScale = GlobalSettingsBridge.getFontScale(activity);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_SELECT_LANGUAGE, langCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
 
-        // 1. Header: SELECT SYSTEM LANGUAGE
-        TextView header = new TextView(activity);
-        header.setText(I18n.get(I18n.KEY_SELECT_LANGUAGE, langCode).toUpperCase(Locale.ROOT));
-        header.setTextColor(tokens.accent);
-        header.setTextSize((screenWidthDp < 360 ? 15 : 16) * fontScale);
-        header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        header.setSingleLine(true);
-        header.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        header.setPadding(0, 0, 0, dpToPx(activity, 4));
-        root.addView(header);
-
-        // Tactile divider line
-        View divider = new View(activity);
-        divider.setBackgroundColor(tokens.border);
-        LinearLayout.LayoutParams divLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(activity, 1));
-        divLp.setMargins(0, 0, 0, dpToPx(activity, 10));
-        divider.setLayoutParams(divLp);
-        root.addView(divider);
-
-        // 2. Real-time search filter EditText [ Search language... ]
+        // 1. Real-time search filter EditText [ Search language... ]
         final EditText searchBar = new EditText(activity);
         searchBar.setHint(I18n.get(I18n.KEY_SEARCH_LANGUAGE, langCode));
-        searchBar.setHintTextColor(tokens.textMuted);
-        searchBar.setTextColor(tokens.textPrimary);
+        searchBar.setHintTextColor(themeTokens.textMuted);
+        searchBar.setTextColor(themeTokens.textPrimary);
         searchBar.setTextSize(13 * fontScale);
         searchBar.setTypeface(Typeface.MONOSPACE);
         searchBar.setSingleLine(true);
-        searchBar.setMinHeight(dpToPx(activity, 44));
-        searchBar.setMinimumHeight(dpToPx(activity, 44));
-        searchBar.setPadding(dpToPx(activity, 12), dpToPx(activity, 8), dpToPx(activity, 12), dpToPx(activity, 8));
+        searchBar.setMinHeight((int) (44 * density + 0.5f));
+        searchBar.setMinimumHeight((int) (44 * density + 0.5f));
+        searchBar.setPadding((int) (12 * density), (int) (8 * density), (int) (12 * density), (int) (8 * density));
 
         GradientDrawable searchBg = new GradientDrawable();
         searchBg.setShape(GradientDrawable.RECTANGLE);
         searchBg.setColor(Color.TRANSPARENT);
-        searchBg.setStroke(dpToPx(activity, 1), tokens.border);
-        searchBg.setCornerRadius(dpToPx(activity, 4));
+        searchBg.setStroke((int) (1 * density + 0.5f), themeTokens.border);
+        searchBg.setCornerRadius((int) (4 * density));
         searchBar.setBackground(searchBg);
 
         LinearLayout.LayoutParams searchLp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        searchLp.setMargins(0, 0, 0, dpToPx(activity, 6));
+        searchLp.setMargins(0, 0, 0, (int) (6 * density));
         searchBar.setLayoutParams(searchLp);
-        root.addView(searchBar);
+        dlg.addFixedSubHeaderView(searchBar);
 
         // Count badge
         final TextView countBadge = new TextView(activity);
-        countBadge.setTextColor(tokens.textMuted);
+        countBadge.setTextColor(themeTokens.textMuted);
         countBadge.setTextSize(11 * fontScale);
         countBadge.setTypeface(Typeface.MONOSPACE);
         countBadge.setSingleLine(true);
         countBadge.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        countBadge.setPadding(0, 0, 0, dpToPx(activity, 6));
-        root.addView(countBadge);
+        countBadge.setPadding(0, 0, 0, (int) (6 * density));
+        dlg.addFixedSubHeaderView(countBadge);
 
-        // 3. Scrollable LinearLayout (in ScrollView)
-        ScrollView scroll = new ScrollView(activity);
-        LinearLayout.LayoutParams scrollLp = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f
-        );
-        scroll.setLayoutParams(scrollLp);
-
-        final LinearLayout listContainer = new LinearLayout(activity);
-        listContainer.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(listContainer);
-        root.addView(scroll);
-
-        // 4. Bottom Cancel / Back Button (Flat invisible action button in navAccent)
-        TextView closeBtn = new TextView(activity);
-        closeBtn.setText(I18n.get(I18n.KEY_CANCEL, langCode));
-        closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(13 * fontScale);
-        closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        closeBtn.setGravity(Gravity.CENTER);
-        closeBtn.setMinHeight(dpToPx(activity, MIN_TOUCH_TARGET_DP));
-        closeBtn.setMinimumHeight(dpToPx(activity, MIN_TOUCH_TARGET_DP));
-        closeBtn.setPadding(0, dpToPx(activity, 10), 0, dpToPx(activity, 10));
-        closeBtn.setBackground(createFlatActionFeedbackDrawable(activity, tokens.controlBgPressed));
-        closeBtn.setClickable(true);
-        closeBtn.setFocusable(true);
-        closeBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        closeLp.setMargins(0, dpToPx(activity, 10), 0, 0);
-        closeBtn.setLayoutParams(closeLp);
-        root.addView(closeBtn);
+        final LinearLayout listContainer = dlg.getContentContainer();
 
         // Populate initial list of unique languages
         final List<LocaleItem> allLocales = LocaleManager.getAvailableLanguages();
-        populateList(activity, listContainer, countBadge, "", allLocales, currentItem, dialog, tokens, langCode, listener);
+        populateList(activity, listContainer, countBadge, "", allLocales, currentItem, dlg, themeTokens, langCode, density, fontScale, listener);
 
         // Real-time TextWatcher
         searchBar.addTextChangedListener(new TextWatcher() {
@@ -201,17 +101,29 @@ public final class LanguagePickerDialog {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 String query = (s != null) ? s.toString() : "";
-                populateList(activity, listContainer, countBadge, query, allLocales, currentItem, dialog, tokens, langCode, listener);
+                populateList(activity, listContainer, countBadge, query, allLocales, currentItem, dlg, themeTokens, langCode, density, fontScale, listener);
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
 
-        outer.addView(root);
-        dialog.setContentView(outer);
-        dialog.show();
-        return dialog;
+        // Bottom Cancel Button
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            themeTokens.navAccent,
+            themeTokens.border,
+            true,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
+            }
+        );
+
+        dlg.show();
+        return dlg.getDialog();
     }
 
     private static String stripAccents(String s) {
@@ -227,9 +139,11 @@ public final class LanguagePickerDialog {
         final String query,
         final List<LocaleItem> allLocales,
         final LocaleItem currentItem,
-        final Dialog dialog,
+        final AmoledDialog dlg,
         final ThemeTokens tokens,
         final String langCode,
+        final float density,
+        final float fontScale,
         final OnLocaleSelectedListener listener
     ) {
         container.removeAllViews();
@@ -237,10 +151,10 @@ public final class LanguagePickerDialog {
 
         // If query is empty, pin the active language at the top for immediate access
         if (q.isEmpty() && currentItem != null) {
-            View activeTopRow = createLanguageRow(activity, currentItem, true, tokens, new View.OnClickListener() {
+            View activeTopRow = createLanguageRow(activity, currentItem, true, tokens, density, fontScale, new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    dialog.dismiss();
+                    dlg.dismiss();
                     if (listener != null) {
                         listener.onLocaleSelected(currentItem);
                     }
@@ -250,8 +164,8 @@ public final class LanguagePickerDialog {
 
             View pinDivider = new View(activity);
             pinDivider.setBackgroundColor(tokens.border);
-            LinearLayout.LayoutParams pdLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(activity, 1));
-            pdLp.setMargins(0, dpToPx(activity, 4), 0, dpToPx(activity, 6));
+            LinearLayout.LayoutParams pdLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (1 * density + 0.5f));
+            pdLp.setMargins(0, (int) (4 * density), 0, (int) (6 * density));
             pinDivider.setLayoutParams(pdLp);
             container.addView(pinDivider);
         }
@@ -274,10 +188,10 @@ public final class LanguagePickerDialog {
                         currentItem.getTag().equalsIgnoreCase(item.getTag())
                         || currentItem.getCode().equalsIgnoreCase(item.getCode())
                     );
-                    View row = createLanguageRow(activity, item, isActive, tokens, new View.OnClickListener() {
+                    View row = createLanguageRow(activity, item, isActive, tokens, density, fontScale, new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            dialog.dismiss();
+                            dlg.dismiss();
                             if (listener != null) {
                                 listener.onLocaleSelected(item);
                             }
@@ -289,9 +203,7 @@ public final class LanguagePickerDialog {
             }
         }
 
-        if (countBadge != null) {
-            countBadge.setText(I18n.format(I18n.KEY_LANGUAGES_FOUND_FMT, langCode, count));
-        }
+        countBadge.setText(I18n.format(I18n.KEY_LANGUAGES_FOUND_FMT, langCode, count));
     }
 
     private static View createLanguageRow(
@@ -299,29 +211,20 @@ public final class LanguagePickerDialog {
         final LocaleItem item,
         final boolean isActive,
         final ThemeTokens tokens,
+        final float density,
+        final float fontScale,
         final View.OnClickListener onClick
     ) {
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setMinimumHeight(dpToPx(context, MIN_TOUCH_TARGET_DP));
-        row.setPadding(dpToPx(context, 12), dpToPx(context, 6), dpToPx(context, 12), dpToPx(context, 6));
+        row.setMinimumHeight((int) (MIN_TOUCH_TARGET_DP * density + 0.5f));
+        row.setPadding((int) (12 * density), (int) (10 * density), (int) (12 * density), (int) (10 * density));
         row.setClickable(true);
         row.setFocusable(true);
+        row.setBackground(TactileUi.createSelectionRowBg(tokens, isActive, density));
 
-        int normalBg = isActive ? tokens.activeSelectionBg : Color.TRANSPARENT;
-        int strokeColor = isActive ? tokens.accent : Color.TRANSPARENT;
-        row.setBackground(createStateFeedbackDrawable(context, normalBg, tokens.controlBgPressed, strokeColor));
-
-        LinearLayout.LayoutParams rowLp = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-        );
-        rowLp.setMargins(0, dpToPx(context, 2), 0, dpToPx(context, 2));
-        row.setLayoutParams(rowLp);
-
-        final float fontScale = GlobalSettingsBridge.getFontScale(context);
-
-        // Active indicator: [x] or [ ]
+        // Indicator [x] or [ ]
         TextView indicator = new TextView(context);
         indicator.setText(isActive ? "[x] " : "[ ] ");
         indicator.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
@@ -329,70 +232,44 @@ public final class LanguagePickerDialog {
         indicator.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
         row.addView(indicator);
 
-        // Language display name
-        TextView nameView = new TextView(context);
-        nameView.setText(item.getDisplayName());
-        nameView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textPrimary);
-        nameView.setTextSize(13 * fontScale);
-        nameView.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
-        nameView.setSingleLine(true);
-        nameView.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
-        nameView.setLayoutParams(nameLp);
-        row.addView(nameView);
+        // Main text container: Title (English) + Native Name
+        LinearLayout textContainer = new LinearLayout(context);
+        textContainer.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams textLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        textContainer.setLayoutParams(textLp);
 
-        // Language tag on right e.g. [en-US]
+        TextView titleView = new TextView(context);
+        titleView.setText(item.getDisplayName());
+        titleView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textPrimary);
+        titleView.setTextSize(13 * fontScale);
+        titleView.setTypeface(Typeface.MONOSPACE, isActive ? Typeface.BOLD : Typeface.NORMAL);
+        titleView.setSingleLine(true);
+        titleView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        textContainer.addView(titleView);
+
+        if (item.getNativeName() != null && !item.getNativeName().isEmpty() && !item.getNativeName().equalsIgnoreCase(item.getDisplayName())) {
+            TextView nativeView = new TextView(context);
+            nativeView.setText(item.getNativeName());
+            nativeView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
+            nativeView.setTextSize(11 * fontScale);
+            nativeView.setTypeface(Typeface.MONOSPACE);
+            nativeView.setSingleLine(true);
+            nativeView.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            textContainer.addView(nativeView);
+        }
+        row.addView(textContainer);
+
+        // Tag badge [en-US]
         TextView tagView = new TextView(context);
         tagView.setText("[" + item.getTag() + "]");
         tagView.setTextColor(isActive ? tokens.activeSelectionText : tokens.textMuted);
         tagView.setTextSize(11 * fontScale);
         tagView.setTypeface(Typeface.MONOSPACE);
         tagView.setSingleLine(true);
-        tagView.setPadding(dpToPx(context, 8), 0, 0, 0);
+        tagView.setPadding((int) (8 * density), 0, 0, 0);
         row.addView(tagView);
 
         row.setOnClickListener(onClick);
         return row;
-    }
-
-    private static Drawable createFlatActionFeedbackDrawable(Context context, int pressedColor) {
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(pressedColor);
-        pressed.setCornerRadius(dpToPx(context, 4));
-        android.graphics.drawable.ColorDrawable normal = new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT);
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        return sld;
-    }
-
-    private static Drawable createStateFeedbackDrawable(Context context, int normalColor, int pressedColor, int strokeColor) {
-        StateListDrawable sld = new StateListDrawable();
-
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setShape(GradientDrawable.RECTANGLE);
-        pressed.setColor(pressedColor); // #222222
-        if (strokeColor != Color.TRANSPARENT) {
-            pressed.setStroke(dpToPx(context, 1), strokeColor);
-        }
-        pressed.setCornerRadius(dpToPx(context, 4));
-
-        GradientDrawable normal = new GradientDrawable();
-        normal.setShape(GradientDrawable.RECTANGLE);
-        normal.setColor(normalColor);
-        if (strokeColor != Color.TRANSPARENT) {
-            normal.setStroke(dpToPx(context, 1), strokeColor);
-        }
-        normal.setCornerRadius(dpToPx(context, 4));
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        return sld;
-    }
-
-    private static int dpToPx(Context context, int dp) {
-        return (int) (dp * context.getResources().getDisplayMetrics().density + 0.5f);
     }
 }
