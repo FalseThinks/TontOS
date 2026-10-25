@@ -23,6 +23,7 @@ import java.util.Map;
 public final class SettingsDescriptions {
 
     private static final Map<String, String> DESCRIPTIONS = new HashMap<>();
+    private static final Map<String, String> DESCRIPTIONS_ES = new HashMap<>();
 
     static {
         // Section 1: Display & Theme
@@ -72,29 +73,94 @@ public final class SettingsDescriptions {
         DESCRIPTIONS.put(I18n.KEY_RUN_WIZARD_ROW, "Reruns the initial out-of-box setup wizard to reconfigure language, theme, and detox budget.");
         DESCRIPTIONS.put(I18n.KEY_DEV_SETTINGS, "Launches Android Developer Options for USB debugging and OEM unlock.");
         DESCRIPTIONS.put(I18n.KEY_HARDWARE_TEST, "Opens hidden engineering diagnostics test screen (*#*#4636#*#*).");
+
+        // Spanish descriptions
+        DESCRIPTIONS_ES.put(I18n.KEY_THEME_PRESET, "Selecciona la paleta de contraste visual: AMOLED Negro Puro, Ámbar Fósforo CRT, Papel Monocromo E-Ink o Azul medianoche Slate.");
+        DESCRIPTIONS_ES.put(I18n.KEY_GRAYSCALE_MODE, "Fuerza monocromía en todo el sistema mediante daltonizador por hardware para eliminar disparadores de dopamina.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BRIGHTNESS, "Ajusta manualmente el nivel de retroiluminación para ahorrar batería de sensores automáticos.");
+        DESCRIPTIONS_ES.put(I18n.KEY_TIMEOUT, "Controla el tiempo de inactividad antes de apagar la pantalla para ahorrar energía.");
+        DESCRIPTIONS_ES.put(I18n.KEY_DAILY_BUDGET, "Fija el límite diario de uso de pantalla con avisos e indicadores al superarlo.");
+        DESCRIPTIONS_ES.put(I18n.KEY_LANGUAGE, "Configura el idioma de la interfaz del sistema operativo y del launcher.");
+        DESCRIPTIONS_ES.put(I18n.KEY_REGION, "Configura formato regional de fecha, números y operador.");
+        DESCRIPTIONS_ES.put(I18n.KEY_FONT_SIZE, "Escala proporcionalmente el tamaño de texto tipográfico monospace.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BATTERY_PROTECTION, "Limita la carga al 80% o activa bypass directo por sysfs para prolongar la vida útil de la batería.");
+        DESCRIPTIONS_ES.put(I18n.KEY_GLYPH_INTERFACE, "Activa los patrones luminosos LED Glyph traseros en Nothing Phone para alertas esenciales.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_MEDIA_VOL, "Controla el volumen de reproducción multimedia, música y navegador.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RING_VOL, "Ajusta el volumen del timbre para llamadas entrantes.");
+        DESCRIPTIONS_ES.put(I18n.KEY_ALARM_VOL, "Fija el nivel de volumen para alarmas y despertadores.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RINGER_PROFILE, "Conmuta entre perfiles Normal, Vibración y Silencio.");
+        DESCRIPTIONS_ES.put(I18n.KEY_NOTIFICATION_DELIVERY_TITLE, "Agrupa avisos: entrega inmediata, digest programado (12:00/18:00) o solo contactos destacados.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RINGTONE_TITLE, "Selecciona el tono de audio para llamadas telefónicas.");
+        DESCRIPTIONS_ES.put(I18n.KEY_NOTIFICATION_SOUND_TITLE, "Selecciona el tono de alerta para notificaciones de aplicaciones.");
+        DESCRIPTIONS_ES.put(I18n.KEY_ALARM_SOUND_TITLE, "Selecciona el tono sonoro para la alarma del reloj.");
+        DESCRIPTIONS_ES.put(I18n.KEY_EQUALIZER, "Interruptor principal y filtrado de 5 bandas por hardware (60Hz a 14kHz).");
+        DESCRIPTIONS_ES.put("pref_eq_enabled", "Activa o desactiva el procesamiento de hardware del ecualizador del sistema.");
+        DESCRIPTIONS_ES.put(I18n.KEY_EQ_PRESET, "Selecciona perfil acústico: Plano, Graves, Vocal, Agudos o Rock.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_APP_LIMIT_TITLE, "Limita el número máximo de aplicaciones fijadas en la pantalla principal.");
+        DESCRIPTIONS_ES.put(I18n.KEY_FRICTION_TITLE, "Introduce una pausa consciente de cuenta atrás antes de abrir apps para evitar compulsividad.");
+        DESCRIPTIONS_ES.put(I18n.KEY_APP_PRIVACY_GUARD, "Supervisa y gestiona permisos de sensores, red y almacenamiento en tiempo de ejecución.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_WIFI_RADIO, "Conmuta el hardware de radio Wi-Fi directamente vía servicio de sistema.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BT_RADIO, "Conmuta el transceptor Bluetooth para audio y periféricos.");
+        DESCRIPTIONS_ES.put(I18n.KEY_CELLULAR_DATA, "Activa o desactiva la conexión de datos móviles por paquetes.");
+        DESCRIPTIONS_ES.put(I18n.KEY_NFC_RADIO, "Controla la radio NFC para lectura sin contacto y etiquetas.");
+        DESCRIPTIONS_ES.put(I18n.KEY_SYNC_BATCHING, "Agrupa despertares de radio en intervalos (15m, 30m, 60m) para optimizar batería.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BG_POLICY, "Restringe la ejecución de apps en segundo plano: Lista blanca, Estricto o Permitido.");
+        DESCRIPTIONS_ES.put(I18n.KEY_SHADE_TILES_TITLE, "Personaliza las baldosas de conmutación en la cortina de ultra ahorro.");
+        DESCRIPTIONS_ES.put(I18n.KEY_APP_NETWORK_FIREWALL, "Aisla y bloquea el acceso a Internet por aplicación mediante AppOps e iptables.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_UPDATE_CHANNEL, "Selecciona el canal de actualizaciones del sistema: Estable, Beta o Nightly.");
+        DESCRIPTIONS_ES.put(I18n.KEY_CREATE_SNAPSHOT, "Crea una instantánea criptográfica cifrada e inmutable con la configuración del launcher.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RESTORE_SNAPSHOT, "Restaura la configuración y disposición de apps desde una copia verificada.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RUN_WIZARD_ROW, "Vuelve a ejecutar el asistente de configuración inicial.");
+        DESCRIPTIONS_ES.put(I18n.KEY_DEV_SETTINGS, "Abre las Opciones de Desarrollador de Android para depuración USB y desbloqueo OEM.");
+        DESCRIPTIONS_ES.put(I18n.KEY_HARDWARE_TEST, "Abre el menú oculto de diagnóstico de hardware (*#*#4636#*#*).");
     }
 
     private SettingsDescriptions() {}
 
     public static String get(String key) {
+        return get(key, "en");
+    }
+
+    public static String get(String key, String langCode) {
         if (key == null) return null;
+        if (langCode != null && langCode.toLowerCase(Locale.ROOT).startsWith("es")) {
+            String esVal = DESCRIPTIONS_ES.get(key);
+            if (esVal != null) return esVal;
+            String clean = key.trim().toLowerCase(Locale.ROOT);
+            for (Map.Entry<String, String> entry : DESCRIPTIONS_ES.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(key) || clean.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
+                    return entry.getValue();
+                }
+            }
+        }
         String val = DESCRIPTIONS.get(key);
         if (val != null) return val;
         // Case-insensitive or normalized check
-        String clean = key.trim().toLowerCase();
+        String clean = key.trim().toLowerCase(Locale.ROOT);
         for (Map.Entry<String, String> entry : DESCRIPTIONS.entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(key) || clean.contains(entry.getKey().toLowerCase())) {
+            if (entry.getKey().equalsIgnoreCase(key) || clean.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
                 return entry.getValue();
             }
         }
         // Fallback default helpful text if not specifically defined
-        return "Configuration setting for " + key + ". Touch to modify system preference.";
+        return (langCode != null && langCode.startsWith("es"))
+            ? "Ajuste de configuración para " + key + ". Toque para modificar."
+            : "Configuration setting for " + key + ". Touch to modify system preference.";
     }
 
     public static void showExplanationDialog(Context context, ThemeTokens tokens, String title, String explanation) {
         if (context == null || explanation == null) return;
         final Dialog dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        String langCode = "en";
+        try {
+            langCode = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE).getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
+        } catch (Throwable ignored) {}
 
         float density = context.getResources().getDisplayMetrics().density;
         LinearLayout root = new LinearLayout(context);
@@ -133,7 +199,7 @@ public final class SettingsDescriptions {
         root.addView(msgView);
 
         Button okBtn = new Button(context);
-        okBtn.setText("[ ENTENDIDO / OK ]");
+        okBtn.setText(I18n.get(I18n.KEY_DONE, langCode));
         okBtn.setTextColor(tokens.navAccent);
         okBtn.setTextSize(13);
         okBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -155,7 +221,11 @@ public final class SettingsDescriptions {
     }
 
     public static View createHelpBadge(final Context context, final ThemeTokens tokens, final String labelKey, final String fallbackTitle) {
-        final String text = get(labelKey);
+        String langCode = "en";
+        try {
+            langCode = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE).getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
+        } catch (Throwable ignored) {}
+        final String text = get(labelKey, langCode);
         if (text == null) return null;
 
         int pad = (int) (4 * context.getResources().getDisplayMetrics().density + 0.5f);

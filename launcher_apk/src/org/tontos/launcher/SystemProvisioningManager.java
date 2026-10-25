@@ -219,6 +219,14 @@ public final class SystemProvisioningManager {
                     SafeCommandExecutor.executePrivileged("pm", "disable-user", "--user", "0", "com.android.dialer");
                     SafeCommandExecutor.executePrivileged("pm", "disable-user", "--user", "0", "com.android.contacts");
 
+                    // 4b. Configure HeliBoard FOSS keyboard as default IME
+                    try {
+                        SafeCommandExecutor.executePrivileged("ime", "enable", "helium314.keyboard/.latin.LatinIME");
+                        SafeCommandExecutor.executePrivileged("ime", "set", "helium314.keyboard/.latin.LatinIME");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "secure", "default_input_method", "helium314.keyboard/.latin.LatinIME");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "secure", "enabled_input_methods", "helium314.keyboard/.latin.LatinIME:com.android.inputmethod.latin/.LatinIME");
+                    } catch (Throwable ignored) {}
+
                     // 5. Disable SystemUI notification shade and peek expansion
                     SafeCommandExecutor.executePrivileged("cmd", "statusbar", "send-disable-flag",
                         "statusbar-expansion", "quick-settings", "notification-peek", "system-icons", "notification-icons", "clock");

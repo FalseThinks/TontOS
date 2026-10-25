@@ -1,10 +1,8 @@
 package org.tontos.launcher;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -432,20 +430,25 @@ public final class SandboxManager {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        new AlertDialog.Builder(activity)
-                            .setTitle(I18n.get(I18n.KEY_SANDBOX_DESTROY_BTN, curLangCode))
-                            .setMessage(I18n.get(I18n.KEY_SANDBOX_CONFIRM_DESTROY, curLangCode))
-                            .setPositiveButton(I18n.get(I18n.KEY_CONFIRM, curLangCode), new DialogInterface.OnClickListener() {
+                        BooleanSelectorDialog.show(
+                            activity,
+                            tokens,
+                            I18n.get(I18n.KEY_SANDBOX_DESTROY_BTN, curLangCode),
+                            I18n.get(I18n.KEY_SANDBOX_CONFIRM_DESTROY, curLangCode),
+                            I18n.get(I18n.KEY_CONFIRM, curLangCode),
+                            I18n.get(I18n.KEY_CANCEL, curLangCode),
+                            new BooleanSelectorDialog.OnBooleanSelectedListener() {
                                 @Override
-                                public void onClick(DialogInterface d, int which) {
-                                    destroySandboxProfile(activity, userId);
-                                    if (onStateChanged != null) onStateChanged.run();
-                                    dialog.dismiss();
-                                    showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
+                                public void onSelected(boolean confirmed) {
+                                    if (confirmed) {
+                                        destroySandboxProfile(activity, userId);
+                                        if (onStateChanged != null) onStateChanged.run();
+                                        dialog.dismiss();
+                                        showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
+                                    }
                                 }
-                            })
-                            .setNegativeButton(I18n.get(I18n.KEY_CANCEL, curLangCode), null)
-                            .show();
+                            }
+                        );
                     }
                 }
             );
@@ -507,20 +510,25 @@ public final class SandboxManager {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        new AlertDialog.Builder(activity)
-                            .setTitle(I18n.get(I18n.KEY_SANDBOX_DESTROY_BTN, curLangCode))
-                            .setMessage(I18n.get(I18n.KEY_SANDBOX_CONFIRM_DESTROY, curLangCode))
-                            .setPositiveButton(I18n.get(I18n.KEY_CONFIRM, curLangCode), new DialogInterface.OnClickListener() {
+                        BooleanSelectorDialog.show(
+                            activity,
+                            tokens,
+                            I18n.get(I18n.KEY_SANDBOX_DESTROY_BTN, curLangCode),
+                            I18n.get(I18n.KEY_SANDBOX_CONFIRM_DESTROY, curLangCode),
+                            I18n.get(I18n.KEY_CONFIRM, curLangCode),
+                            I18n.get(I18n.KEY_CANCEL, curLangCode),
+                            new BooleanSelectorDialog.OnBooleanSelectedListener() {
                                 @Override
-                                public void onClick(DialogInterface d, int which) {
-                                    destroySandboxProfile(activity, userId);
-                                    if (onStateChanged != null) onStateChanged.run();
-                                    dialog.dismiss();
-                                    showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
+                                public void onSelected(boolean confirmed) {
+                                    if (confirmed) {
+                                        destroySandboxProfile(activity, userId);
+                                        if (onStateChanged != null) onStateChanged.run();
+                                        dialog.dismiss();
+                                        showSandboxDialog(activity, tokens, curLangCode, onStateChanged);
+                                    }
                                 }
-                            })
-                            .setNegativeButton(I18n.get(I18n.KEY_CANCEL, curLangCode), null)
-                            .show();
+                            }
+                        );
                     }
                 }
             );

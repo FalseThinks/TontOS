@@ -374,7 +374,7 @@ public final class OtaUpdateManager {
         );
 
         builder.setMessage(msg);
-        builder.setPositiveButton("OK", null);
+        builder.setPositiveButton(I18n.get(I18n.KEY_DONE, langCode), null);
         AlertDialog dialog = builder.create();
         dialog.show();
         if (dialog.getWindow() != null) {
@@ -400,7 +400,7 @@ public final class OtaUpdateManager {
         builder.setTitle(I18n.get(I18n.KEY_OTA_ERROR_TITLE, langCode));
         String msg = I18n.format(I18n.KEY_OTA_ERROR_MSG_FMT, langCode, errorDetail);
         builder.setMessage(msg);
-        builder.setPositiveButton("OK", null);
+        builder.setPositiveButton(I18n.get(I18n.KEY_DONE, langCode), null);
         AlertDialog dialog = builder.create();
         dialog.show();
         if (dialog.getWindow() != null) {

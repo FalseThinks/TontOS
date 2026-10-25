@@ -1,6 +1,7 @@
 package org.tontos.launcher;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,11 +22,10 @@ import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.graphics.drawable.ClipDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -1201,7 +1201,51 @@ public class SettingsActivity extends Activity {
     }
 
     private void showLockOwnerDialog(final ThemeTokens tokens, final String curLangCode) {
-        float density = getResources().getDisplayMetrics().density;
+        if (isFinishing()) return;
+        final Dialog dlg = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        dlg.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+        Window window = dlg.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(tokens.bg));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
+                    window.getInsetsController().setSystemBarsAppearance(
+                        tokens.isLight ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                    );
+                }
+            } catch (Throwable ignored) {}
+            GrayscaleManager.applyGrayscaleToWindow(window, GrayscaleManager.isGrayscaleEnabled(this));
+        }
+
+        final float density = getResources().getDisplayMetrics().density;
+        final int pad = (int) (24 * density);
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(tokens.bg);
+        root.setPadding(pad, pad, pad, pad);
+
+        // Header Title
+        TextView header = new TextView(this);
+        header.setText(I18n.get(I18n.KEY_LOCK_OWNER_INFO, curLangCode));
+        header.setTextColor(tokens.accent);
+        header.setTextSize(16);
+        header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        header.setPadding(0, 0, 0, (int) (12 * density));
+        root.addView(header);
+
+        // Subtitle / Hint
+        TextView hint = new TextView(this);
+        hint.setText(I18n.get(I18n.KEY_LOCK_OWNER_HINT, curLangCode));
+        hint.setTextColor(tokens.textMuted);
+        hint.setTextSize(12);
+        hint.setTypeface(Typeface.MONOSPACE);
+        hint.setPadding(0, 0, 0, (int) (16 * density));
+        root.addView(hint);
+
         final android.widget.EditText input = new android.widget.EditText(this);
         input.setTypeface(Typeface.MONOSPACE);
         input.setTextSize(14);
@@ -1209,27 +1253,65 @@ public class SettingsActivity extends Activity {
         input.setBackgroundColor(tokens.controlBgNormal);
         input.setPadding((int) (14 * density), (int) (12 * density), (int) (14 * density), (int) (12 * density));
         input.setText(LockScreenManager.getOwnerInfo(this));
-        input.setHint(I18n.get(I18n.KEY_LOCK_OWNER_HINT, curLangCode));
         input.setHintTextColor(tokens.textMuted);
+        root.addView(input);
 
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding((int) (20 * density), (int) (12 * density), (int) (20 * density), (int) (8 * density));
-        layout.addView(input);
+        // Spacer
+        View spacer = new View(this);
+        LinearLayout.LayoutParams spLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f);
+        spacer.setLayoutParams(spLp);
+        root.addView(spacer);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this, tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK);
-        builder.setTitle(I18n.get(I18n.KEY_LOCK_OWNER_INFO, curLangCode));
-        builder.setView(layout);
-        builder.setPositiveButton(I18n.get(I18n.KEY_CONFIRM, curLangCode), new DialogInterface.OnClickListener() {
+        // Bottom Actions Dock
+        LinearLayout dock = new LinearLayout(this);
+        dock.setOrientation(LinearLayout.HORIZONTAL);
+        dock.setPadding(0, (int) (16 * density), 0, 0);
+
+        TextView cancelBtn = new TextView(this);
+        cancelBtn.setText(I18n.get(I18n.KEY_CANCEL, curLangCode));
+        cancelBtn.setTextColor(tokens.textMuted);
+        cancelBtn.setTextSize(13);
+        cancelBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        cancelBtn.setPadding((int) (16 * density), (int) (12 * density), (int) (16 * density), (int) (12 * density));
+        cancelBtn.setClickable(true);
+        cancelBtn.setFocusable(true);
+        cancelBtn.setBackgroundColor(tokens.controlBgNormal);
+        cancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onClick(View v) {
+                dlg.dismiss();
+            }
+        });
+        LinearLayout.LayoutParams cancelLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        cancelLp.setMargins(0, 0, (int) (8 * density), 0);
+        dock.addView(cancelBtn, cancelLp);
+
+        TextView confirmBtn = new TextView(this);
+        confirmBtn.setText(I18n.get(I18n.KEY_CONFIRM, curLangCode));
+        confirmBtn.setTextColor(tokens.navAccent);
+        confirmBtn.setTextSize(13);
+        confirmBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        confirmBtn.setPadding((int) (16 * density), (int) (12 * density), (int) (16 * density), (int) (12 * density));
+        confirmBtn.setClickable(true);
+        confirmBtn.setFocusable(true);
+        confirmBtn.setBackgroundColor(tokens.controlBgNormal);
+        confirmBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 String text = input.getText().toString();
                 LockScreenManager.setOwnerInfo(SettingsActivity.this, text);
+                dlg.dismiss();
                 buildSettingsUI();
             }
         });
-        builder.setNegativeButton(I18n.get(I18n.KEY_CANCEL, curLangCode), null);
-        builder.show();
+        LinearLayout.LayoutParams confirmLp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+        confirmLp.setMargins((int) (8 * density), 0, 0, 0);
+        dock.addView(confirmBtn, confirmLp);
+
+        root.addView(dock);
+
+        dlg.setContentView(root);
+        dlg.show();
     }
 
     // ==========================================

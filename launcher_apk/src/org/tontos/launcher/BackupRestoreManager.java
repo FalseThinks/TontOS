@@ -383,7 +383,7 @@ public final class BackupRestoreManager {
         details.setPadding(0, (int) (6 * density), 0, (int) (14 * density));
         root.addView(details);
 
-        TextView okBtn = createDialogButton(activity, "OK", true, tokens);
+        TextView okBtn = createDialogButton(activity, I18n.get(I18n.KEY_DONE, langCode), true, tokens);
         builder.setView(root);
         final AlertDialog dialog = builder.create();
         okBtn.setOnClickListener(new View.OnClickListener() {

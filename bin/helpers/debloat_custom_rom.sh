@@ -206,10 +206,14 @@ fi
 
 # 3. Configure Default Launcher Role to TontOS Minimalist Launcher
 echo ""
-echo ">> [3/5] Configuring Default Launcher (org.tontos.launcher/.MainActivity)..."
+echo ">> [3/5] Configuring Default Launcher & Keyboard..."
 run_remote "cmd package set-home-activity org.tontos.launcher/.MainActivity 2>/dev/null || true"
 run_remote "cmd role add-role-holder android.app.role.HOME org.tontos.launcher 1 2>/dev/null || cmd role add-role-holder android.app.role.HOME org.tontos.launcher 2>/dev/null || true"
-echo "[+] Default launcher set to org.tontos.launcher/.MainActivity"
+run_remote "ime enable helium314.keyboard/.latin.LatinIME 2>/dev/null || true"
+run_remote "ime set helium314.keyboard/.latin.LatinIME 2>/dev/null || true"
+run_remote "settings put secure default_input_method helium314.keyboard/.latin.LatinIME 2>/dev/null || true"
+run_remote "settings put secure enabled_input_methods 'helium314.keyboard/.latin.LatinIME:com.android.inputmethod.latin/.LatinIME' 2>/dev/null || true"
+echo "[+] Default launcher set to org.tontos.launcher/.MainActivity; default keyboard IME set to HeliBoard"
 
 # 4. Zero Dropdown: Disable SystemUI Notification Shade Expansion & Peek
 echo ""
