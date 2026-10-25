@@ -126,13 +126,11 @@ System management is handled by 13 dedicated Rust crates (2024 Edition, `forbid(
 │   ├── tont-shell/            # Monospace shell interface
 │   ├── tont-syncd/            # Sync batching daemon
 │   └── tont-telephony/        # Cellular and radio state manager
-├── docs/                      # Architecture specifications & component references
 ├── init/                      # Systemd service unit files and early init configs
 ├── launcher_apk/              # System Launcher (Java 17, AOSP system_ext priv-app)
 ├── patches/                   # AOSP platform and framework diffs
 ├── platform/                  # AOSP BoardConfig, manifests, and product targets
-├── tests/                     # Test suites (Rust workspace, Java modular, UI)
-└── tools/                     # Build & verification tooling (JaCoCo agent/CLI)
+└── tests/                     # Test suites (Rust workspace, Java modular, UI)
 ```
 
 ---

@@ -34,6 +34,8 @@ print_header() {
 
 ensure_setup() {
     mkdir -p "$BUILD_DIR" "$CCACHE_DIR" "$OUT_DIR"
+    chmod 777 "$BUILD_DIR" "$CCACHE_DIR" "$OUT_DIR" 2>/dev/null || true
+    chmod -R a+rwX "$CCACHE_DIR" "$OUT_DIR" 2>/dev/null || true
     if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
         echo "[+] Building Docker image $IMAGE_NAME..."
         docker build -t "$IMAGE_NAME" -f "$DOCKERFILE" "$ROOT_DIR"
@@ -110,13 +112,20 @@ case "$ACTION" in
     --shell|shell)
         run_container /bin/bash
         ;;
+    --exec|exec)
+        shift
+        run_container "$@"
+        ;;
+    bash|sh)
+        run_container "$@"
+        ;;
     --test|test)
         run_container ./bin/run_full_suite.sh --fast
         ;;
     --apk|apk)
         run_container ./bin/build_launcher_apk.sh
         ;;
-    --build|build|*)
+    --build|build)
         if [[ ! -d "$AOSP_DIR" ]]; then
             echo "[-] Notice: AOSP tree not found at $AOSP_DIR. Running containerized test suite..."
             run_container ./bin/run_full_suite.sh --fast
@@ -126,11 +135,15 @@ case "$ACTION" in
         LUNCH_COMBO="${LUNCH_COMBO:-tontos_cf_x86_64-trunk_staging-userdebug}"
         echo "[+] Launching parallel AOSP compilation inside container (-j$BUILD_JOBS)..."
         run_container /bin/bash -c "
-            ccache -M 50G &&
+            sudo chmod -R 777 /workspace/.ccache /workspace/out 2>/dev/null || true
+            ccache -M 50G 2>/dev/null || true
             if [ -d /home/tontos/aosp ]; then cd /home/tontos/aosp; else cd /workspace/.build/aosp; fi &&
             source build/envsetup.sh &&
             lunch $LUNCH_COMBO &&
             m -j$BUILD_JOBS $BUILD_TARGET
         "
+        ;;
+    *)
+        run_container "$@"
         ;;
 esac

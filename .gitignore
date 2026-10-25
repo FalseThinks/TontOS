@@ -24,6 +24,11 @@ local.properties
 node_modules/
 playwright-report/
 test-results/
+tools/
+.cache/
+tests/ui/*.png
+tests/ui/test-results/
+tests/ui/tests/
 
 # IDE & Editor files
 .idea/

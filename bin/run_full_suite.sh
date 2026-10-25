@@ -61,10 +61,18 @@ fi
 # Stage 3: Java Modular Settings & Feature Validation Tests (JaCoCo)
 echo ""
 echo "--> [3/7] Running Java Modular Test Suite & JaCoCo Coverage Gate..."
-mkdir -p "$ROOT_DIR/target/test-classes" "$ROOT_DIR/target/jacoco-report"
+mkdir -p "$ROOT_DIR/target/test-classes" "$ROOT_DIR/target/jacoco-report" "$ROOT_DIR/target/jacoco-tools"
 JAVA_TEST_FILES=$(find "$ROOT_DIR/tests/java" -name "*.java")
-JACOCO_AGENT="$ROOT_DIR/tools/jacoco/jacocoagent.jar"
-JACOCO_CLI="$ROOT_DIR/tools/jacoco/jacococli.jar"
+JACOCO_DIR="$ROOT_DIR/target/jacoco-tools"
+JACOCO_AGENT="$JACOCO_DIR/jacocoagent.jar"
+JACOCO_CLI="$JACOCO_DIR/jacococli.jar"
+JACOCO_VERSION="0.8.12"
+
+if [[ ! -f "$JACOCO_AGENT" || ! -f "$JACOCO_CLI" ]]; then
+    echo "  [+] Fetching JaCoCo binaries (v${JACOCO_VERSION})..."
+    curl -sSL "https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/${JACOCO_VERSION}/org.jacoco.agent-${JACOCO_VERSION}-runtime.jar" -o "$JACOCO_AGENT" 2>/dev/null || true
+    curl -sSL "https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/${JACOCO_VERSION}/org.jacoco.cli-${JACOCO_VERSION}-nodeps.jar" -o "$JACOCO_CLI" 2>/dev/null || true
+fi
 
 if javac -d "$ROOT_DIR/target/test-classes" $JAVA_TEST_FILES; then
     if [[ -f "$JACOCO_AGENT" && -f "$JACOCO_CLI" ]]; then
