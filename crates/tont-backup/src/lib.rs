@@ -4,7 +4,7 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::fs;
-use std::path::Path;
+use std::path::{Component, Path};
 use thiserror::Error;
 use tont_settings::TontSettings;
 use tont_shell::AppEntry;
@@ -18,6 +18,8 @@ pub enum BackupError {
     Json(#[from] serde_json::Error),
     #[error("Integrity check failed: payload checksum mismatch (tampered or corrupt backup)")]
     IntegrityFailure,
+    #[error("Invalid backup path: path must be relative and must not contain '..'")]
+    InvalidPath,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -87,6 +89,14 @@ impl BackupPackage {
 
     /// Write backup package to target file.
     pub fn save_to_file(&self, path: &Path) -> Result<(), BackupError> {
+        if path.is_absolute()
+            || path
+                .components()
+                .any(|component| matches!(component, Component::ParentDir))
+        {
+            return Err(BackupError::InvalidPath);
+        }
+
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
