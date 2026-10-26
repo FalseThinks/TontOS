@@ -36,7 +36,8 @@ public class PackageInstallReceiver extends BroadcastReceiver {
         // Skip re-processing when app is merely updated
         if (intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) return;
 
-        Log.i(TAG, "New app installed: " + pkg + ". Auto-provisioning sandbox and firewall policy.");
+        final String safePkgForLog = pkg.replace('\n', '_').replace('\r', '_').replace('\t', '_');
+        Log.i(TAG, "New app installed: " + safePkgForLog + ". Auto-provisioning sandbox and firewall policy.");
 
         new Thread(new Runnable() {
             @Override
