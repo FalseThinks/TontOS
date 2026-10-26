@@ -28,7 +28,8 @@ public class PackageInstallReceiver extends BroadcastReceiver {
         final String pkg = data.getSchemeSpecificPart();
         if (pkg == null || pkg.isEmpty() || pkg.equals(context.getPackageName())) return;
         if (!SafeCommandExecutor.isValidPackageName(pkg)) {
-            Log.w(TAG, "Rejecting invalid package name: " + pkg);
+            final String safePkgForLog = pkg.replace('\n', '_').replace('\r', '_');
+            Log.w(TAG, "Rejecting invalid package name: " + safePkgForLog);
             return;
         }
 
