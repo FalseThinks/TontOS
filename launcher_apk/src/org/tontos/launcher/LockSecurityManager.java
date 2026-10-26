@@ -93,14 +93,23 @@ public final class LockSecurityManager {
 
     public static String getOrCreateSalt(Context context) {
         SharedPreferences prefs = getPrefs(context);
-        if (prefs == null) return "fallback_salt_0";
+        if (prefs == null) {
+            Log.e(TAG, "Secure preferences unavailable; refusing to create credential salt");
+            return null;
+        }
+
         String salt = prefs.getString(KEY_SALT, null);
         if (salt == null || salt.trim().isEmpty()) {
             byte[] saltBytes = new byte[16];
             new SecureRandom().nextBytes(saltBytes);
             salt = Base64.encodeToString(saltBytes, Base64.NO_WRAP);
-            prefs.edit().putString(KEY_SALT, salt).apply();
+
+            if (!prefs.edit().putString(KEY_SALT, salt).commit()) {
+                Log.e(TAG, "Failed to persist credential salt");
+                return null;
+            }
         }
+
         return salt;
     }
 
@@ -108,40 +117,36 @@ public final class LockSecurityManager {
     private static final int PBKDF2_KEY_LENGTH = 256;
 
     public static String hashCredential(String credential, String salt) {
-        if (credential == null) credential = "";
-        if (salt == null) salt = "";
+        if (credential == null || salt == null) {
+            return null;
+        }
+
         try {
-            javax.crypto.spec.PBEKeySpec spec = new javax.crypto.spec.PBEKeySpec(
-                credential.toCharArray(),
-                salt.getBytes(StandardCharsets.UTF_8),
-                PBKDF2_ITERATIONS,
-                PBKDF2_KEY_LENGTH
-            );
-            javax.crypto.SecretKeyFactory skf = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            javax.crypto.spec.PBEKeySpec spec =
+                new javax.crypto.spec.PBEKeySpec(
+                    credential.toCharArray(),
+                    salt.getBytes(StandardCharsets.UTF_8),
+                    PBKDF2_ITERATIONS,
+                    PBKDF2_KEY_LENGTH
+                );
+
+            javax.crypto.SecretKeyFactory skf =
+                javax.crypto.SecretKeyFactory.getInstance(
+                    "PBKDF2WithHmacSHA256"
+                );
+
             byte[] hash = skf.generateSecret(spec).getEncoded();
+
             StringBuilder sb = new StringBuilder(hash.length * 2);
             for (byte b : hash) {
                 sb.append(Character.forDigit((b >> 4) & 0xF, 16));
                 sb.append(Character.forDigit(b & 0xF, 16));
             }
-            return "pbkdf2$" + sb.toString();
+
+            return "pbkdf2$" + sb;
         } catch (Exception e) {
-            try {
-                MessageDigest md = MessageDigest.getInstance("SHA-256");
-                byte[] data = (salt + ":" + credential).getBytes(StandardCharsets.UTF_8);
-                for (int i = 0; i < 50_000; i++) {
-                    data = md.digest(data);
-                }
-                StringBuilder sb = new StringBuilder(data.length * 2);
-                for (byte b : data) {
-                    sb.append(Character.forDigit((b >> 4) & 0xF, 16));
-                    sb.append(Character.forDigit(b & 0xF, 16));
-                }
-                return "sha256$" + sb.toString();
-            } catch (Exception ex) {
-                Log.e(TAG, "Cryptographic failure in credential hashing", ex);
-                return "";
-            }
+            Log.e(TAG, "Cryptographic failure in credential hashing", e);
+            return null;
         }
     }
 
@@ -149,7 +154,7 @@ public final class LockSecurityManager {
         if (savedHash == null || savedHash.isEmpty()) return false;
         if (savedHash.startsWith("pbkdf2$") || savedHash.startsWith("sha256$")) {
             String computed = hashCredential(credential, salt);
-            return MessageDigest.isEqual(savedHash.getBytes(StandardCharsets.UTF_8), computed.getBytes(StandardCharsets.UTF_8));
+            return computed==null ? false : MessageDigest.isEqual(savedHash.getBytes(StandardCharsets.UTF_8), computed.getBytes(StandardCharsets.UTF_8));
         }
         // Legacy single-round SHA-256 migration
         try {
@@ -181,7 +186,9 @@ public final class LockSecurityManager {
         if (context == null || pattern == null || pattern.size() < 4) return false;
         String raw = patternToString(pattern);
         String salt = getOrCreateSalt(context);
+        if (salt == null) return false;
         String hash = hashCredential(raw, salt);
+        if (hash == null) return false;
         SharedPreferences prefs = getPrefs(context);
         if (prefs == null) return false;
         prefs.edit()
@@ -199,6 +206,7 @@ public final class LockSecurityManager {
         if (savedHash == null) return false;
         String raw = patternToString(pattern);
         String salt = getOrCreateSalt(context);
+        if (salt == null) return false;
         boolean matched = verifyCredentialMatch(raw, salt, savedHash);
         if (matched && !savedHash.startsWith("pbkdf2$")) {
             setPattern(context, pattern);
@@ -209,7 +217,9 @@ public final class LockSecurityManager {
     public static boolean setPin(Context context, String pin) {
         if (context == null || pin == null || pin.length() < 4) return false;
         String salt = getOrCreateSalt(context);
+        if (salt == null) return false;
         String hash = hashCredential(pin, salt);
+        if (hash == null) return false;
         SharedPreferences prefs = getPrefs(context);
         if (prefs == null) return false;
         prefs.edit()
@@ -226,6 +236,7 @@ public final class LockSecurityManager {
         String savedHash = prefs.getString(KEY_PIN_HASH, null);
         if (savedHash == null) return false;
         String salt = getOrCreateSalt(context);
+        if (salt == null) return false;
         boolean matched = verifyCredentialMatch(pin, salt, savedHash);
         if (matched && !savedHash.startsWith("pbkdf2$")) {
             setPin(context, pin);
