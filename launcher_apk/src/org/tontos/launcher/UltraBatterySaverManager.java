@@ -95,13 +95,13 @@ public final class UltraBatterySaverManager {
 
     public static boolean isUltraBatterySaverActive(Context context) {
         if (context == null) return false;
-        android.content.SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = MainActivity.getSafeSharedPreferences(context, MainActivity.PREFS_NAME);
         return prefs.getBoolean("pref_ultra_battery_saver", false);
     }
 
     public static ActionResult setUltraBatterySaver(Context context, boolean enable) {
         if (context == null) return ActionResult.FAILED;
-        android.content.SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        android.content.SharedPreferences prefs = MainActivity.getSafeSharedPreferences(context, MainActivity.PREFS_NAME);
         boolean current = prefs.getBoolean("pref_ultra_battery_saver", false);
         if (current == enable) {
             return ActionResult.APPLIED;
@@ -448,7 +448,7 @@ public final class UltraBatterySaverManager {
         }
 
         if (context != null) {
-            context.getSharedPreferences("tontos_prefs", Context.MODE_PRIVATE)
+            MainActivity.getSafeSharedPreferences(context, "tontos_prefs")
                 .edit().putBoolean("nfc_enabled", enable).apply();
         }
 

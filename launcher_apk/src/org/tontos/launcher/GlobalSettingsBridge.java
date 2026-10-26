@@ -26,13 +26,17 @@ public final class GlobalSettingsBridge {
 
     private GlobalSettingsBridge() {}
 
+    private static SharedPreferences getPrefs(Context context) {
+        if (context == null) return null;
+        return MainActivity.getSafeSharedPreferences(context, PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
     /**
      * Resolves current font scale factor (0.85f - 1.30f).
      */
     public static float getFontScale(Context context) {
-        if (context == null) return 1.0f;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        int scaleInt = prefs.getInt(KEY_FONT_SCALE, 100);
+        SharedPreferences prefs = getPrefs(context);
+        int scaleInt = prefs != null ? prefs.getInt(KEY_FONT_SCALE, 100) : 100;
         return Math.max(0.5f, Math.min(2.0f, scaleInt / 100.0f));
     }
 
@@ -45,8 +49,10 @@ public final class GlobalSettingsBridge {
         final int scaleInt = Math.round(scale * 100.0f);
 
         // 1. Save locally in TontOS launcher preferences
-        appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_FONT_SCALE, scaleInt).apply();
+        SharedPreferences prefs = getPrefs(appCtx != null ? appCtx : context);
+        if (prefs != null) {
+            prefs.edit().putInt(KEY_FONT_SCALE, scaleInt).apply();
+        }
 
         // 2. Apply asynchronously to Android framework, system providers, and ActivityManager
         new Thread(new Runnable() {
@@ -87,8 +93,10 @@ public final class GlobalSettingsBridge {
     public static void applyGlobalScreenTimeout(final Context context, final int secs) {
         if (context == null) return;
         final Context appCtx = context.getApplicationContext();
-        appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_TIMEOUT, secs).apply();
+        SharedPreferences prefs = getPrefs(appCtx != null ? appCtx : context);
+        if (prefs != null) {
+            prefs.edit().putInt(KEY_TIMEOUT, secs).apply();
+        }
 
         final long ms = (secs <= 0) ? 2147483647L : ((long) secs * 1000L);
         new Thread(new Runnable() {
@@ -112,8 +120,10 @@ public final class GlobalSettingsBridge {
     public static void applyGlobalBrightness(final Context context, final int progressPercent) {
         if (context == null) return;
         final Context appCtx = context.getApplicationContext();
-        appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_BRIGHTNESS, progressPercent).apply();
+        SharedPreferences prefs = getPrefs(appCtx != null ? appCtx : context);
+        if (prefs != null) {
+            prefs.edit().putInt(KEY_BRIGHTNESS, progressPercent).apply();
+        }
 
         final int val255 = (int) Math.round((Math.max(0, Math.min(100, progressPercent)) / 100.0) * 255.0);
         new Thread(new Runnable() {

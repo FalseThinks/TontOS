@@ -69,17 +69,22 @@ public final class LockSecurityManager {
 
     private LockSecurityManager() {}
 
+    private static SharedPreferences getPrefs(Context context) {
+        if (context == null) return null;
+        return MainActivity.getSafeSharedPreferences(context, PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
     public static SecurityType getSecurityType(Context context) {
-        if (context == null) return SecurityType.NONE;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return SecurityType.NONE;
         String id = prefs.getString(KEY_SECURITY_TYPE, SecurityType.NONE.getId());
         return SecurityType.fromId(id);
     }
 
     public static void setSecurityType(Context context, SecurityType type) {
-        if (context == null || type == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_SECURITY_TYPE, type.getId()).apply();
+        if (type == null) return;
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putString(KEY_SECURITY_TYPE, type.getId()).apply();
     }
 
     public static boolean hasSecurity(Context context) {
@@ -87,8 +92,8 @@ public final class LockSecurityManager {
     }
 
     public static String getOrCreateSalt(Context context) {
-        if (context == null) return "fallback_salt_0";
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return "fallback_salt_0";
         String salt = prefs.getString(KEY_SALT, null);
         if (salt == null || salt.trim().isEmpty()) {
             byte[] saltBytes = new byte[16];
@@ -177,8 +182,9 @@ public final class LockSecurityManager {
         String raw = patternToString(pattern);
         String salt = getOrCreateSalt(context);
         String hash = hashCredential(raw, salt);
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return false;
+        prefs.edit()
             .putString(KEY_PATTERN_HASH, hash)
             .putString(KEY_SECURITY_TYPE, SecurityType.PATTERN.getId())
             .apply();
@@ -187,7 +193,8 @@ public final class LockSecurityManager {
 
     public static boolean verifyPattern(Context context, List<Integer> pattern) {
         if (context == null || pattern == null || pattern.isEmpty()) return false;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return false;
         String savedHash = prefs.getString(KEY_PATTERN_HASH, null);
         if (savedHash == null) return false;
         String raw = patternToString(pattern);
@@ -203,8 +210,9 @@ public final class LockSecurityManager {
         if (context == null || pin == null || pin.length() < 4) return false;
         String salt = getOrCreateSalt(context);
         String hash = hashCredential(pin, salt);
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return false;
+        prefs.edit()
             .putString(KEY_PIN_HASH, hash)
             .putString(KEY_SECURITY_TYPE, SecurityType.PIN.getId())
             .apply();
@@ -213,7 +221,8 @@ public final class LockSecurityManager {
 
     public static boolean verifyPin(Context context, String pin) {
         if (context == null || pin == null || pin.isEmpty()) return false;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return false;
         String savedHash = prefs.getString(KEY_PIN_HASH, null);
         if (savedHash == null) return false;
         String salt = getOrCreateSalt(context);
@@ -225,13 +234,14 @@ public final class LockSecurityManager {
     }
 
     public static void clearSecurity(Context context) {
-        if (context == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .remove(KEY_PATTERN_HASH)
-            .remove(KEY_PIN_HASH)
-            .putString(KEY_SECURITY_TYPE, SecurityType.NONE.getId())
-            .apply();
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) {
+            prefs.edit()
+                .remove(KEY_PATTERN_HASH)
+                .remove(KEY_PIN_HASH)
+                .putString(KEY_SECURITY_TYPE, SecurityType.NONE.getId())
+                .apply();
+        }
     }
 
     // --- Biometric & Fingerprint Integration ---
@@ -277,15 +287,13 @@ public final class LockSecurityManager {
     }
 
     public static boolean isFingerprintEnabled(Context context) {
-        if (context == null) return false;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getBoolean(KEY_BIOMETRIC_ENABLED, true);
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null && prefs.getBoolean(KEY_BIOMETRIC_ENABLED, true);
     }
 
     public static void setFingerprintEnabled(Context context, boolean enabled) {
-        if (context == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply();
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply();
     }
 
     public static void launchFingerprintEnrollment(Activity activity) {

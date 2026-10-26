@@ -168,7 +168,8 @@ public class MainActivity extends Activity {
         screenTimeTodaySecs = 0;
         screenOnStartTime = System.currentTimeMillis();
         if (ctx != null) {
-            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putLong(KEY_SCREEN_TIME_SECS, 0L).apply();
+            SharedPreferences sp = getSafeSharedPreferences(ctx, PREFS_NAME, Context.MODE_PRIVATE);
+            if (sp != null) sp.edit().putLong(KEY_SCREEN_TIME_SECS, 0L).apply();
         }
     }
 
@@ -218,7 +219,8 @@ public class MainActivity extends Activity {
     public static void applyBackgroundPolicy(Context context) {
         if (context == null) return;
         final Context appContext = context.getApplicationContext();
-        SharedPreferences prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(appContext != null ? appContext : context, PREFS_NAME, Context.MODE_PRIVATE);
+        if (prefs == null) return;
         final String policy = prefs.getString("bg_policy", "whitelist");
         final Set<String> rawAllowed = getSafeStringSet(prefs, "bg_allowed_apps", Collections.<String>emptySet());
         final Set<String> allowed = rawAllowed != null ? new HashSet<>(rawAllowed) : Collections.<String>emptySet();
@@ -265,20 +267,18 @@ public class MainActivity extends Activity {
         }, "TontOS-BgPolicy").start();
     }
 
+    public static SharedPreferences getSafeSharedPreferences(Context context, String name) {
+        return getSafeSharedPreferences(context, name, Context.MODE_PRIVATE);
+    }
+
     public static SharedPreferences getSafeSharedPreferences(Context context, String name, int mode) {
         if (context == null) return null;
         Context target = context.getApplicationContext() != null ? context.getApplicationContext() : context;
         try {
-            android.os.UserManager um = (android.os.UserManager) target.getSystemService(Context.USER_SERVICE);
-            if (um != null && !um.isUserUnlocked()) {
-                return target.createDeviceProtectedStorageContext().getSharedPreferences(name, mode);
-            }
-        } catch (Throwable ignored) {}
-        try {
-            return target.getSharedPreferences(name, mode);
+            return target.createDeviceProtectedStorageContext().getSharedPreferences(name, mode);
         } catch (Throwable e) {
             try {
-                return target.createDeviceProtectedStorageContext().getSharedPreferences(name, mode);
+                return target.getSharedPreferences(name, mode);
             } catch (Throwable ignored) {
                 return null;
             }
@@ -547,7 +547,7 @@ public class MainActivity extends Activity {
             screenTimeTodaySecs += (System.currentTimeMillis() - screenOnStartTime) / 1000;
             screenOnStartTime = 0;
         }
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putLong(KEY_SCREEN_TIME_SECS, screenTimeTodaySecs).apply();
+        getSafeSharedPreferences(this, PREFS_NAME).edit().putLong(KEY_SCREEN_TIME_SECS, screenTimeTodaySecs).apply();
     }
 
     @Override

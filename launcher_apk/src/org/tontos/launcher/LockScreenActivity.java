@@ -88,7 +88,7 @@ public class LockScreenActivity extends Activity {
     private final Date now = new Date();
 
     private void refreshFormatters() {
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences sp = preferences();
         boolean is24 = sp.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
         String lang = sp.getString("system_language", "en");
         String reg = sp.getString("system_region", "US");
@@ -112,8 +112,8 @@ public class LockScreenActivity extends Activity {
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences prefs = newBase.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        int scaleInt = prefs.getInt("pref_font_scale", 100);
+        SharedPreferences prefs = MainActivity.getSafeSharedPreferences(newBase, PREFS_NAME, Context.MODE_PRIVATE);
+        int scaleInt = (prefs != null) ? prefs.getInt("pref_font_scale", 100) : 100;
         Configuration config = new Configuration(newBase.getResources().getConfiguration());
         config.fontScale = scaleInt / 100.0f;
         Context context = newBase.createConfigurationContext(config);
@@ -137,7 +137,7 @@ public class LockScreenActivity extends Activity {
 
         tokens = LockScreenManager.getResolvedThemeTokens(this);
         clockStyle = LockScreenManager.getClockStyle(this);
-        curLangCode = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("system_language", "en");
+        curLangCode = preferences().getString("system_language", "en");
         refreshFormatters();
 
         buildLockUI();
@@ -162,7 +162,7 @@ public class LockScreenActivity extends Activity {
         setIntent(intent);
         tokens = LockScreenManager.getResolvedThemeTokens(this);
         clockStyle = LockScreenManager.getClockStyle(this);
-        curLangCode = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("system_language", "en");
+        curLangCode = preferences().getString("system_language", "en");
         refreshFormatters();
         buildLockUI();
         updateTimeAndStats();
@@ -173,7 +173,7 @@ public class LockScreenActivity extends Activity {
         super.onResume();
         tokens = LockScreenManager.getResolvedThemeTokens(this);
         clockStyle = LockScreenManager.getClockStyle(this);
-        curLangCode = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("system_language", "en");
+        curLangCode = preferences().getString("system_language", "en");
         refreshFormatters();
         buildLockUI();
         updateTimeAndStats();
@@ -254,7 +254,7 @@ public class LockScreenActivity extends Activity {
     private static final String PREF_LOCKOUT_DEADLINE = "pref_lockout_deadline_epoch";
 
     private boolean isLockoutActive() {
-        long deadline = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        long deadline = preferences()
                 .getLong(PREF_LOCKOUT_DEADLINE, 0L);
         long now = System.currentTimeMillis();
         if (now < deadline) {
@@ -269,7 +269,7 @@ public class LockScreenActivity extends Activity {
     }
 
     private void handleCredentialFailure() {
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences sp = preferences();
         int fails = sp.getInt(PREF_LOCK_FAILED_ATTEMPTS, 0) + 1;
         SharedPreferences.Editor ed = sp.edit().putInt(PREF_LOCK_FAILED_ATTEMPTS, fails);
         if (fails >= 5) {
@@ -280,7 +280,7 @@ public class LockScreenActivity extends Activity {
     }
 
     private void handleCredentialSuccess() {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        preferences()
                 .edit()
                 .putInt(PREF_LOCK_FAILED_ATTEMPTS, 0)
                 .putLong(PREF_LOCKOUT_DEADLINE, 0L)
@@ -642,7 +642,7 @@ public class LockScreenActivity extends Activity {
     }
 
     private SharedPreferences preferences() {
-        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return MainActivity.getSafeSharedPreferences(this, PREFS_NAME);
     }
 
     private void buildBottomDock() {
