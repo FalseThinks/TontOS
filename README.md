@@ -12,10 +12,10 @@
 **Minimalist AOSP Distribution · Rust System Daemons · Low-Distraction Interface**
 
 [![Main Workflow](https://img.shields.io/github/actions/workflow/status/FalseThinks/TontOS/main.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white)](https://github.com/FalseThinks/TontOS/actions/workflows/main.yml)
-[![Release](https://img.shields.io/badge/release-v0.0.3--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
+[![Release](https://img.shields.io/badge/release-v0.0.4--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
 [![Rust](https://img.shields.io/badge/rust-1.99.0%20(2024%20Edition)-DEA584.svg?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![AOSP](https://img.shields.io/badge/AOSP-17.0.0__r1-3DDC84.svg?style=flat-square&logo=android&logoColor=white)](https://source.android.com/)
-[![Tests](https://img.shields.io/badge/tests-142%20passed-10B981.svg?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-151%20passed-10B981.svg?style=flat-square)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95.5%25%20JaCoCo-22C55E.svg?style=flat-square)](tests/java/)
 [![Clippy](https://img.shields.io/badge/clippy-0%20warnings-brightgreen.svg?style=flat-square)](crates/)
 [![Safety](https://img.shields.io/badge/unsafe_code-forbid-059669.svg?style=flat-square)](crates/)
@@ -81,7 +81,7 @@ TontOS is an open-source mobile operating system engineered for digital detox, b
 ## System Architecture
 
 ### 1. System & Hardware Daemons (Rust)
-System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(unsafe_code)`):
+System management is handled by 13 dedicated Rust crates (2024 Edition, `forbid(unsafe_code)`):
 * **Process & Resource Control (`tont-appd`):** Manages background execution and memory throttling via `cgroups v2`.
 * **Power & Thermal (`tont-powerd`, `tont-romctl`):** Direct hardware and thermal state management.
 * **Backup & Verification (`tont-backup`):** Cryptographic snapshot generation with SHA-256 integrity verification.
@@ -112,7 +112,7 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 │   ├── run_all_tests.sh       # Unified test gate (Rust, Java JaCoCo, APK)
 │   ├── build_launcher_apk.sh  # Standalone launcher compiler & signer
 │   └── helpers/               # Specialized automation (host swap, GSI, sandbox, Cuttlefish)
-├── crates/                    # Rust Workspace (14 System Daemons & Libraries)
+├── crates/                    # Rust Workspace (13 System Daemons & Libraries)
 │   ├── tont-appd/             # Process supervision and cgroups v2 controls
 │   ├── tont-backup/           # Cryptographic backup and snapshot verification
 │   ├── tont-common/           # Shared traits and error types
@@ -123,17 +123,14 @@ System management is handled by 14 dedicated Rust crates (2024 Edition, `forbid(
 │   ├── tont-romctl/           # Hardware and system control utilities
 │   ├── tont-sensors/          # Sensor privacy controls
 │   ├── tont-settings/         # Theme tokens and configuration engine
-│   ├── tont-settings-app/     # Settings daemon backend
 │   ├── tont-shell/            # Monospace shell interface
 │   ├── tont-syncd/            # Sync batching daemon
 │   └── tont-telephony/        # Cellular and radio state manager
-├── docs/                      # Architecture specifications & component references
 ├── init/                      # Systemd service unit files and early init configs
 ├── launcher_apk/              # System Launcher (Java 17, AOSP system_ext priv-app)
 ├── patches/                   # AOSP platform and framework diffs
 ├── platform/                  # AOSP BoardConfig, manifests, and product targets
-├── tests/                     # Test suites (Rust workspace, Java modular, UI)
-└── tools/                     # Build & verification tooling (JaCoCo agent/CLI)
+└── tests/                     # Test suites (Rust workspace, Java modular, UI)
 ```
 
 ---

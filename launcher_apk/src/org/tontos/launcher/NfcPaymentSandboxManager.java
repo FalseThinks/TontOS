@@ -187,72 +187,10 @@ public final class NfcPaymentSandboxManager {
     public static void showDiagnosticsDialog(final Activity activity, final ThemeTokens tokens, final String langCode) {
         if (activity == null || activity.isFinishing()) return;
 
-        final Dialog dialog = new Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(tokens.bg));
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
-                    window.getInsetsController().setSystemBarsAppearance(
-                        tokens.isLight ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    );
-                }
-            } catch (Throwable ignored) {}
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            GrayscaleManager.applyGrayscaleToWindow(window, GrayscaleManager.isGrayscaleEnabled(activity));
-        }
-
-        float density = activity.getResources().getDisplayMetrics().density;
-        int screenWidthPx = activity.getResources().getDisplayMetrics().widthPixels;
-        int screenWidthDp = (int) (screenWidthPx / density);
-        int padH = screenWidthDp < 360 ? (int) (14 * density) : (int) (20 * density);
-        int padV = (int) (20 * density);
-
-        LinearLayout outer = new LinearLayout(activity);
-        outer.setOrientation(LinearLayout.VERTICAL);
-        outer.setBackgroundColor(tokens.bg);
-        outer.setGravity(Gravity.CENTER_HORIZONTAL);
-        outer.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(tokens.bg);
-        root.setPadding(padH, padV, padH, padV);
-
-        if (screenWidthDp > 520) {
-            root.setLayoutParams(new LinearLayout.LayoutParams((int) (480 * density), ViewGroup.LayoutParams.MATCH_PARENT));
-        } else {
-            root.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        }
-
-        // Header Title
-        TextView header = new TextView(activity);
-        header.setText(I18n.get(I18n.KEY_NFC_ATTESTATION_TITLE, langCode));
-        header.setTextColor(tokens.accent);
-        header.setTextSize(screenWidthDp < 360 ? 15 : 17);
-        header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        header.setSingleLine(true);
-        header.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        header.setPadding(0, 0, 0, (int) (6 * density));
-        root.addView(header);
-
-        View divider = new View(activity);
-        LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, (int) (1 * density + 0.5f)
-        );
-        divParams.setMargins(0, 0, 0, (int) (12 * density));
-        divider.setLayoutParams(divParams);
-        divider.setBackgroundColor(tokens.border);
-        root.addView(divider);
-
-        ScrollView scroll = new ScrollView(activity);
-        scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
-
-        LinearLayout list = new LinearLayout(activity);
-        list.setOrientation(LinearLayout.VERTICAL);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_NFC_ATTESTATION_TITLE, langCode));
+        final float density = dlg.getDensity();
+        final ThemeTokens themeTokens = dlg.getTokens();
+        final LinearLayout list = dlg.getContentContainer();
 
         boolean nfcSupported = isNfcSupported(activity);
         boolean nfcEnabled = isNfcEnabled(activity);
@@ -284,7 +222,7 @@ public final class NfcPaymentSandboxManager {
             public void onClick(View v) {
                 boolean next = !isSandboxHceEnabled(activity);
                 setSandboxHceEnabled(activity, next);
-                dialog.dismiss();
+                dlg.dismiss();
                 showDiagnosticsDialog(activity, tokens, langCode);
             }
         }, tokens);
@@ -306,47 +244,21 @@ public final class NfcPaymentSandboxManager {
             }
         }, tokens);
 
-        scroll.addView(list);
-        root.addView(scroll);
-
         // Close button
-        TextView closeBtn = new TextView(activity);
-        closeBtn.setText(I18n.get(I18n.KEY_CANCEL, langCode));
-        closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(13);
-        closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        closeBtn.setGravity(Gravity.CENTER);
-        closeBtn.setMinimumHeight((int) (44 * density));
-        closeBtn.setPadding(0, (int) (8 * density), 0, (int) (8 * density));
-        closeBtn.setClickable(true);
-        closeBtn.setFocusable(true);
-
-        StateListDrawable btnSld = new StateListDrawable();
-        GradientDrawable btnPressed = new GradientDrawable();
-        btnPressed.setColor(tokens.controlBgPressed);
-        btnPressed.setCornerRadius((int) (4 * density));
-        btnSld.addState(new int[]{android.R.attr.state_pressed}, btnPressed);
-        btnSld.addState(new int[]{android.R.attr.state_focused}, btnPressed);
-        btnSld.addState(new int[]{}, new ColorDrawable(Color.TRANSPARENT));
-        closeBtn.setBackground(btnSld);
-
-        closeBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            themeTokens.navAccent,
+            themeTokens.border,
+            true,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
             }
-        });
+        );
 
-        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        closeLp.setMargins(0, (int) (10 * density), 0, 0);
-        closeBtn.setLayoutParams(closeLp);
-        root.addView(closeBtn);
-
-        outer.addView(root);
-        dialog.setContentView(outer);
-        dialog.setCancelable(true);
-        dialog.setCanceledOnTouchOutside(true);
-        dialog.show();
+        dlg.show();
     }
 
     private static void addCategoryHeader(LinearLayout container, String title, ThemeTokens tokens) {

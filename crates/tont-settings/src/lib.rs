@@ -189,3 +189,109 @@ impl TontSettings {
         self.default_apps.phone_app = app_id;
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SettingsCategory {
+    Connectivity,
+    SoundAndRingtones,
+    DefaultApplications,
+    DisplayAndBattery,
+    AboutSystem,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum AppRole {
+    Dialer,
+    Messaging,
+    Browser,
+    Maps,
+    Gallery,
+    Music,
+    Files,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum SettingsAction {
+    ToggleWifi,
+    ToggleBluetooth,
+    ToggleMobileData,
+    ToggleGps,
+    ToggleAirplaneMode,
+    SetRingtone(String),
+    SetScreenTimeout(u32),
+    SetDefaultApp(AppRole, String),
+    SetScreenTimeBudget(u32),
+}
+
+#[derive(Default)]
+pub struct SettingsApp {
+    pub current_category: Option<SettingsCategory>,
+    pub settings: TontSettings,
+}
+
+impl SettingsApp {
+    pub fn new(settings: TontSettings) -> Self {
+        Self {
+            current_category: None,
+            settings,
+        }
+    }
+
+    /// Navigate to a specific settings sub-menu.
+    pub fn navigate_to(&mut self, category: SettingsCategory) {
+        self.current_category = Some(category);
+    }
+
+    /// Return to top-level menu.
+    pub fn navigate_back(&mut self) {
+        self.current_category = None;
+    }
+
+    /// Apply a user-initiated setting modification.
+    pub fn dispatch(&mut self, action: SettingsAction) -> Result<(), SettingsError> {
+        match action {
+            SettingsAction::ToggleWifi => {
+                self.settings.connectivity.wifi_enabled = !self.settings.connectivity.wifi_enabled;
+            }
+            SettingsAction::ToggleBluetooth => {
+                self.settings.connectivity.bluetooth_enabled =
+                    !self.settings.connectivity.bluetooth_enabled;
+            }
+            SettingsAction::ToggleMobileData => {
+                self.settings.connectivity.mobile_data_enabled =
+                    !self.settings.connectivity.mobile_data_enabled;
+            }
+            SettingsAction::ToggleGps => {
+                self.settings.connectivity.gps_enabled = !self.settings.connectivity.gps_enabled;
+            }
+            SettingsAction::ToggleAirplaneMode => {
+                let new_mode = !self.settings.connectivity.airplane_mode;
+                self.settings.connectivity.airplane_mode = new_mode;
+                if new_mode {
+                    self.settings.connectivity.wifi_enabled = false;
+                    self.settings.connectivity.bluetooth_enabled = false;
+                    self.settings.connectivity.mobile_data_enabled = false;
+                }
+            }
+            SettingsAction::SetRingtone(path) => {
+                self.settings.set_custom_ringtone(path)?;
+            }
+            SettingsAction::SetScreenTimeout(secs) => {
+                self.settings.display.screen_timeout_secs = secs;
+            }
+            SettingsAction::SetDefaultApp(role, pkg) => match role {
+                AppRole::Dialer => self.settings.default_apps.phone_app = pkg,
+                AppRole::Messaging => self.settings.default_apps.messaging_app = pkg,
+                AppRole::Browser => self.settings.default_apps.browser_app = pkg,
+                AppRole::Maps => self.settings.default_apps.maps_app = pkg,
+                AppRole::Gallery => self.settings.default_apps.gallery_app = pkg,
+                AppRole::Music => self.settings.default_apps.music_app = pkg,
+                AppRole::Files => self.settings.default_apps.files_app = pkg,
+            },
+            SettingsAction::SetScreenTimeBudget(mins) => {
+                self.settings.display.screen_time_budget_mins = mins;
+            }
+        }
+        Ok(())
+    }
+}

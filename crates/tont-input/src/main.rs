@@ -26,7 +26,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = std::fs::remove_file(socket_path);
     let listener = UnixListener::bind(socket_path).ok();
     if listener.is_some() {
-        tracing::info!("Volume IPC server listening on {}", socket_path);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(socket_path, std::fs::Permissions::from_mode(0o600));
+        }
+        tracing::info!("Volume IPC server listening on {} (mode 0600)", socket_path);
     } else {
         tracing::warn!(
             "Volume IPC socket unavailable at {} (SELinux/restricted). Hardware evdev monitoring active.",

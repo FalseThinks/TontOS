@@ -76,8 +76,105 @@ public final class UltraBatterySaverManager {
         }
     }
 
+    public static ActionResult setAirplaneMode(Context context, boolean enable) {
+        if (context == null) return ActionResult.FAILED;
+        try {
+            Settings.Global.putInt(context.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON, enable ? 1 : 0);
+            Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
+            intent.putExtra("state", enable);
+            context.sendBroadcast(intent);
+        } catch (Throwable ignored) {}
+
+        SafeCommandExecutor.executePrivileged("cmd", "connectivity", "airplane-mode", enable ? "enable" : "disable");
+        return ActionResult.APPLIED;
+    }
+
     public static ActionResult openAirplaneModeSettings(Context context) {
         return openSettings(context, Settings.ACTION_AIRPLANE_MODE_SETTINGS);
+    }
+
+    public static boolean isUltraBatterySaverActive(Context context) {
+        if (context == null) return false;
+        android.content.SharedPreferences prefs = MainActivity.getSafeSharedPreferences(context, MainActivity.PREFS_NAME);
+        return prefs.getBoolean("pref_ultra_battery_saver", false);
+    }
+
+    public static ActionResult setUltraBatterySaver(Context context, boolean enable) {
+        if (context == null) return ActionResult.FAILED;
+        android.content.SharedPreferences prefs = MainActivity.getSafeSharedPreferences(context, MainActivity.PREFS_NAME);
+        boolean current = prefs.getBoolean("pref_ultra_battery_saver", false);
+        if (current == enable) {
+            return ActionResult.APPLIED;
+        }
+
+        prefs.edit().putBoolean("pref_ultra_battery_saver", enable).apply();
+
+        if (enable) {
+            try {
+                int curB = Settings.System.getInt(context.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 128);
+                prefs.edit().putInt("pre_ultra_brightness", curB).apply();
+            } catch (Throwable ignored) {}
+            try {
+                int curT = Settings.System.getInt(context.getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 60000);
+                prefs.edit().putInt("pre_ultra_timeout", curT).apply();
+            } catch (Throwable ignored) {}
+            try {
+                boolean curGray = prefs.getBoolean("pref_grayscale_enabled", false);
+                prefs.edit().putBoolean("pre_ultra_grayscale", curGray).apply();
+            } catch (Throwable ignored) {}
+
+            // Save and duty-cycle radios
+            try {
+                boolean wifiOn = getWifiState(context) == ToggleState.ON;
+                prefs.edit().putBoolean("pre_ultra_wifi", wifiOn).apply();
+                if (wifiOn) {
+                    SafeCommandExecutor.executePrivileged("cmd", "wifi", "set-wifi-enabled", "disabled");
+                }
+            } catch (Throwable ignored) {}
+            try {
+                boolean btOn = getBluetoothState(context) == ToggleState.ON;
+                prefs.edit().putBoolean("pre_ultra_bt", btOn).apply();
+                if (btOn) {
+                    SafeCommandExecutor.executePrivileged("cmd", "bluetooth_manager", "disable");
+                }
+            } catch (Throwable ignored) {}
+
+            GlobalSettingsBridge.applyGlobalBrightness(context, 4);
+            GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15);
+            SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", "1");
+            SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", "1");
+            GrayscaleManager.setGrayscaleEnabled(context, true);
+        } else {
+            int rawB = prefs.getInt("pre_ultra_brightness", 128);
+            int pctB = Math.max(0, Math.min(100, Math.round((rawB / 255.0f) * 100.0f)));
+            int timeoutMs = prefs.getInt("pre_ultra_timeout", 60000);
+            int timeoutSecs = Math.max(15, timeoutMs / 1000);
+
+            GlobalSettingsBridge.applyGlobalBrightness(context, pctB);
+            GlobalSettingsBridge.applyGlobalScreenTimeout(context, timeoutSecs);
+            SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", "0");
+            SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", "0");
+
+            boolean userGrayscale = prefs.getBoolean("pre_ultra_grayscale", false);
+            prefs.edit().putBoolean("pref_grayscale_enabled", userGrayscale).apply();
+            GrayscaleManager.setGrayscaleEnabled(context, userGrayscale);
+
+            // Restore radios
+            try {
+                if (prefs.getBoolean("pre_ultra_wifi", false)) {
+                    SafeCommandExecutor.executePrivileged("cmd", "wifi", "set-wifi-enabled", "enabled");
+                }
+            } catch (Throwable ignored) {}
+            try {
+                if (prefs.getBoolean("pre_ultra_bt", false)) {
+                    SafeCommandExecutor.executePrivileged("cmd", "bluetooth_manager", "enable");
+                }
+            } catch (Throwable ignored) {}
+
+            SystemProvisioningManager.executeInitialProvisioning(context);
+            MainActivity.applyBackgroundPolicy(context);
+        }
+        return ActionResult.APPLIED;
     }
 
     public static ToggleState getDndState(Context context) {
@@ -239,17 +336,15 @@ public final class UltraBatterySaverManager {
                 manager.setTorchMode(torchCameraId, enable);
                 return ActionResult.REQUESTED;
             } catch (SecurityException denied) {
-                SafeCommandExecutor.execute("pm", "grant", "org.tontos.launcher", "android.permission.CAMERA");
+                SafeCommandExecutor.executePrivileged("pm", "grant", "org.tontos.launcher", "android.permission.CAMERA");
                 try {
                     manager.setTorchMode(torchCameraId, enable);
                     return ActionResult.REQUESTED;
                 } catch (Throwable t) {
-                    return ActionResult.FAILED;
+                    return ActionResult.UNSUPPORTED;
                 }
-            } catch (CameraAccessException failure) {
-                return ActionResult.FAILED;
-            } catch (RuntimeException failure) {
-                return ActionResult.FAILED;
+            } catch (Throwable failure) {
+                return ActionResult.UNSUPPORTED;
             }
         }
     }
@@ -353,7 +448,7 @@ public final class UltraBatterySaverManager {
         }
 
         if (context != null) {
-            context.getSharedPreferences("tontos_prefs", Context.MODE_PRIVATE)
+            MainActivity.getSafeSharedPreferences(context, "tontos_prefs")
                 .edit().putBoolean("nfc_enabled", enable).apply();
         }
 
@@ -408,39 +503,7 @@ public final class UltraBatterySaverManager {
     }
 
     public static boolean isUltraBatterySaverEnabled(Context context) {
-        if (context == null) return false;
-        try {
-            return Settings.Global.getInt(context.getContentResolver(), "low_power", 0) == 1;
-        } catch (Throwable t) {
-            return false;
-        }
-    }
-
-    public static void setUltraBatterySaver(final Context context, final boolean enable) {
-        if (context == null) return;
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", enable ? "1" : "0");
-                    SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", enable ? "1" : "0");
-                    if (enable) {
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "window_animation_scale", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "transition_animation_scale", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "animator_duration_scale", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "wifi_scan_always_enabled", "0");
-                        SafeCommandExecutor.executePrivileged("settings", "put", "global", "ble_scan_always_enabled", "0");
-                        GrayscaleManager.setGrayscaleEnabled(context, true);
-                        GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15);
-                        GlobalSettingsBridge.applyGlobalBrightness(context, 20);
-                    } else {
-                        GrayscaleManager.setGrayscaleEnabled(context, false);
-                        GlobalSettingsBridge.applyGlobalScreenTimeout(context, 30);
-                        GlobalSettingsBridge.applyGlobalBrightness(context, 50);
-                    }
-                } catch (Throwable ignored) {}
-            }
-        }).start();
+        return isUltraBatterySaverActive(context);
     }
 
     private static ToggleState toState(boolean enabled) {

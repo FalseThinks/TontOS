@@ -134,6 +134,16 @@ public final class SystemProvisioningManager {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE",
             "android.permission.POST_NOTIFICATIONS"
+        },
+        {
+            "com.bitchat.droid",
+            "android.permission.BLUETOOTH_CONNECT",
+            "android.permission.BLUETOOTH_SCAN",
+            "android.permission.BLUETOOTH_ADVERTISE",
+            "android.permission.ACCESS_FINE_LOCATION",
+            "android.permission.ACCESS_COARSE_LOCATION",
+            "android.permission.POST_NOTIFICATIONS",
+            "android.permission.FOREGROUND_SERVICE"
         }
     };
 
@@ -219,6 +229,14 @@ public final class SystemProvisioningManager {
                     SafeCommandExecutor.executePrivileged("pm", "disable-user", "--user", "0", "com.android.dialer");
                     SafeCommandExecutor.executePrivileged("pm", "disable-user", "--user", "0", "com.android.contacts");
 
+                    // 4b. Configure HeliBoard FOSS keyboard as default IME
+                    try {
+                        SafeCommandExecutor.executePrivileged("ime", "enable", "helium314.keyboard/.latin.LatinIME");
+                        SafeCommandExecutor.executePrivileged("ime", "set", "helium314.keyboard/.latin.LatinIME");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "secure", "default_input_method", "helium314.keyboard/.latin.LatinIME");
+                        SafeCommandExecutor.executePrivileged("settings", "put", "secure", "enabled_input_methods", "helium314.keyboard/.latin.LatinIME:com.android.inputmethod.latin/.LatinIME");
+                    } catch (Throwable ignored) {}
+
                     // 5. Disable SystemUI notification shade and peek expansion
                     SafeCommandExecutor.executePrivileged("cmd", "statusbar", "send-disable-flag",
                         "statusbar-expansion", "quick-settings", "notification-peek", "system-icons", "notification-icons", "clock");
@@ -238,11 +256,20 @@ public final class SystemProvisioningManager {
                     } catch (Throwable ignored) {}
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "development_settings_enabled", "1");
 
-                    // 9. ROM-Wide Lock Screen: Completely disable stock AOSP keyguard service so TontOS LockScreenActivity is sole lock screen
-                    SafeCommandExecutor.executePrivileged("settings", "put", "secure", "lockscreen.disabled", "1");
-                    SafeCommandExecutor.executePrivileged("locksettings", "set-disabled", "--user", "0", "true");
-                    SafeCommandExecutor.executePrivileged("cmd", "deviceidle", "whitelist", "+org.tontos.launcher");
-                    SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "RUN_IN_BACKGROUND", "allow");
+                    // 9. ROM Lock Screen & Power Policy: Preserve hardware AOSP keyguard & FBE encryption
+                    String[] bgWhitelistedApps = {
+                        "org.tontos.launcher",
+                        "com.bitchat.droid",
+                        "eu.faircode.email",
+                        "helium314.keyboard",
+                        "org.fossify.phone",
+                        "org.fossify.messages"
+                    };
+                    for (String app : bgWhitelistedApps) {
+                        SafeCommandExecutor.executePrivileged("cmd", "deviceidle", "whitelist", "+" + app);
+                        SafeCommandExecutor.executePrivileged("cmd", "appops", "set", app, "RUN_IN_BACKGROUND", "allow");
+                        SafeCommandExecutor.executePrivileged("cmd", "appops", "set", app, "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS", "allow");
+                    }
                     SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "SYSTEM_ALERT_WINDOW", "allow");
                     LockScreenManager.registerScreenReceiver(appContext);
 

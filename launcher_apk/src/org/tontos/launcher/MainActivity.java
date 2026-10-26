@@ -69,12 +69,26 @@ public class MainActivity extends Activity {
     public static final String KEY_SELECTED_THEME = "selected_theme";
     public static final String KEY_SYSTEM_LANGUAGE = "system_language";
     public static final String KEY_SYSTEM_REGION = "system_region";
+
+    public static String resolveCurrentLanguage(SharedPreferences prefs) {
+        if (prefs != null) {
+            String saved = prefs.getString(KEY_SYSTEM_LANGUAGE, null);
+            if (saved != null && !saved.trim().isEmpty()) {
+                return I18n.resolveLanguage(saved);
+            }
+        }
+        String sys = Locale.getDefault().getLanguage();
+        if (sys != null && !sys.trim().isEmpty()) {
+            return I18n.resolveLanguage(sys);
+        }
+        return "en";
+    }
     public static final String KEY_DAILY_BUDGET_MINS = "daily_budget_mins";
     public static final String KEY_PINNED_APPS = "pinned_apps";
     public static final String KEY_PINNED_APPS_ORDER = "pinned_apps_order";
     public static final String KEY_HOME_APP_LIMIT = "home_app_limit";
 
-    public static final int DEFAULT_HOME_APP_LIMIT = 5;
+    public static final int DEFAULT_HOME_APP_LIMIT = 6;
     public static final int DEFAULT_BUDGET_MINUTES = 120;
     public static final String OS_VERSION_STRING = "TontOS v1.0-beta";
 
@@ -132,8 +146,15 @@ public class MainActivity extends Activity {
     private GestureDetector swipeDetector;
 
     // Algorithmic optimization: Cached installed applications to avoid repeated PackageManager IPC
-    private List<AppItem> cachedInstalledApps = new ArrayList<>();
-    private final Map<String, AppItem> cachedAppLookup = new HashMap<>();
+    private static final List<AppItem> cachedInstalledApps = new ArrayList<>();
+    private static final Map<String, AppItem> cachedAppLookup = new HashMap<>();
+
+    public static void invalidateAppCache() {
+        synchronized (cachedInstalledApps) {
+            cachedInstalledApps.clear();
+            cachedAppLookup.clear();
+        }
+    }
 
     // Performance & scaling optimizations: font scale and cached formatters
     private float fontScale = 1.0f;
@@ -147,7 +168,8 @@ public class MainActivity extends Activity {
         screenTimeTodaySecs = 0;
         screenOnStartTime = System.currentTimeMillis();
         if (ctx != null) {
-            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putLong(KEY_SCREEN_TIME_SECS, 0L).apply();
+            SharedPreferences sp = getSafeSharedPreferences(ctx, PREFS_NAME, Context.MODE_PRIVATE);
+            if (sp != null) sp.edit().putLong(KEY_SCREEN_TIME_SECS, 0L).apply();
         }
     }
 
@@ -160,12 +182,47 @@ public class MainActivity extends Activity {
     private static Set<String> lastAppliedAllowed = null;
     private static long lastApplyUptimeMs = 0;
 
+    public static boolean isCoreBackgroundApp(String pkg) {
+        if (pkg == null) return false;
+        return "com.bitchat.droid".equals(pkg)
+            || "eu.faircode.email".equals(pkg)
+            || "helium314.keyboard".equals(pkg)
+            || "org.fossify.phone".equals(pkg)
+            || "org.fossify.messages".equals(pkg);
+    }
+
+    public static Set<String> getSafeStringSet(SharedPreferences prefs, String key, Set<String> def) {
+        if (prefs == null) return def;
+        try {
+            return prefs.getStringSet(key, def);
+        } catch (ClassCastException e) {
+            try {
+                String raw = prefs.getString(key, null);
+                if (raw != null) {
+                    Set<String> set = new HashSet<>();
+                    String trimmed = raw.trim();
+                    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                        trimmed = trimmed.substring(1, trimmed.length() - 1);
+                    }
+                    for (String part : trimmed.split(",")) {
+                        String item = part.trim();
+                        if (!item.isEmpty()) set.add(item);
+                    }
+                    prefs.edit().remove(key).putStringSet(key, set).apply();
+                    return set;
+                }
+            } catch (Throwable ignored) {}
+            return def;
+        }
+    }
+
     public static void applyBackgroundPolicy(Context context) {
         if (context == null) return;
         final Context appContext = context.getApplicationContext();
-        SharedPreferences prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(appContext != null ? appContext : context, PREFS_NAME, Context.MODE_PRIVATE);
+        if (prefs == null) return;
         final String policy = prefs.getString("bg_policy", "whitelist");
-        final Set<String> rawAllowed = prefs.getStringSet("bg_allowed_apps", Collections.<String>emptySet());
+        final Set<String> rawAllowed = getSafeStringSet(prefs, "bg_allowed_apps", Collections.<String>emptySet());
         final Set<String> allowed = rawAllowed != null ? new HashSet<>(rawAllowed) : Collections.<String>emptySet();
 
         synchronized (MainActivity.class) {
@@ -198,11 +255,11 @@ public class MainActivity extends Activity {
                         if ("allowed".equals(policy)) {
                             canRunBg = true;
                         } else if ("whitelist".equals(policy)) {
-                            canRunBg = allowed.contains(pkg);
+                            canRunBg = allowed.contains(pkg) || isCoreBackgroundApp(pkg);
                         }
                         try {
-                            Runtime.getRuntime().exec(new String[]{"cmd", "appops", "set", pkg, "RUN_IN_BACKGROUND", canRunBg ? "allow" : "ignore"});
-                            Runtime.getRuntime().exec(new String[]{"am", "set-standby-bucket", pkg, canRunBg ? "active" : "restricted"});
+                            SafeCommandExecutor.executePrivileged("cmd", "appops", "set", pkg, "RUN_IN_BACKGROUND", canRunBg ? "allow" : "ignore");
+                            SafeCommandExecutor.executePrivileged("am", "set-standby-bucket", pkg, canRunBg ? "active" : "restricted");
                         } catch (Throwable ignored) {}
                     }
                 } catch (Throwable ignored) {}
@@ -210,10 +267,33 @@ public class MainActivity extends Activity {
         }, "TontOS-BgPolicy").start();
     }
 
+    public static SharedPreferences getSafeSharedPreferences(Context context, String name) {
+        return getSafeSharedPreferences(context, name, Context.MODE_PRIVATE);
+    }
+
+    public static SharedPreferences getSafeSharedPreferences(Context context, String name, int mode) {
+        if (context == null) return null;
+        Context target = context.getApplicationContext() != null ? context.getApplicationContext() : context;
+        try {
+            return target.createDeviceProtectedStorageContext().getSharedPreferences(name, mode);
+        } catch (Throwable e) {
+            try {
+                return target.getSharedPreferences(name, mode);
+            } catch (Throwable ignored) {
+                return null;
+            }
+        }
+    }
+
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences prefs = newBase.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        int scaleInt = prefs.getInt("pref_font_scale", 100);
+        int scaleInt = 100;
+        try {
+            SharedPreferences prefs = getSafeSharedPreferences(newBase, PREFS_NAME, Context.MODE_PRIVATE);
+            if (prefs != null) {
+                scaleInt = prefs.getInt("pref_font_scale", 100);
+            }
+        } catch (Throwable ignored) {}
         Configuration config = new Configuration(newBase.getResources().getConfiguration());
         config.fontScale = scaleInt / 100.0f;
         Context context = newBase.createConfigurationContext(config);
@@ -224,7 +304,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         if (!prefs.getBoolean(KEY_SETUP_COMPLETED, false)) {
             startActivity(new Intent(this, SetupWizardActivity.class));
             finish();
@@ -234,18 +314,42 @@ public class MainActivity extends Activity {
         applyBackgroundPolicy(this);
         SystemProvisioningManager.executeInitialProvisioning(this);
         LockScreenManager.registerScreenReceiver(this);
+        if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
+            LockScreenManager.launchLockScreen(this);
+        }
 
         handler = new Handler(Looper.getMainLooper());
-        screenTimeTodaySecs = prefs.getLong(KEY_SCREEN_TIME_SECS, 0L);
+        try {
+            screenTimeTodaySecs = prefs.getLong(KEY_SCREEN_TIME_SECS, 0L);
+        } catch (ClassCastException e) {
+            try {
+                screenTimeTodaySecs = prefs.getInt(KEY_SCREEN_TIME_SECS, 0);
+            } catch (Exception ex) {
+                screenTimeTodaySecs = 0L;
+            }
+            prefs.edit().putLong(KEY_SCREEN_TIME_SECS, screenTimeTodaySecs).apply();
+        }
         screenOnStartTime = System.currentTimeMillis();
 
         int fontScaleInt = prefs.getInt("pref_font_scale", 100);
-        fontScale = fontScaleInt / 100.0f;
+        fontScale = 1.0f; // Android config.fontScale is already applied via attachBaseContext
 
+        getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.BLACK));
         rootLayout = new LinearLayout(this);
         rootLayout.setOrientation(LinearLayout.VERTICAL);
         rootLayout.setBackgroundColor(Color.BLACK);
-        rootLayout.setPadding(50, 30, 50, 20);
+        final float density = getResources().getDisplayMetrics().density;
+        rootLayout.setPadding((int)(20 * density), (int)(16 * density), (int)(20 * density), (int)(16 * density));
+        rootLayout.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                int topInset = insets.getSystemWindowInsetTop();
+                int bottomInset = insets.getSystemWindowInsetBottom();
+                float d = v.getResources().getDisplayMetrics().density;
+                v.setPadding((int)(20 * d), Math.max((int)(16 * d), topInset), (int)(20 * d), Math.max((int)(16 * d), bottomInset));
+                return insets.consumeSystemWindowInsets();
+            }
+        });
 
         topSection = new LinearLayout(this);
         topSection.setOrientation(LinearLayout.VERTICAL);
@@ -291,7 +395,6 @@ public class MainActivity extends Activity {
         detoxView.setPadding(0, 6, 0, 6);
         topSection.addView(detoxView);
 
-        float density = getResources().getDisplayMetrics().density;
         dividerView = new View(this);
         LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -444,7 +547,7 @@ public class MainActivity extends Activity {
             screenTimeTodaySecs += (System.currentTimeMillis() - screenOnStartTime) / 1000;
             screenOnStartTime = 0;
         }
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putLong(KEY_SCREEN_TIME_SECS, screenTimeTodaySecs).apply();
+        getSafeSharedPreferences(this, PREFS_NAME).edit().putLong(KEY_SCREEN_TIME_SECS, screenTimeTodaySecs).apply();
     }
 
     @Override
@@ -461,6 +564,16 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (LockScreenManager.isDeviceLocked() && LockScreenManager.isLockScreenEnabled(this)) {
+            Intent lockIntent = new Intent(this, LockScreenActivity.class);
+            lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_NO_ANIMATION
+                | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+            startActivity(lockIntent);
+            return;
+        }
         try {
             Intent batIntent = registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
             if (batIntent != null) {
@@ -475,13 +588,13 @@ public class MainActivity extends Activity {
                 updateBatteryDisplay();
             }
         } catch (Throwable ignored) {}
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         isDrawerView = false;
 
-        String langCode = prefs.getString(KEY_SYSTEM_LANGUAGE, "en");
+        String langCode = resolveCurrentLanguage(prefs);
         String regionCode = prefs.getString(KEY_SYSTEM_REGION, "US");
         int fontScaleInt = prefs.getInt("pref_font_scale", 100);
-        fontScale = fontScaleInt / 100.0f;
+        fontScale = 1.0f; // Android config.fontScale is already applied via attachBaseContext
         I18n.applyLocaleAndScale(this, langCode, regionCode, fontScale);
         applyFontScale();
         applyBackgroundPolicy(this);
@@ -519,7 +632,7 @@ public class MainActivity extends Activity {
     }
 
     private ThemePreset currentTheme() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         return ThemePreset.fromId(prefs.getString(KEY_SELECTED_THEME, ThemePreset.AMOLED.getId()));
     }
 
@@ -544,12 +657,10 @@ public class MainActivity extends Activity {
             }
         } catch (Throwable ignored) {}
 
+        rootLayout.setBackgroundColor(tokens.bg);
         if (!isDrawerView) {
-            rootLayout.setBackgroundColor(tokens.bg);
             topSection.setVisibility(View.VISIBLE);
             bottomBar.setVisibility(View.VISIBLE);
-        } else {
-            rootLayout.setBackgroundColor(tokens.surface);
         }
 
         osVersionView.setTextColor(tokens.accent);
@@ -606,7 +717,7 @@ public class MainActivity extends Activity {
         Locale targetLocale = (regionCode != null && !regionCode.isEmpty())
             ? new Locale(langCode, regionCode)
             : new Locale(langCode);
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         boolean is24 = prefs.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
         if (cachedLocale == null || !cachedLocale.equals(targetLocale) || cachedIs24 != is24) {
             cachedLocale = targetLocale;
@@ -617,8 +728,8 @@ public class MainActivity extends Activity {
     }
 
     private void updateTimeDisplay() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String langCode = prefs.getString(KEY_SYSTEM_LANGUAGE, "en");
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
+        String langCode = resolveCurrentLanguage(prefs);
         String regionCode = prefs.getString(KEY_SYSTEM_REGION, "US");
         updateDateFormats(langCode, regionCode);
 
@@ -689,7 +800,12 @@ public class MainActivity extends Activity {
     /**
      * O(N) Cache refresh: queries PackageManager and indexes into hash map for O(1) lookups.
      */
-    private void refreshInstalledAppsCache() {
+    public void refreshInstalledAppsCache() {
+        refreshInstalledAppsCache(false);
+    }
+
+    public void refreshInstalledAppsCache(boolean force) {
+        if (!force && !cachedInstalledApps.isEmpty()) return;
         PackageManager pm = getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -701,7 +817,8 @@ public class MainActivity extends Activity {
         for (ResolveInfo ri : activities) {
             String pkg = ri.activityInfo.packageName;
             if (pkg.equals(getPackageName()) || pkg.equals("com.android.settings") || pkg.equals("com.android.stk")
-                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")) {
+                    || pkg.equals("com.android.dialer") || pkg.equals("com.android.contacts")
+                    || pkg.equals("com.android.documentsui")) {
                 continue;
             }
             String label = ri.loadLabel(pm).toString();
@@ -715,7 +832,7 @@ public class MainActivity extends Activity {
 
     private void renderApps() {
         appListContainer.removeAllViews();
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         ThemeTokens tokens = currentTokens();
 
         if (isDrawerView) {
@@ -730,8 +847,8 @@ public class MainActivity extends Activity {
         topSection.setVisibility(View.GONE);
         bottomBar.setVisibility(View.GONE);
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String langCode = prefs.getString(KEY_SYSTEM_LANGUAGE, "en");
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
+        String langCode = resolveCurrentLanguage(prefs);
 
         LinearLayout drawerTop = new LinearLayout(this);
         drawerTop.setOrientation(LinearLayout.HORIZONTAL);
@@ -739,7 +856,7 @@ public class MainActivity extends Activity {
         drawerTop.setPadding(0, 10, 0, 16);
 
         TextView backBtn = new TextView(this);
-        backBtn.setText(I18n.get(I18n.KEY_BACK, langCode));
+        backBtn.setText(ensureBrackets(I18n.get(I18n.KEY_BACK, langCode)));
         backBtn.setTextColor(tokens.navAccent);
         backBtn.setTextSize(15 * fontScale);
         backBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
@@ -890,7 +1007,7 @@ public class MainActivity extends Activity {
         bottomBar.setVisibility(View.VISIBLE);
 
         int homeLimit = prefs.getInt(KEY_HOME_APP_LIMIT, DEFAULT_HOME_APP_LIMIT);
-        Set<String> pinned = prefs.getStringSet(KEY_PINNED_APPS, DEFAULT_PINNED_PACKAGES);
+        Set<String> pinned = getSafeStringSet(prefs, KEY_PINNED_APPS, DEFAULT_PINNED_PACKAGES);
 
         String orderCsv = prefs.getString(KEY_PINNED_APPS_ORDER, null);
         Set<String> orderedPkgs = new java.util.LinkedHashSet<>();
@@ -916,7 +1033,7 @@ public class MainActivity extends Activity {
                 }, new View.OnLongClickListener() {
                     @Override
                     public boolean onLongClick(View v) {
-                        String langCode = prefs.getString(KEY_SYSTEM_LANGUAGE, "en");
+                        String langCode = resolveCurrentLanguage(prefs);
                         AppPrivacyGuard.showAppPrivacySheet(MainActivity.this, tokens, app.packageName, app.label, langCode, new Runnable() {
                             @Override
                             public void run() {
@@ -981,6 +1098,10 @@ public class MainActivity extends Activity {
         return cachedTouchState != null ? cachedTouchState.newDrawable() : new ColorDrawable(Color.TRANSPARENT);
     }
 
+    private static String ensureBrackets(String val) {
+        return TactileUi.ensureBrackets(val);
+    }
+
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
     }
@@ -993,7 +1114,7 @@ public class MainActivity extends Activity {
 
     public void launchApp(final String pkg, final String label, final ThemeTokens tokens) {
         isDrawerView = false;
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         int frictionSecs = prefs.getInt("pref_friction_seconds", 0);
 
         if (frictionSecs > 0 && !isFrictionWhitelisted(pkg)) {
@@ -1094,7 +1215,7 @@ public class MainActivity extends Activity {
         if (exitedPkg.equals(getPackageName())) return;
         if (isEssentialSystemPackage(exitedPkg)) return;
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         String policy = prefs.getString("bg_policy", "whitelist");
         if ("allowed".equals(policy)) {
             return;
@@ -1102,7 +1223,7 @@ public class MainActivity extends Activity {
 
         boolean canRunBg = false;
         if ("whitelist".equals(policy)) {
-            Set<String> allowed = prefs.getStringSet("bg_allowed_apps", Collections.<String>emptySet());
+            Set<String> allowed = getSafeStringSet(prefs, "bg_allowed_apps", Collections.<String>emptySet());
             canRunBg = allowed != null && allowed.contains(exitedPkg);
             if (AppPrivacyGuard.isBgRestricted(this, exitedPkg)) {
                 canRunBg = false;
@@ -1141,7 +1262,6 @@ public class MainActivity extends Activity {
                 || pkg.equals("com.android.calculator2")
                 || pkg.equals("com.android.contacts")
                 || pkg.equals("com.android.calendar")
-                || pkg.equals("com.android.documentsui")
                 || DEFAULT_PINNED_PACKAGES.contains(pkg)) {
             return true;
         }

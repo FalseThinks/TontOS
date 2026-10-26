@@ -31,7 +31,12 @@ PRODUCT_PACKAGES += \
     FossifyGallery \
     FossifyMessages \
     FossifyMusicPlayer \
-    FossifyPhone
+    FossifyPhone \
+    BitChat \
+    GraphenePdfViewer \
+    HeliumKeyboard \
+    OpenDocumentReader \
+    NewPipe
 
 # Excluir Dialer y Contacts nativos de AOSP en favor de la suite Fossify
 PRODUCT_PACKAGES_REMOVE += \

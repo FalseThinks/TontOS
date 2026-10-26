@@ -6,7 +6,7 @@ use tont_telephony::SmsMessage;
 
 #[test]
 fn test_backup_create_save_load_roundtrip() {
-    let temp_dir = std::env::temp_dir().join("tont_test_backup");
+    let temp_dir = Path::new("target").join(format!("tont_test_backup_{}", std::process::id()));
     let backup_path = temp_dir.join("tontos_backup.json");
 
     let settings = TontSettings::default();

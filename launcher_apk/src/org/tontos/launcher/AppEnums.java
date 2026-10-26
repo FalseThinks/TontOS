@@ -5,8 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Consolidated Domain Architecture Enums for TontOS Launcher.
- * Combines ThemePreset, SettingsSection, WizardStep, UpdateChannel, and LanguageLocale.
+ * Enums for TontOS Launcher themes, sections, and wizard steps.
  */
 public final class AppEnums {
     private AppEnums() {}
@@ -14,7 +13,6 @@ public final class AppEnums {
 
 /**
  * Visual detox theme presets.
- * Implements the Flyweight/Strategy pattern for subpixel-efficient AMOLED rendering.
  */
 enum ThemePreset {
     AMOLED(
@@ -25,7 +23,7 @@ enum ThemePreset {
         Color.parseColor("#44DD88"),
         Color.parseColor("#1B5E38"),
         Color.parseColor("#E5E7EB"),
-        Color.parseColor("#6B7280"),
+        Color.parseColor("#9CA3AF"),
         Color.parseColor("#1B261F"),
         false,
         Color.parseColor("#0D0D0D"),
@@ -43,7 +41,7 @@ enum ThemePreset {
         Color.parseColor("#FFB000"),
         Color.parseColor("#805800"),
         Color.parseColor("#FFB000"),
-        Color.parseColor("#996A00"),
+        Color.parseColor("#CCA000"),
         Color.parseColor("#332300"),
         false,
         Color.parseColor("#0D0D0D"),
@@ -61,15 +59,15 @@ enum ThemePreset {
         Color.parseColor("#000000"),
         Color.parseColor("#333333"),
         Color.parseColor("#000000"),
-        Color.parseColor("#555555"),
+        Color.parseColor("#444444"),
         Color.parseColor("#777777"),
         true,
         Color.parseColor("#F4F4F6"),
         Color.parseColor("#DDDDDD"),
         Color.parseColor("#000000"),
         Color.parseColor("#FFFFFF"),
-        Color.parseColor("#1D4ED8"),
-        Color.parseColor("#EFF6FF")
+        Color.parseColor("#000000"),
+        Color.parseColor("#F4F4F6")
     ),
     SLATE(
         "SLATE",
@@ -79,7 +77,7 @@ enum ThemePreset {
         Color.parseColor("#58A6FF"),
         Color.parseColor("#1F4A85"),
         Color.parseColor("#F0F6FC"),
-        Color.parseColor("#8B949E"),
+        Color.parseColor("#A3B1C2"),
         Color.parseColor("#212B36"),
         false,
         Color.parseColor("#0D0D0D"),
@@ -241,7 +239,8 @@ enum WizardStep {
     LANGUAGE_REGION(1, "1. Language & Region"),
     THEME_PRESET(2, "2. Theme Preset"),
     DETOX_BUDGET(3, "3. Focus & Detox Limit"),
-    COMPLETE(4, "4. Setup Complete");
+    SECURITY(4, "4. Device Security"),
+    COMPLETE(5, "5. Setup Complete");
 
     private final int index;
     private final String headerTitle;
@@ -305,80 +304,6 @@ enum UpdateChannel {
             }
         }
         return BETA;
-    }
-}
-
-/**
- * Standard default fallback locales and bridge to TontOS dynamic LocaleManager.
- */
-enum LanguageLocale {
-    EN_US("en-US", "English (US)", Locale.US),
-    DE_DE("de-DE", "Deutsch (DE)", Locale.GERMANY),
-    PL_PL("pl-PL", "Polski (PL)", new Locale("pl", "PL")),
-    ES_ES("es-ES", "Español (ES)", new Locale("es", "ES")),
-    FR_FR("fr-FR", "Français (FR)", Locale.FRANCE),
-    IT_IT("it-IT", "Italiano (IT)", Locale.ITALY),
-    PT_PT("pt-PT", "Português (PT)", new Locale("pt", "PT")),
-    RU_RU("ru-RU", "Русский (RU)", new Locale("ru", "RU")),
-    UK_UA("uk-UA", "Українська (UA)", new Locale("uk", "UA")),
-    ZH_CN("zh-CN", "中文 (CN)", Locale.SIMPLIFIED_CHINESE),
-    JA_JP("ja-JP", "日本語 (JP)", Locale.JAPAN),
-    NL_NL("nl-NL", "Nederlands (NL)", new Locale("nl", "NL"));
-
-    private final String code;
-    private final String displayName;
-    private final Locale locale;
-
-    LanguageLocale(String code, String displayName, Locale locale) {
-        this.code = code;
-        this.displayName = displayName;
-        this.locale = locale;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public Locale getLocale() {
-        return locale;
-    }
-
-    public LocaleItem toLocaleItem() {
-        return LocaleManager.getLocale(code);
-    }
-
-    public static LanguageLocale fromCode(String code) {
-        if (code == null) return EN_US;
-        for (LanguageLocale l : values()) {
-            if (l.code.equalsIgnoreCase(code) || l.displayName.equalsIgnoreCase(code) || l.name().equalsIgnoreCase(code)) {
-                return l;
-            }
-        }
-        String clean = code.replace('-', '_');
-        for (LanguageLocale l : values()) {
-            if (clean.equalsIgnoreCase(l.code.replace('-', '_')) || clean.startsWith(l.locale.getLanguage() + "_") || clean.equalsIgnoreCase(l.locale.getLanguage())) {
-                return l;
-            }
-        }
-        return EN_US;
-    }
-
-    /**
-     * Bridges to dynamic LocaleManager to fetch all available device locales.
-     */
-    public static List<LocaleItem> getAllAvailableLocales() {
-        return LocaleManager.getAllAvailableLocales();
-    }
-
-    /**
-     * Bridges to dynamic LocaleManager to resolve any device locale in O(1).
-     */
-    public static LocaleItem getLocale(String code) {
-        return LocaleManager.getLocale(code);
     }
 }
 

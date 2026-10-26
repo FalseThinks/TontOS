@@ -1,9 +1,8 @@
 package org.tontos.launcher;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -18,7 +17,8 @@ import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.view.Window;
+import android.view.WindowInsetsController;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -66,7 +66,8 @@ public final class BackupRestoreManager {
             byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder(digest.length * 2);
             for (byte b : digest) {
-                sb.append(String.format(Locale.ROOT, "%02x", b));
+                sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+                sb.append(Character.forDigit(b & 0xF, 16));
             }
             return sb.toString();
         } catch (Exception e) {
@@ -80,9 +81,18 @@ public final class BackupRestoreManager {
         for (Map.Entry<String, ?> entry : all.entrySet()) {
             String key = entry.getKey();
             if (key == null) continue;
-            // Exclude temporary scroll positions or transient session states
-            if (key.startsWith("pref_last_settings_scroll")) continue;
-            payload.put(key, entry.getValue());
+            // Exclude temporary scroll positions and security credentials (PIN/pattern/salt)
+            if (key.startsWith("pref_last_settings_scroll") || key.startsWith("pref_lock_")) continue;
+            Object val = entry.getValue();
+            if (val instanceof Set || val instanceof java.util.Collection) {
+                org.json.JSONArray arr = new org.json.JSONArray();
+                for (Object item : (java.util.Collection<?>) val) {
+                    if (item != null) arr.put(item.toString());
+                }
+                payload.put(key, arr);
+            } else {
+                payload.put(key, val);
+            }
         }
 
         String payloadStr = payload.toString();
@@ -110,45 +120,33 @@ public final class BackupRestoreManager {
         final String langCode,
         final SharedPreferences prefs
     ) {
-        final float density = activity.getResources().getDisplayMetrics().density;
+        if (activity == null || activity.isFinishing()) return;
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            activity,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_BACKUP_CREATE_TITLE, langCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
 
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding((int) (20 * density), (int) (18 * density), (int) (20 * density), (int) (18 * density));
-        root.setBackgroundColor(tokens.bg);
-
-        // Header Title
-        TextView header = new TextView(activity);
-        header.setText(I18n.get(I18n.KEY_BACKUP_CREATE_TITLE, langCode));
-        header.setTextColor(tokens.accent);
-        header.setTextSize(15);
-        header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        header.setPadding(0, 0, 0, (int) (8 * density));
-        root.addView(header);
+        LinearLayout scrollContent = dlg.getContentContainer();
 
         // Summary Info
         TextView info = new TextView(activity);
         int keyCount = prefs.getAll().size();
         info.setText(I18n.format(I18n.KEY_BACKUP_CREATE_SUMMARY_FMT, langCode, keyCount));
         info.setTextColor(tokens.textMuted);
-        info.setTextSize(12);
+        info.setTextSize(12 * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
         info.setPadding(0, 0, 0, (int) (14 * density));
-        root.addView(info);
+        scrollContent.addView(info);
 
         // File Name Label
         TextView nameLabel = new TextView(activity);
         nameLabel.setText(I18n.get(I18n.KEY_BACKUP_FILE_NAME_LABEL, langCode));
         nameLabel.setTextColor(tokens.textPrimary);
-        nameLabel.setTextSize(13);
+        nameLabel.setTextSize(13 * fontScale);
         nameLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         nameLabel.setPadding(0, 0, 0, (int) (4 * density));
-        root.addView(nameLabel);
+        scrollContent.addView(nameLabel);
 
         // File Name Input
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmm", Locale.US).format(new Date());
@@ -156,7 +154,7 @@ public final class BackupRestoreManager {
         nameInput.setText("tontos_backup_" + timeStamp + ".tontbak");
         nameInput.setInputType(InputType.TYPE_CLASS_TEXT);
         nameInput.setTextColor(tokens.textPrimary);
-        nameInput.setTextSize(13);
+        nameInput.setTextSize(13 * fontScale);
         nameInput.setTypeface(Typeface.MONOSPACE);
         nameInput.setSingleLine(true);
         nameInput.setPadding((int) (12 * density), (int) (10 * density), (int) (12 * density), (int) (10 * density));
@@ -166,16 +164,16 @@ public final class BackupRestoreManager {
         inputBg.setStroke((int) (1 * density + 0.5f), tokens.border);
         inputBg.setCornerRadius((int) (4 * density));
         nameInput.setBackground(inputBg);
-        root.addView(nameInput);
+        scrollContent.addView(nameInput);
 
         // Destination Label
         TextView destLabel = new TextView(activity);
         destLabel.setText(I18n.get(I18n.KEY_BACKUP_DEST_LABEL, langCode));
         destLabel.setTextColor(tokens.textPrimary);
-        destLabel.setTextSize(13);
+        destLabel.setTextSize(13 * fontScale);
         destLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         destLabel.setPadding(0, (int) (14 * density), 0, (int) (6 * density));
-        root.addView(destLabel);
+        scrollContent.addView(destLabel);
 
         // 3 Destination Options (Download, App Internal, SAF System Picker)
         final int[] selectedDest = new int[]{0}; // 0 = Downloads, 1 = App Internal, 2 = SAF Picker
@@ -198,7 +196,7 @@ public final class BackupRestoreManager {
             final TextView row = new TextView(activity);
             row.setText(destTitles[i]);
             row.setTextColor(index == 0 ? tokens.accent : tokens.textMuted);
-            row.setTextSize(12);
+            row.setTextSize(12 * fontScale);
             row.setTypeface(Typeface.MONOSPACE, index == 0 ? Typeface.BOLD : Typeface.NORMAL);
             row.setPadding((int) (10 * density), (int) (8 * density), (int) (10 * density), (int) (8 * density));
             row.setClickable(true);
@@ -225,100 +223,93 @@ public final class BackupRestoreManager {
             optionViews.add(row);
             optionsContainer.addView(row);
         }
-        root.addView(optionsContainer);
+        scrollContent.addView(optionsContainer);
 
-        builder.setView(root);
-        final AlertDialog dialog = builder.create();
-
-        // Dialog Action Buttons Dock
-        LinearLayout dock = new LinearLayout(activity);
-        dock.setOrientation(LinearLayout.HORIZONTAL);
-        dock.setGravity(Gravity.END);
-        dock.setPadding(0, (int) (16 * density), 0, 0);
-
-        TextView cancelBtn = createDialogButton(activity, I18n.get(I18n.KEY_CANCEL, langCode), false, tokens);
-        cancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
+        // Cancel Button
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            themeTokens.textMuted,
+            themeTokens.border,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
             }
-        });
-        dock.addView(cancelBtn);
+        );
 
-        View spacer = new View(activity);
-        spacer.setLayoutParams(new LinearLayout.LayoutParams((int) (12 * density), 1));
-        dock.addView(spacer);
-
-        TextView saveBtn = createDialogButton(activity, I18n.get(I18n.KEY_BACKUP_SAVE_BTN, langCode), true, tokens);
-        saveBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String fileName = nameInput.getText().toString().trim();
-                if (fileName.isEmpty()) {
-                    Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_ERR_EMPTY_NAME, langCode), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                // Enforce a safe single filename component to prevent path traversal/injection.
-                if (fileName.contains("..")
-                        || fileName.contains("/")
-                        || fileName.contains("\\")
-                        || fileName.startsWith(".")
-                        || !fileName.matches("[A-Za-z0-9 _.-]+")) {
-                    Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_ERR_INVALID_NAME, langCode), Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (!fileName.endsWith(".tontbak") && !fileName.endsWith(".json")) {
-                    fileName += ".tontbak";
-                }
-
-                try {
-                    String envelopeJson = generateBackupEnvelope(prefs);
-
-                    if (selectedDest[0] == 2) {
-                        // SAF Picker
-                        sPendingBackupPayload = envelopeJson;
-                        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-                        intent.addCategory(Intent.CATEGORY_OPENABLE);
-                        intent.setType("application/octet-stream");
-                        intent.putExtra(Intent.EXTRA_TITLE, fileName);
-                        activity.startActivityForResult(intent, REQUEST_CODE_SAF_CREATE);
-                        dialog.dismiss();
+        // Save Button
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_BACKUP_SAVE_BTN, langCode),
+            themeTokens.accent,
+            themeTokens.accent,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String fileName = nameInput.getText().toString().trim();
+                    if (fileName.isEmpty()) {
+                        Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_ERR_EMPTY_NAME, langCode), Toast.LENGTH_SHORT).show();
                         return;
                     }
-
-                    File targetDir;
-                    if (selectedDest[0] == 0) {
-                        File dl = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                        targetDir = new File(dl, "TontOS_Backups");
-                    } else {
-                        File base = activity.getExternalFilesDir(null);
-                        if (base == null) base = activity.getFilesDir();
-                        targetDir = new File(base, "backup");
+                    // Enforce a safe single filename component to prevent path traversal/injection.
+                    if (fileName.contains("..")
+                            || fileName.contains("/")
+                            || fileName.contains("\\")
+                            || fileName.startsWith(".")
+                            || !fileName.matches("[A-Za-z0-9 _.-]+")) {
+                        Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_ERR_INVALID_NAME, langCode), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (!fileName.endsWith(".tontbak") && !fileName.endsWith(".json")) {
+                        fileName += ".tontbak";
                     }
 
-                    if (!targetDir.exists()) targetDir.mkdirs();
-                    File targetFile = new File(targetDir, fileName);
+                    try {
+                        String envelopeJson = generateBackupEnvelope(prefs);
 
-                    FileWriter writer = new FileWriter(targetFile);
-                    writer.write(envelopeJson);
-                    writer.flush();
-                    writer.close();
+                        if (selectedDest[0] == 2) {
+                            // SAF Picker
+                            sPendingBackupPayload = envelopeJson;
+                            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                            intent.addCategory(Intent.CATEGORY_OPENABLE);
+                            intent.setType("application/octet-stream");
+                            intent.putExtra(Intent.EXTRA_TITLE, fileName);
+                            activity.startActivityForResult(intent, REQUEST_CODE_SAF_CREATE);
+                            dlg.dismiss();
+                            return;
+                        }
 
-                    dialog.dismiss();
-                    showBackupSuccessDialog(activity, tokens, langCode, targetFile);
+                        File targetDir;
+                        if (selectedDest[0] == 0) {
+                            File dl = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                            targetDir = new File(dl, "TontOS_Backups");
+                        } else {
+                            File base = activity.getExternalFilesDir(null);
+                            if (base == null) base = activity.getFilesDir();
+                            targetDir = new File(base, "backup");
+                        }
 
-                } catch (Exception e) {
-                    Toast.makeText(activity, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        if (!targetDir.exists()) targetDir.mkdirs();
+                        File targetFile = new File(targetDir, fileName);
+
+                        FileWriter writer = new FileWriter(targetFile);
+                        writer.write(envelopeJson);
+                        writer.flush();
+                        writer.close();
+
+                        dlg.dismiss();
+                        showBackupSuccessDialog(activity, tokens, langCode, targetFile);
+
+                    } catch (Exception e) {
+                        Toast.makeText(activity, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
                 }
             }
-        });
-        dock.addView(saveBtn);
-        root.addView(dock);
+        );
 
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
+        dlg.show();
     }
 
     public static void handleSafCreateResult(
@@ -349,52 +340,22 @@ public final class BackupRestoreManager {
         final String langCode,
         final File targetFile
     ) {
-        final float density = activity.getResources().getDisplayMetrics().density;
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            activity,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding((int) (20 * density), (int) (18 * density), (int) (20 * density), (int) (18 * density));
-        root.setBackgroundColor(tokens.bg);
-
-        TextView header = new TextView(activity);
-        header.setText(I18n.get(I18n.KEY_BACKUP_SUCCESS_TITLE, langCode));
-        header.setTextColor(tokens.accent);
-        header.setTextSize(14);
-        header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        header.setPadding(0, 0, 0, (int) (8 * density));
-        root.addView(header);
-
-        TextView details = new TextView(activity);
         long bytes = targetFile.length();
-        details.setText(
+        String details =
             I18n.get(I18n.KEY_BACKUP_DETAILS_FILE, langCode) + targetFile.getName() + "\n" +
             I18n.get(I18n.KEY_BACKUP_DETAILS_PATH, langCode) + targetFile.getParent() + "\n" +
             I18n.get(I18n.KEY_BACKUP_DETAILS_SIZE, langCode) + bytes + " bytes\n" +
-            I18n.get(I18n.KEY_BACKUP_DETAILS_STATUS, langCode) + I18n.get(I18n.KEY_BACKUP_STATUS_VERIFIED, langCode)
+            I18n.get(I18n.KEY_BACKUP_DETAILS_STATUS, langCode) + I18n.get(I18n.KEY_BACKUP_STATUS_VERIFIED, langCode);
+
+        BooleanSelectorDialog.show(
+            activity,
+            tokens,
+            I18n.get(I18n.KEY_BACKUP_SUCCESS_TITLE, langCode),
+            details,
+            I18n.get(I18n.KEY_DONE, langCode),
+            null,
+            null
         );
-        details.setTextColor(tokens.textPrimary);
-        details.setTextSize(12);
-        details.setTypeface(Typeface.MONOSPACE);
-        details.setPadding(0, (int) (6 * density), 0, (int) (14 * density));
-        root.addView(details);
-
-        TextView okBtn = createDialogButton(activity, "OK", true, tokens);
-        builder.setView(root);
-        final AlertDialog dialog = builder.create();
-        okBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { dialog.dismiss(); }
-        });
-        root.addView(okBtn);
-
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
     }
 
     /**
@@ -407,114 +368,91 @@ public final class BackupRestoreManager {
         final SharedPreferences prefs,
         final Runnable onRestored
     ) {
-        final float density = activity.getResources().getDisplayMetrics().density;
+        if (activity == null || activity.isFinishing()) return;
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            activity,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding((int) (20 * density), (int) (18 * density), (int) (20 * density), (int) (18 * density));
-        root.setBackgroundColor(tokens.bg);
-
-        TextView header = new TextView(activity);
-        header.setText(I18n.get(I18n.KEY_RESTORE_TITLE, langCode));
-        header.setTextColor(tokens.accent);
-        header.setTextSize(14);
-        header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        header.setPadding(0, 0, 0, (int) (8 * density));
-        root.addView(header);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_RESTORE_TITLE, langCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
 
         // Find existing backups
         List<File> backupFiles = findAvailableBackups(activity);
-
-        ScrollView scroll = new ScrollView(activity);
-        scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (180 * density)));
-
-        LinearLayout listContainer = new LinearLayout(activity);
-        listContainer.setOrientation(LinearLayout.VERTICAL);
-
-        builder.setView(root);
-        final AlertDialog dialog = builder.create();
+        LinearLayout listContainer = dlg.getContentContainer();
 
         if (backupFiles.isEmpty()) {
             TextView none = new TextView(activity);
             none.setText(I18n.get(I18n.KEY_RESTORE_NO_BACKUPS, langCode));
-            none.setTextColor(tokens.textMuted);
-            none.setTextSize(12);
+            none.setTextColor(themeTokens.textMuted);
+            none.setTextSize(13 * fontScale);
             none.setTypeface(Typeface.MONOSPACE);
-            none.setPadding(0, (int) (10 * density), 0, (int) (10 * density));
+            none.setPadding(0, (int) (16 * density), 0, (int) (16 * density));
             listContainer.addView(none);
         } else {
             for (final File f : backupFiles) {
                 TextView item = new TextView(activity);
                 item.setText("> " + f.getName() + " (" + (f.length() / 1024 + 1) + " KB)");
-                item.setTextColor(tokens.textPrimary);
-                item.setTextSize(12);
+                item.setTextColor(themeTokens.textPrimary);
+                item.setTextSize(13 * fontScale);
                 item.setTypeface(Typeface.MONOSPACE);
-                item.setPadding((int) (8 * density), (int) (8 * density), (int) (8 * density), (int) (8 * density));
+                item.setMinHeight((int) (48 * density));
+                item.setGravity(Gravity.CENTER_VERTICAL);
+                item.setPadding((int) (12 * density), (int) (10 * density), (int) (12 * density), (int) (10 * density));
                 item.setClickable(true);
                 item.setFocusable(true);
 
                 GradientDrawable itemBg = new GradientDrawable();
-                itemBg.setColor(tokens.controlBgNormal);
-                itemBg.setStroke((int) (1 * density), tokens.border);
+                itemBg.setColor(themeTokens.controlBgNormal);
+                itemBg.setStroke((int) (1 * density + 0.5f), themeTokens.border);
                 itemBg.setCornerRadius((int) (4 * density));
                 item.setBackground(itemBg);
 
                 LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                lp.setMargins(0, 0, 0, (int) (6 * density));
+                lp.setMargins(0, 0, 0, (int) (8 * density));
                 item.setLayoutParams(lp);
 
                 item.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        dialog.dismiss();
-                        confirmRestoreFile(activity, tokens, langCode, f, prefs, onRestored);
+                        dlg.dismiss();
+                        confirmRestoreFile(activity, themeTokens, langCode, f, prefs, onRestored);
                     }
                 });
                 listContainer.addView(item);
             }
         }
-        scroll.addView(listContainer);
-        root.addView(scroll);
 
         // Action dock: SAF picker button + Cancel
-        LinearLayout dock = new LinearLayout(activity);
-        dock.setOrientation(LinearLayout.HORIZONTAL);
-        dock.setGravity(Gravity.END);
-        dock.setPadding(0, (int) (12 * density), 0, 0);
-
-        TextView safBtn = createDialogButton(activity, I18n.get(I18n.KEY_RESTORE_SAF_BTN, langCode), false, tokens);
-        safBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.setType("*/*");
-                activity.startActivityForResult(intent, REQUEST_CODE_SAF_RESTORE);
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_RESTORE_SAF_BTN, langCode),
+            themeTokens.textPrimary,
+            themeTokens.border,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("*/*");
+                    activity.startActivityForResult(intent, REQUEST_CODE_SAF_RESTORE);
+                }
             }
-        });
-        dock.addView(safBtn);
+        );
 
-        View sp = new View(activity);
-        sp.setLayoutParams(new LinearLayout.LayoutParams((int) (8 * density), 1));
-        dock.addView(sp);
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_RESTORE_CLOSE_BTN, langCode),
+            themeTokens.textMuted,
+            themeTokens.border,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
+            }
+        );
 
-        TextView cancelBtn = createDialogButton(activity, I18n.get(I18n.KEY_RESTORE_CLOSE_BTN, langCode), false, tokens);
-        cancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { dialog.dismiss(); }
-        });
-        dock.addView(cancelBtn);
-        root.addView(dock);
-
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
+        dlg.show();
     }
 
     private static List<File> findAvailableBackups(Context context) {
@@ -606,8 +544,6 @@ public final class BackupRestoreManager {
         final SharedPreferences prefs,
         final Runnable onRestored
     ) throws Exception {
-        final float density = activity.getResources().getDisplayMetrics().density;
-
         JSONObject envelope = new JSONObject(rawJson);
         if (!envelope.has("payload") || !envelope.has("sha256")) {
             Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_ERR_INVALID, langCode), Toast.LENGTH_LONG).show();
@@ -625,70 +561,29 @@ public final class BackupRestoreManager {
 
         final JSONObject payloadObj = new JSONObject(payload);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            activity,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding((int) (20 * density), (int) (18 * density), (int) (20 * density), (int) (18 * density));
-        root.setBackgroundColor(tokens.bg);
-
-        TextView title = new TextView(activity);
-        title.setText(I18n.get(I18n.KEY_RESTORE_CONFIRM_TITLE, langCode));
-        title.setTextColor(tokens.accent);
-        title.setTextSize(14);
-        title.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        title.setPadding(0, 0, 0, (int) (8 * density));
-        root.addView(title);
-
-        TextView msg = new TextView(activity);
         String dateStr = envelope.optString("date_iso", "Unknown");
         String devStr = envelope.optString("device_model", "TontOS Device");
         int count = payloadObj.length();
+        String confirmMsg = I18n.format(I18n.KEY_RESTORE_CONFIRM_MSG_FMT, langCode, count, dateStr, devStr);
 
-        msg.setText(I18n.format(I18n.KEY_RESTORE_CONFIRM_MSG_FMT, langCode, count, dateStr, devStr));
-        msg.setTextColor(tokens.textPrimary);
-        msg.setTextSize(12);
-        msg.setTypeface(Typeface.MONOSPACE);
-        msg.setPadding(0, (int) (6 * density), 0, (int) (14 * density));
-        root.addView(msg);
-
-        LinearLayout dock = new LinearLayout(activity);
-        dock.setOrientation(LinearLayout.HORIZONTAL);
-        dock.setGravity(Gravity.END);
-
-        builder.setView(root);
-        final AlertDialog confirmDialog = builder.create();
-
-        TextView cancelBtn = createDialogButton(activity, I18n.get(I18n.KEY_CANCEL, langCode), false, tokens);
-        cancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { confirmDialog.dismiss(); }
-        });
-        dock.addView(cancelBtn);
-
-        View sp = new View(activity);
-        sp.setLayoutParams(new LinearLayout.LayoutParams((int) (8 * density), 1));
-        dock.addView(sp);
-
-        TextView applyBtn = createDialogButton(activity, I18n.get(I18n.KEY_RESTORE_NOW_BTN, langCode), true, tokens);
-        applyBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                confirmDialog.dismiss();
-                applyRestoredPreferences(prefs, payloadObj);
-                Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_SUCCESS, langCode), Toast.LENGTH_SHORT).show();
-                if (onRestored != null) onRestored.run();
+        BooleanSelectorDialog.show(
+            activity,
+            tokens,
+            I18n.get(I18n.KEY_RESTORE_CONFIRM_TITLE, langCode),
+            confirmMsg,
+            I18n.get(I18n.KEY_RESTORE_NOW_BTN, langCode),
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            new BooleanSelectorDialog.OnBooleanSelectedListener() {
+                @Override
+                public void onSelected(boolean confirmed) {
+                    if (confirmed) {
+                        applyRestoredPreferences(prefs, payloadObj);
+                        Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_SUCCESS, langCode), Toast.LENGTH_SHORT).show();
+                        if (onRestored != null) onRestored.run();
+                    }
+                }
             }
-        });
-        dock.addView(applyBtn);
-        root.addView(dock);
-
-        confirmDialog.show();
-        if (confirmDialog.getWindow() != null) {
-            confirmDialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
+        );
     }
 
     private static void applyRestoredPreferences(SharedPreferences prefs, JSONObject payload) {
@@ -696,9 +591,15 @@ public final class BackupRestoreManager {
         java.util.Iterator<String> keys = payload.keys();
         while (keys.hasNext()) {
             String key = keys.next();
+            // Validate key against strict allowlist (blocks credentials, hashes, or arbitrary injection)
+            if (!isAllowedPreferenceKey(key)) continue;
             Object val = payload.opt(key);
             if (val instanceof Boolean) {
                 editor.putBoolean(key, (Boolean) val);
+            } else if (MainActivity.KEY_SCREEN_TIME_SECS.equals(key) || "screen_time_today_secs".equals(key)) {
+                if (val instanceof Number) {
+                    editor.putLong(key, ((Number) val).longValue());
+                }
             } else if (val instanceof Integer) {
                 editor.putInt(key, (Integer) val);
             } else if (val instanceof Long) {
@@ -706,7 +607,13 @@ public final class BackupRestoreManager {
             } else if (val instanceof Double) {
                 editor.putFloat(key, ((Double) val).floatValue());
             } else if (val instanceof String) {
-                editor.putString(key, (String) val);
+                String str = (String) val;
+                if (isStringSetKey(key) || (str.startsWith("[") && str.endsWith("]"))) {
+                    Set<String> set = parseSafeStringSet(str);
+                    editor.putStringSet(key, set);
+                } else {
+                    editor.putString(key, str);
+                }
             } else if (val instanceof org.json.JSONArray) {
                 org.json.JSONArray arr = (org.json.JSONArray) val;
                 Set<String> set = new HashSet<>();
@@ -719,39 +626,55 @@ public final class BackupRestoreManager {
         editor.apply();
     }
 
-    private static TextView createDialogButton(
-        Context context,
-        String text,
-        boolean isPrimary,
-        ThemeTokens tokens
-    ) {
-        float density = context.getResources().getDisplayMetrics().density;
-        TextView btn = new TextView(context);
-        btn.setText(text);
-        btn.setTextColor(isPrimary ? tokens.activeSelectionText : tokens.navAccent);
-        btn.setTextSize(12);
-        btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        btn.setGravity(Gravity.CENTER);
-        btn.setPadding((int) (14 * density), (int) (8 * density), (int) (14 * density), (int) (8 * density));
-        btn.setClickable(true);
-        btn.setFocusable(true);
+    private static boolean isAllowedPreferenceKey(String key) {
+        if (key == null) return false;
+        if (key.startsWith("pref_lock_") || key.equals("lock_salt") || key.contains("hash")) return false;
+        return key.equals("selected_theme")
+                || key.equals("system_language")
+                || key.equals("system_region")
+                || key.equals("pref_font_scale")
+                || key.equals("pref_clock_24h")
+                || key.equals("pref_friction_seconds")
+                || key.equals("pref_home_app_limit")
+                || key.equals("pref_daily_budget_mins")
+                || key.equals("pref_grayscale_enabled")
+                || key.equals("bg_policy")
+                || key.equals("bg_allowed_apps")
+                || key.equals("pinned_apps")
+                || key.equals("pinned_apps_order")
+                || key.equals("shade_tiles")
+                || key.equals("pref_blocked_network_apps")
+                || key.equals("pref_privacy_restricted_bg_apps")
+                || key.equals("pref_notification_delivery_mode")
+                || key.equals("pref_ultra_battery_saver")
+                || key.equals("setup_completed")
+                || key.equals("screen_time_today_secs")
+                || key.startsWith("pref_privacy_")
+                || key.startsWith("pref_glyph_")
+                || key.startsWith("pre_ultra_")
+                || key.startsWith("pref_eq_");
+    }
 
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-        pressed.setStroke((int) (1 * density + 0.5f), tokens.border);
+    private static boolean isStringSetKey(String key) {
+        return "bg_allowed_apps".equals(key)
+                || "pinned_apps".equals(key)
+                || "shade_tiles".equals(key)
+                || "pref_blocked_network_apps".equals(key)
+                || "pref_privacy_restricted_bg_apps".equals(key)
+                || (key != null && key.startsWith("pref_privacy_blocked_perms_"));
+    }
 
-        GradientDrawable normal = new GradientDrawable();
-        normal.setColor(isPrimary ? tokens.activeSelectionBg : tokens.controlBgNormal);
-        normal.setCornerRadius((int) (4 * density));
-        normal.setStroke((int) (1 * density + 0.5f), isPrimary ? tokens.accent : tokens.border);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-
-        btn.setBackground(sld);
-        return btn;
+    private static Set<String> parseSafeStringSet(String raw) {
+        Set<String> set = new HashSet<>();
+        if (raw == null || raw.trim().isEmpty()) return set;
+        String trimmed = raw.trim();
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1);
+        }
+        for (String p : trimmed.split(",")) {
+            String item = p.trim();
+            if (!item.isEmpty()) set.add(item);
+        }
+        return set;
     }
 }

@@ -165,7 +165,7 @@ fi
 cat > "$ROOTFS_DIR/etc/os-release" <<'EOF'
 NAME="TontOS"
 ID="tontos"
-VERSION="0.0.1-alpha"
+VERSION="0.0.4-alpha"
 PRETTY_NAME="TontOS Digital Detox Mobile Linux"
 HOME_URL="https://github.com/tontos/tontos"
 EOF

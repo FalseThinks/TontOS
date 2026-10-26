@@ -37,92 +37,88 @@ public final class LockScreenManager {
 
     private LockScreenManager() {}
 
+    private static SharedPreferences getPrefs(Context context) {
+        if (context == null) return null;
+        return MainActivity.getSafeSharedPreferences(context, PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
     public static boolean isLockScreenEnabled(Context context) {
-        if (context == null) return false;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getBoolean(KEY_LOCKSCREEN_ENABLED, true);
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null && prefs.getBoolean(KEY_LOCKSCREEN_ENABLED, true);
     }
 
     public static void setLockScreenEnabled(Context context, boolean enabled) {
-        if (context == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_LOCKSCREEN_ENABLED, enabled).apply();
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putBoolean(KEY_LOCKSCREEN_ENABLED, enabled).apply();
     }
 
     public static LockClockStyle getClockStyle(Context context) {
-        if (context == null) return LockClockStyle.THEME_DEFAULT;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return LockClockStyle.THEME_DEFAULT;
         String id = prefs.getString(KEY_LOCK_CLOCK_STYLE, LockClockStyle.THEME_DEFAULT.getId());
         return LockClockStyle.fromId(id);
     }
 
     public static void setClockStyle(Context context, LockClockStyle style) {
-        if (context == null || style == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_LOCK_CLOCK_STYLE, style.getId()).apply();
+        if (style == null) return;
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putString(KEY_LOCK_CLOCK_STYLE, style.getId()).apply();
     }
 
     public static String getThemeOverride(Context context) {
-        if (context == null) return THEME_MATCH_ACTIVE;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_LOCK_THEME_OVERRIDE, THEME_MATCH_ACTIVE);
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null ? prefs.getString(KEY_LOCK_THEME_OVERRIDE, THEME_MATCH_ACTIVE) : THEME_MATCH_ACTIVE;
     }
 
     public static void setThemeOverride(Context context, String override) {
-        if (context == null || override == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_LOCK_THEME_OVERRIDE, override).apply();
+        if (override == null) return;
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putString(KEY_LOCK_THEME_OVERRIDE, override).apply();
     }
 
     public static boolean isShowDetox(Context context) {
-        if (context == null) return true;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getBoolean(KEY_LOCK_SHOW_DETOX, true);
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null && prefs.getBoolean(KEY_LOCK_SHOW_DETOX, true);
     }
 
     public static void setShowDetox(Context context, boolean show) {
-        if (context == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_LOCK_SHOW_DETOX, show).apply();
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putBoolean(KEY_LOCK_SHOW_DETOX, show).apply();
     }
 
     public static boolean isShowBattery(Context context) {
-        if (context == null) return true;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getBoolean(KEY_LOCK_SHOW_BATTERY, true);
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null && prefs.getBoolean(KEY_LOCK_SHOW_BATTERY, true);
     }
 
     public static void setShowBattery(Context context, boolean show) {
-        if (context == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putBoolean(KEY_LOCK_SHOW_BATTERY, show).apply();
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putBoolean(KEY_LOCK_SHOW_BATTERY, show).apply();
     }
 
     public static String getOwnerInfo(Context context) {
-        if (context == null) return DEFAULT_OWNER_INFO;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        return prefs.getString(KEY_LOCK_OWNER_INFO, DEFAULT_OWNER_INFO);
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null ? prefs.getString(KEY_LOCK_OWNER_INFO, DEFAULT_OWNER_INFO) : DEFAULT_OWNER_INFO;
     }
 
     public static void setOwnerInfo(Context context, String info) {
-        if (context == null) return;
         String sanitized = info != null ? info.trim() : "";
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_LOCK_OWNER_INFO, sanitized).apply();
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putString(KEY_LOCK_OWNER_INFO, sanitized).apply();
         GlobalSettingsBridge.applyGlobalLockScreenOwnerInfo(context, sanitized);
     }
 
     public static LockNotificationMode getNotificationMode(Context context) {
-        if (context == null) return LockNotificationMode.DONT_SHOW;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return LockNotificationMode.DONT_SHOW;
         String id = prefs.getString(KEY_LOCK_NOTIF_MODE, LockNotificationMode.DONT_SHOW.getId());
         return LockNotificationMode.fromId(id);
     }
 
     public static void setNotificationMode(Context context, LockNotificationMode mode) {
-        if (context == null || mode == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_LOCK_NOTIF_MODE, mode.getId()).apply();
+        if (mode == null) return;
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putString(KEY_LOCK_NOTIF_MODE, mode.getId()).apply();
         GlobalSettingsBridge.applyGlobalLockScreenNotifications(context, mode);
     }
 
@@ -131,29 +127,29 @@ public final class LockScreenManager {
     }
 
     public static LockShortcut getLeftShortcut(Context context) {
-        if (context == null) return LockShortcut.TORCH;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return LockShortcut.TORCH;
         String id = prefs.getString(KEY_LOCK_SHORTCUT_LEFT, LockShortcut.TORCH.getId());
         return LockShortcut.fromId(id);
     }
 
     public static void setLeftShortcut(Context context, LockShortcut shortcut) {
-        if (context == null || shortcut == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_LOCK_SHORTCUT_LEFT, shortcut.getId()).apply();
+        if (shortcut == null) return;
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putString(KEY_LOCK_SHORTCUT_LEFT, shortcut.getId()).apply();
     }
 
     public static LockShortcut getRightShortcut(Context context) {
-        if (context == null) return LockShortcut.CAMERA;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs == null) return LockShortcut.CAMERA;
         String id = prefs.getString(KEY_LOCK_SHORTCUT_RIGHT, LockShortcut.CAMERA.getId());
         return LockShortcut.fromId(id);
     }
 
     public static void setRightShortcut(Context context, LockShortcut shortcut) {
-        if (context == null || shortcut == null) return;
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putString(KEY_LOCK_SHORTCUT_RIGHT, shortcut.getId()).apply();
+        if (shortcut == null) return;
+        SharedPreferences prefs = getPrefs(context);
+        if (prefs != null) prefs.edit().putString(KEY_LOCK_SHORTCUT_RIGHT, shortcut.getId()).apply();
     }
 
     /**
@@ -165,17 +161,17 @@ public final class LockScreenManager {
         if (!THEME_MATCH_ACTIVE.equalsIgnoreCase(override)) {
             return ThemeTokens.get(override);
         }
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String activeTheme = prefs.getString("selected_theme", "AMOLED");
+        SharedPreferences prefs = getPrefs(context);
+        String activeTheme = prefs != null ? prefs.getString("selected_theme", "AMOLED") : "AMOLED";
         return ThemeTokens.get(activeTheme);
     }
 
     /**
      * Executes designated lock screen shortcut safely.
+     * Prevents data exfiltration by enforcing unlock authentication for sensitive user applications.
      */
     public static void executeShortcut(Activity activity, LockShortcut shortcut) {
         if (activity == null || shortcut == null || shortcut == LockShortcut.NONE) return;
-        PackageManager pm = activity.getPackageManager();
 
         switch (shortcut) {
             case TORCH:
@@ -184,22 +180,35 @@ public final class LockScreenManager {
             case CAMERA:
                 launchApp(activity, "org.fossify.camera", new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA));
                 break;
-            case PHONE:
-                launchApp(activity, "org.fossify.phone", new Intent(Intent.ACTION_DIAL));
-                break;
-            case BROWSER:
-                launchApp(activity, "de.baumann.browser", null);
-                break;
-            case MESSAGES:
-                launchApp(activity, "org.fossify.messages", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING));
-                break;
-            case EMAIL:
-                launchApp(activity, "eu.faircode.email", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_EMAIL));
-                break;
-            case CALCULATOR:
-                launchApp(activity, "com.android.calculator2", null);
-                break;
             default:
+                // Sensitive user apps (Phone, Browser, Messages, Email, Calculator) require authentication if locked
+                if (isDeviceLocked(activity) && isLockScreenEnabled(activity) && LockSecurityManager.getSecurityType(activity) != LockSecurityManager.SecurityType.NONE) {
+                    if (activity instanceof LockScreenActivity) {
+                        ((LockScreenActivity) activity).handleUnlockAction();
+                    } else {
+                        launchLockScreen(activity);
+                    }
+                    return;
+                }
+                switch (shortcut) {
+                    case PHONE:
+                        launchApp(activity, "org.fossify.phone", new Intent(Intent.ACTION_DIAL));
+                        break;
+                    case BROWSER:
+                        launchApp(activity, "de.baumann.browser", null);
+                        break;
+                    case MESSAGES:
+                        launchApp(activity, "org.fossify.messages", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MESSAGING));
+                        break;
+                    case EMAIL:
+                        launchApp(activity, "eu.faircode.email", new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_EMAIL));
+                        break;
+                    case CALCULATOR:
+                        launchApp(activity, "com.android.calculator2", null);
+                        break;
+                    default:
+                        break;
+                }
                 break;
         }
     }
@@ -217,10 +226,25 @@ public final class LockScreenManager {
         }
     }
 
-    private static volatile boolean isDeviceLocked = false;
+    private static volatile Boolean isDeviceLocked = null;
 
     public static boolean isDeviceLocked() {
+        return isDeviceLocked != null && isDeviceLocked;
+    }
+
+    public static boolean isDeviceLocked(Context context) {
+        if (isDeviceLocked == null) {
+            if (context != null && LockSecurityManager.getSecurityType(context) != LockSecurityManager.SecurityType.NONE) {
+                isDeviceLocked = true;
+                return true;
+            }
+            return false;
+        }
         return isDeviceLocked;
+    }
+
+    public static void setDeviceLocked(boolean locked) {
+        isDeviceLocked = locked;
     }
 
     public static void setDeviceUnlocked() {
@@ -245,7 +269,7 @@ public final class LockScreenManager {
                         launchLockScreen(appContext);
                     }
                 } else if (Intent.ACTION_SCREEN_ON.equals(action)) {
-                    if (isDeviceLocked && isLockScreenEnabled(appContext)) {
+                    if (isDeviceLocked(appContext) && isLockScreenEnabled(appContext)) {
                         launchLockScreen(appContext);
                     }
                 }
@@ -260,7 +284,8 @@ public final class LockScreenManager {
         receiverRegistered = true;
     }
 
-    private static void launchLockScreen(Context context) {
+    public static void launchLockScreen(Context context) {
+        isDeviceLocked = true;
         try {
             Intent lockIntent = new Intent(context, LockScreenActivity.class);
             lockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK

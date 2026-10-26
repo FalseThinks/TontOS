@@ -1,16 +1,22 @@
 package org.tontos.launcher;
 
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.view.Window;
+import android.view.WindowInsetsController;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -19,108 +25,184 @@ import java.util.Map;
 public final class SettingsDescriptions {
 
     private static final Map<String, String> DESCRIPTIONS = new HashMap<>();
+    private static final Map<String, String> DESCRIPTIONS_ES = new HashMap<>();
 
     static {
         // Section 1: Display & Theme
-        DESCRIPTIONS.put(I18n.KEY_THEME_PRESET, "Selects visual contrast palette: AMOLED Pure Black, Amber CRT Phosphor, E-Ink Monochrome Paper, or Slate Midnight.");
-        DESCRIPTIONS.put(I18n.KEY_GRAYSCALE_MODE, "Forces system-wide monochromacy via hardware display daltonizer to eliminate dopamine triggers.");
-        DESCRIPTIONS.put(I18n.KEY_BRIGHTNESS, "Adjusts screen backlight level manually to prevent battery drain from auto-brightness sensors.");
-        DESCRIPTIONS.put(I18n.KEY_TIMEOUT, "Controls inactivity timeout before device turns off screen to save energy and discourage mindless use.");
-        DESCRIPTIONS.put(I18n.KEY_DAILY_BUDGET, "Sets daily screen-time limit. When reached, home screen shows warning badge and usage alerts.");
-        DESCRIPTIONS.put(I18n.KEY_LANGUAGE, "Configures operating system and launcher localization across 12 supported languages.");
-        DESCRIPTIONS.put(I18n.KEY_REGION, "Sets regional date, number and carrier format settings.");
-        DESCRIPTIONS.put(I18n.KEY_FONT_SIZE, "Scales user interface and monospace font sizes proportionally.");
-        DESCRIPTIONS.put(I18n.KEY_BATTERY_PROTECTION, "Caps battery charge at 80% or enables bypass charging via kernel sysfs to extend battery lifespan.");
-        DESCRIPTIONS.put(I18n.KEY_GLYPH_INTERFACE, "Enables Nothing Phone rear LED glyph patterns for essential silent alerts.");
+        DESCRIPTIONS.put(I18n.KEY_THEME_PRESET, "Choose your color theme: AMOLED Pure Black, Amber Phosphor, E-Ink Paper, or Slate Midnight.");
+        DESCRIPTIONS.put(I18n.KEY_GRAYSCALE_MODE, "Turns the screen black and white to reduce eye strain and screen addiction.");
+        DESCRIPTIONS.put(I18n.KEY_BRIGHTNESS, "Adjusts screen brightness level.");
+        DESCRIPTIONS.put(I18n.KEY_TIMEOUT, "Time before the screen turns off automatically when not in use.");
+        DESCRIPTIONS.put(I18n.KEY_DAILY_BUDGET, "Set a daily screen-time limit with reminders when exceeded.");
+        DESCRIPTIONS.put(I18n.KEY_LANGUAGE, "Choose system and launcher language.");
+        DESCRIPTIONS.put(I18n.KEY_REGION, "Set regional format for dates and numbers.");
+        DESCRIPTIONS.put(I18n.KEY_FONT_SIZE, "Adjust text size across the launcher.");
+        DESCRIPTIONS.put(I18n.KEY_BATTERY_PROTECTION, "Limits charging to 80% to extend battery lifespan.");
+        DESCRIPTIONS.put(I18n.KEY_GLYPH_INTERFACE, "Enables Nothing Phone rear LED light patterns for silent notifications.");
 
         // Section 2: Sound & Volume
-        DESCRIPTIONS.put(I18n.KEY_MEDIA_VOL, "Controls multimedia, music, and browser playback volume level.");
-        DESCRIPTIONS.put(I18n.KEY_RING_VOL, "Adjusts incoming phone call audio ringer volume level.");
-        DESCRIPTIONS.put(I18n.KEY_ALARM_VOL, "Sets morning and scheduled alarm buzzer volume level.");
-        DESCRIPTIONS.put(I18n.KEY_RINGER_PROFILE, "Toggles between Normal, Vibrate, and Silent ringer modes.");
-        DESCRIPTIONS.put(I18n.KEY_NOTIFICATION_DELIVERY_TITLE, "Batches alerts: delivers immediately, as scheduled digests (12:00/18:00), or starred contacts only.");
-        DESCRIPTIONS.put(I18n.KEY_RINGTONE_TITLE, "Selects incoming phone call audio tone.");
-        DESCRIPTIONS.put(I18n.KEY_NOTIFICATION_SOUND_TITLE, "Selects sound tone played for incoming app notifications.");
-        DESCRIPTIONS.put(I18n.KEY_ALARM_SOUND_TITLE, "Selects sound played for clock alarms.");
-        DESCRIPTIONS.put(I18n.KEY_EQUALIZER, "Master switch and 5-band frequency hardware audio filtering (60Hz to 14kHz).");
-        DESCRIPTIONS.put("pref_eq_enabled", "Enables or disables system hardware equalizer audio processing.");
-        DESCRIPTIONS.put(I18n.KEY_EQ_PRESET, "Selects pre-tuned audio profile: Flat, Bass Boost, Vocal, Treble Boost, or Rock.");
+        DESCRIPTIONS.put(I18n.KEY_MEDIA_VOL, "Media and music playback volume.");
+        DESCRIPTIONS.put(I18n.KEY_RING_VOL, "Incoming call ringtone volume.");
+        DESCRIPTIONS.put(I18n.KEY_ALARM_VOL, "Clock alarm buzzer volume.");
+        DESCRIPTIONS.put(I18n.KEY_RINGER_PROFILE, "Switch between Normal, Vibrate, and Silent sound profiles.");
+        DESCRIPTIONS.put(I18n.KEY_NOTIFICATION_DELIVERY_TITLE, "Batch alerts: receive right away, as daily digests (12:00/18:00), or starred contacts only.");
+        DESCRIPTIONS.put(I18n.KEY_RINGTONE_TITLE, "Choose ringtone for incoming calls.");
+        DESCRIPTIONS.put(I18n.KEY_NOTIFICATION_SOUND_TITLE, "Choose sound for app notifications.");
+        DESCRIPTIONS.put(I18n.KEY_ALARM_SOUND_TITLE, "Choose sound for alarms.");
+        DESCRIPTIONS.put(I18n.KEY_EQUALIZER, "5-band audio equalizer for sound tuning.");
+        DESCRIPTIONS.put("pref_eq_enabled", "Turn the audio equalizer on or off.");
+        DESCRIPTIONS.put(I18n.KEY_EQ_PRESET, "Select sound preset: Flat, Bass Boost, Vocal, Treble Boost, or Rock.");
 
         // Section 3: Home & Drawer
-        DESCRIPTIONS.put(I18n.KEY_APP_LIMIT_TITLE, "Limits max number of pinned applications on home screen to eliminate visual clutter.");
-        DESCRIPTIONS.put(I18n.KEY_FRICTION_TITLE, "Introduces mindful countdown delay before launching apps to curb compulsive habits.");
-        DESCRIPTIONS.put(I18n.KEY_APP_PRIVACY_GUARD, "Inspects runtime and background permissions granted to installed applications.");
+        DESCRIPTIONS.put(I18n.KEY_APP_LIMIT_TITLE, "Maximum number of pinned apps on your home screen.");
+        DESCRIPTIONS.put(I18n.KEY_FRICTION_TITLE, "Adds a brief countdown pause before launching apps to prevent compulsive checking.");
+        DESCRIPTIONS.put(I18n.KEY_APP_PRIVACY_GUARD, "Review and manage permissions granted to installed apps.");
 
         // Section 4: Connectivity
-        DESCRIPTIONS.put(I18n.KEY_WIFI_RADIO, "Toggles Wi-Fi radio interface hardware state directly via system service.");
-        DESCRIPTIONS.put(I18n.KEY_BT_RADIO, "Toggles Bluetooth transceiver for audio and peripherals.");
-        DESCRIPTIONS.put(I18n.KEY_CELLULAR_DATA, "Enables or disables mobile internet packet data connection.");
-        DESCRIPTIONS.put(I18n.KEY_NFC_RADIO, "Controls Near Field Communication radio for contactless reading and tags.");
-        DESCRIPTIONS.put(I18n.KEY_SYNC_BATCHING, "Schedules background radio wakeups in intervals (15m, 30m, 60m) to save battery.");
-        DESCRIPTIONS.put(I18n.KEY_BG_POLICY, "Restricts apps from executing in background: Whitelist (only allowed apps), Strict (none), or Allow.");
-        DESCRIPTIONS.put(I18n.KEY_SHADE_TILES_TITLE, "Customizes which hardware toggle tiles appear in the pull-down Ultra Battery Saver shade.");
-        DESCRIPTIONS.put(I18n.KEY_APP_NETWORK_FIREWALL, "Controls per-app Internet access rules via AppOps and kernel packet filters.");
+        DESCRIPTIONS.put(I18n.KEY_WIFI_RADIO, "Turn Wi-Fi connection on or off.");
+        DESCRIPTIONS.put(I18n.KEY_BT_RADIO, "Turn Bluetooth on or off for headphones and accessories.");
+        DESCRIPTIONS.put(I18n.KEY_CELLULAR_DATA, "Turn mobile data connection on or off.");
+        DESCRIPTIONS.put(I18n.KEY_NFC_RADIO, "Turn NFC on or off for contactless tags.");
+        DESCRIPTIONS.put(I18n.KEY_SYNC_BATCHING, "Group background syncs into intervals (15m, 30m, 60m) to save battery.");
+        DESCRIPTIONS.put(I18n.KEY_BG_POLICY, "Control background app activity: Whitelist (allowed apps only), Strict (none), or Allow.");
+        DESCRIPTIONS.put(I18n.KEY_SHADE_TILES_TITLE, "Choose quick toggle buttons shown in the top pull-down panel.");
+        DESCRIPTIONS.put(I18n.KEY_APP_NETWORK_FIREWALL, "Block internet access for individual apps.");
 
         // Section 5: Device & Updates
-        DESCRIPTIONS.put(I18n.KEY_UPDATE_CHANNEL, "Selects Over-The-Air system upgrade track: Release (Stable), Beta, or Nightly.");
-        DESCRIPTIONS.put(I18n.KEY_CREATE_SNAPSHOT, "Creates an encrypted, tamper-evident JSON cryptographic snapshot of all launcher configurations.");
-        DESCRIPTIONS.put(I18n.KEY_RESTORE_SNAPSHOT, "Restores settings and app layouts from verified cryptographic snapshot archive.");
-        DESCRIPTIONS.put(I18n.KEY_RUN_WIZARD_ROW, "Reruns the initial out-of-box setup wizard to reconfigure language, theme, and detox budget.");
-        DESCRIPTIONS.put(I18n.KEY_DEV_SETTINGS, "Launches Android Developer Options for USB debugging and OEM unlock.");
-        DESCRIPTIONS.put(I18n.KEY_HARDWARE_TEST, "Opens hidden engineering diagnostics test screen (*#*#4636#*#*).");
+        DESCRIPTIONS.put(I18n.KEY_UPDATE_CHANNEL, "Choose system update channel: Stable, Beta, or Nightly.");
+        DESCRIPTIONS.put(I18n.KEY_CREATE_SNAPSHOT, "Create a backup of your settings and home screen layout.");
+        DESCRIPTIONS.put(I18n.KEY_RESTORE_SNAPSHOT, "Restore settings and home screen layout from a backup.");
+        DESCRIPTIONS.put(I18n.KEY_RUN_WIZARD_ROW, "Run the initial setup wizard again.");
+        DESCRIPTIONS.put(I18n.KEY_KEYBOARD, "Choose the active keyboard.");
+        DESCRIPTIONS.put(I18n.KEY_BOOTLOADER_LOCK_STATUS, "Shows bootloader lock status.");
+        DESCRIPTIONS.put(I18n.KEY_DEV_SETTINGS, "Open Android Developer Options.");
+        DESCRIPTIONS.put(I18n.KEY_HARDWARE_TEST, "Open phone testing menu (*#*#4636#*#*).");
+
+        // Spanish descriptions
+        DESCRIPTIONS_ES.put(I18n.KEY_THEME_PRESET, "Elige el tema de color: AMOLED Negro Puro, Ámbar Fósforo, Papel E-Ink o Azul Medianoche.");
+        DESCRIPTIONS_ES.put(I18n.KEY_GRAYSCALE_MODE, "Pone la pantalla en blanco y negro para reducir distracciones y fatiga visual.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BRIGHTNESS, "Ajusta el nivel de brillo de la pantalla.");
+        DESCRIPTIONS_ES.put(I18n.KEY_TIMEOUT, "Tiempo antes de que la pantalla se apague sola por inactividad.");
+        DESCRIPTIONS_ES.put(I18n.KEY_DAILY_BUDGET, "Fija un límite de uso diario con recordatorios al superarlo.");
+        DESCRIPTIONS_ES.put(I18n.KEY_LANGUAGE, "Configura el idioma del sistema y del launcher.");
+        DESCRIPTIONS_ES.put(I18n.KEY_REGION, "Formato regional para fechas y números.");
+        DESCRIPTIONS_ES.put(I18n.KEY_FONT_SIZE, "Ajusta el tamaño del texto en el launcher.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BATTERY_PROTECTION, "Limita la carga al 80% para cuidar la salud de la batería.");
+        DESCRIPTIONS_ES.put(I18n.KEY_GLYPH_INTERFACE, "Activa las luces LED traseras de Nothing Phone para notificaciones silenciosas.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_MEDIA_VOL, "Volumen para música, vídeos y juegos.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RING_VOL, "Volumen del timbre para llamadas entrantes.");
+        DESCRIPTIONS_ES.put(I18n.KEY_ALARM_VOL, "Volumen de la alarma del despertador.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RINGER_PROFILE, "Cambia entre modo Sonido, Vibración y Silencio.");
+        DESCRIPTIONS_ES.put(I18n.KEY_NOTIFICATION_DELIVERY_TITLE, "Organiza avisos: al instante, resúmenes diarios (12:00/18:00) o solo contactos destacados.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RINGTONE_TITLE, "Elige el tono de llamada.");
+        DESCRIPTIONS_ES.put(I18n.KEY_NOTIFICATION_SOUND_TITLE, "Elige el sonido de las notificaciones.");
+        DESCRIPTIONS_ES.put(I18n.KEY_ALARM_SOUND_TITLE, "Elige el sonido de la alarma.");
+        DESCRIPTIONS_ES.put(I18n.KEY_EQUALIZER, "Ecualizador de audio de 5 bandas.");
+        DESCRIPTIONS_ES.put("pref_eq_enabled", "Activa o desactiva el ecualizador de audio.");
+        DESCRIPTIONS_ES.put(I18n.KEY_EQ_PRESET, "Elige un perfil de sonido: Plano, Graves, Vocal, Agudos o Rock.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_APP_LIMIT_TITLE, "Número máximo de aplicaciones fijadas en la pantalla principal.");
+        DESCRIPTIONS_ES.put(I18n.KEY_FRICTION_TITLE, "Añade una pausa de unos segundos antes de abrir apps para evitar su uso impulsivo.");
+        DESCRIPTIONS_ES.put(I18n.KEY_APP_PRIVACY_GUARD, "Revisa y administra los permisos de cada aplicación instalada.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_WIFI_RADIO, "Activa o desactiva la conexión Wi-Fi.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BT_RADIO, "Activa o desactiva Bluetooth para auriculares y accesorios.");
+        DESCRIPTIONS_ES.put(I18n.KEY_CELLULAR_DATA, "Activa o desactiva los datos móviles de internet.");
+        DESCRIPTIONS_ES.put(I18n.KEY_NFC_RADIO, "Activa o desactiva la conexión NFC.");
+        DESCRIPTIONS_ES.put(I18n.KEY_SYNC_BATCHING, "Agrupa sincronizaciones periódicas (15m, 30m, 60m) para ahorrar batería.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BG_POLICY, "Controla qué apps pueden funcionar en segundo plano: Solo permitidas, Ninguna o Todas.");
+        DESCRIPTIONS_ES.put(I18n.KEY_SHADE_TILES_TITLE, "Elige qué botones rápidos aparecen en el panel superior.");
+        DESCRIPTIONS_ES.put(I18n.KEY_APP_NETWORK_FIREWALL, "Bloquea el acceso a Internet de aplicaciones individuales.");
+
+        DESCRIPTIONS_ES.put(I18n.KEY_UPDATE_CHANNEL, "Canal de actualizaciones del sistema: Estable, Beta o Nightly.");
+        DESCRIPTIONS_ES.put(I18n.KEY_CREATE_SNAPSHOT, "Crea una copia de seguridad con tus ajustes y aplicaciones.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RESTORE_SNAPSHOT, "Restaura tus ajustes desde una copia de seguridad.");
+        DESCRIPTIONS_ES.put(I18n.KEY_RUN_WIZARD_ROW, "Vuelve a abrir el asistente de configuración inicial.");
+        DESCRIPTIONS_ES.put(I18n.KEY_KEYBOARD, "Elige el teclado en pantalla predeterminado.");
+        DESCRIPTIONS_ES.put(I18n.KEY_BOOTLOADER_LOCK_STATUS, "Muestra el estado de bloqueo del bootloader.");
+        DESCRIPTIONS_ES.put(I18n.KEY_DEV_SETTINGS, "Abre las Opciones de Desarrollador de Android.");
+        DESCRIPTIONS_ES.put(I18n.KEY_HARDWARE_TEST, "Abre el menú de pruebas del teléfono (*#*#4636#*#*).");
     }
 
     private SettingsDescriptions() {}
 
     public static String get(String key) {
+        return get(key, "en");
+    }
+
+    public static String get(String key, String langCode) {
         if (key == null) return null;
+        if (langCode != null && langCode.toLowerCase(Locale.ROOT).startsWith("es")) {
+            String esVal = DESCRIPTIONS_ES.get(key);
+            if (esVal != null) return esVal;
+            String clean = key.trim().toLowerCase(Locale.ROOT);
+            for (Map.Entry<String, String> entry : DESCRIPTIONS_ES.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(key) || clean.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
+                    return entry.getValue();
+                }
+            }
+        }
         String val = DESCRIPTIONS.get(key);
         if (val != null) return val;
         // Case-insensitive or normalized check
-        String clean = key.trim().toLowerCase();
+        String clean = key.trim().toLowerCase(Locale.ROOT);
         for (Map.Entry<String, String> entry : DESCRIPTIONS.entrySet()) {
-            if (entry.getKey().equalsIgnoreCase(key) || clean.contains(entry.getKey().toLowerCase())) {
+            if (entry.getKey().equalsIgnoreCase(key) || clean.contains(entry.getKey().toLowerCase(Locale.ROOT))) {
                 return entry.getValue();
             }
         }
         // Fallback default helpful text if not specifically defined
-        return "Configuration setting for " + key + ". Touch to modify system preference.";
+        return (langCode != null && langCode.startsWith("es"))
+            ? "Ajuste de configuración para " + key + ". Toque para modificar."
+            : "Configuration setting for " + key + ". Touch to modify system preference.";
     }
 
     public static void showExplanationDialog(Context context, ThemeTokens tokens, String title, String explanation) {
         if (context == null || explanation == null) return;
+        String langCode = "en";
+        try {
+            langCode = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE).getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
+        } catch (Throwable ignored) {}
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(
-            context,
-            tokens.isLight ? AlertDialog.THEME_DEVICE_DEFAULT_LIGHT : AlertDialog.THEME_DEVICE_DEFAULT_DARK
-        );
-        builder.setTitle(title);
-        builder.setMessage(explanation);
-        builder.setPositiveButton("OK", null);
+        final AmoledDialog dlg = new AmoledDialog(context, tokens, title != null ? title.toUpperCase(Locale.ROOT) : "INFO");
+        dlg.setCancelable(true);
 
-        AlertDialog dialog = builder.create();
-        dialog.show();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(tokens.bg));
-        }
+        float density = context.getResources().getDisplayMetrics().density;
+        TextView msgView = new TextView(context);
+        msgView.setText(explanation);
+        msgView.setTextColor(tokens.textPrimary);
+        msgView.setTextSize(14f);
+        msgView.setTypeface(Typeface.MONOSPACE);
+        msgView.setLineSpacing(3, 1.25f);
+        msgView.setPadding(0, (int) (12 * density), 0, (int) (20 * density));
+        dlg.getContentContainer().addView(msgView);
 
-        Button pBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        if (pBtn != null) {
-            pBtn.setTextColor(tokens.accent);
-            pBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        }
+        dlg.addActionButton(I18n.get(I18n.KEY_DONE, langCode), tokens.navAccent, tokens.border, true, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dlg.dismiss();
+            }
+        });
+
+        dlg.show();
     }
 
     public static View createHelpBadge(final Context context, final ThemeTokens tokens, final String labelKey, final String fallbackTitle) {
-        final String text = get(labelKey);
+        String langCode = "en";
+        try {
+            langCode = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE).getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
+        } catch (Throwable ignored) {}
+        final String text = get(labelKey, langCode);
         if (text == null) return null;
 
         int pad = (int) (4 * context.getResources().getDisplayMetrics().density + 0.5f);
         TextView badge = new TextView(context);
-        badge.setText(" (?)");
+        badge.setText(" [?]");
         badge.setTextColor(tokens.navAccent);
         badge.setTextSize(12);
         badge.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        badge.setSingleLine(true);
         badge.setPadding(pad, 0, pad, 0);
         badge.setClickable(true);
         badge.setFocusable(true);

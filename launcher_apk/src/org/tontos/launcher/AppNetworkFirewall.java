@@ -91,6 +91,35 @@ public final class AppNetworkFirewall {
     }
 
     /**
+     * Re-applies all active firewall rules on device boot.
+     */
+    public static void restoreFirewallRules(final Context context) {
+        if (context == null) return;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+                    Set<String> blocked = prefs.getStringSet(PREF_BLOCKED_NETWORK_APPS, null);
+                    if (blocked == null || blocked.isEmpty()) return;
+                    for (String pkg : blocked) {
+                        if (!SafeCommandExecutor.isValidPackageName(pkg)) continue;
+                        executeAppOps(pkg, true);
+                        try {
+                            ApplicationInfo ai = context.getPackageManager().getApplicationInfo(pkg, 0);
+                            if (ai != null && ai.uid >= 10000 && ai.uid <= 19999999) {
+                                executeIptables(ai.uid, true);
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "Error restoring firewall rules on boot: " + t.getMessage());
+                }
+            }
+        }).start();
+    }
+
+    /**
      * Updates SharedPreferences and executes AppOp / iptables restrictions for the target package.
      */
     public static void setAppNetworkBlocked(Context context, String pkg, boolean blocked) {
@@ -170,64 +199,26 @@ public final class AppNetworkFirewall {
     public static void showFirewallDialog(final Activity activity, final ThemeTokens tokens, final String curLangCode) {
         if (activity == null || activity.isFinishing()) return;
 
-        final Dialog dlg = new Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dlg.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        Window window = dlg.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(tokens.bg));
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
-                    window.getInsetsController().setSystemBarsAppearance(
-                        tokens.isLight ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    );
-                }
-            } catch (Throwable ignored) {}
-        }
-
-        final float density = activity.getResources().getDisplayMetrics().density;
-        final int pad = (int) (24 * density);
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(tokens.bg);
-        root.setPadding(pad, pad, pad, pad);
-
-        // Header Title
-        TextView titleView = new TextView(activity);
-        titleView.setText(I18n.get(I18n.KEY_APP_NETWORK_FIREWALL, curLangCode).toUpperCase(Locale.ROOT));
-        titleView.setTextColor(tokens.accent);
-        titleView.setTextSize(16);
-        titleView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        titleView.setPadding(0, 0, 0, (int) (4 * density));
-        root.addView(titleView);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_APP_NETWORK_FIREWALL, curLangCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
 
         // Subtitle / Blocked Count Summary
         final TextView summaryView = new TextView(activity);
         summaryView.setText(getBlockedCountSummary(activity, curLangCode));
-        summaryView.setTextColor(tokens.textMuted);
-        summaryView.setTextSize(12);
+        summaryView.setTextColor(themeTokens.textMuted);
+        summaryView.setTextSize(12 * fontScale);
         summaryView.setTypeface(Typeface.MONOSPACE);
-        root.addView(summaryView);
-
-        View divider = new View(activity);
-        LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (int) (1 * density + 0.5f)
-        );
-        divParams.setMargins(0, 0, 0, (int) (12 * density));
-        divider.setLayoutParams(divParams);
-        divider.setBackgroundColor(tokens.border);
-        root.addView(divider);
+        summaryView.setPadding(0, 0, 0, (int) (8 * density));
+        dlg.addHeaderCustomView(summaryView);
 
         // Search Filter Input
         final EditText searchBox = new EditText(activity);
         searchBox.setHint(I18n.get(I18n.KEY_SEARCH_APPS, curLangCode));
-        searchBox.setHintTextColor(tokens.textMuted);
-        searchBox.setTextColor(tokens.textPrimary);
-        searchBox.setTextSize(13);
+        searchBox.setHintTextColor(themeTokens.textMuted);
+        searchBox.setTextColor(themeTokens.textPrimary);
+        searchBox.setTextSize(13 * fontScale);
         searchBox.setTypeface(Typeface.MONOSPACE);
         searchBox.setSingleLine(true);
         searchBox.setMinimumHeight((int) (44 * density));
@@ -236,32 +227,25 @@ public final class AppNetworkFirewall {
         final GradientDrawable searchBg = new GradientDrawable();
         searchBg.setShape(GradientDrawable.RECTANGLE);
         searchBg.setColor(Color.TRANSPARENT);
-        searchBg.setStroke((int) (1 * density), tokens.border);
+        searchBg.setStroke((int) (1 * density), themeTokens.border);
         searchBg.setCornerRadius((int) (4 * density));
         searchBox.setBackground(searchBg);
 
         searchBox.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                searchBg.setStroke((int) (1 * density), hasFocus ? tokens.accent : tokens.border);
+                searchBg.setStroke((int) (1 * density), hasFocus ? themeTokens.accent : themeTokens.border);
             }
         });
 
         LinearLayout.LayoutParams searchLp = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        searchLp.setMargins(0, 0, 0, (int) (12 * density));
+        searchLp.setMargins(0, 0, 0, (int) (8 * density));
         searchBox.setLayoutParams(searchLp);
-        root.addView(searchBox);
+        dlg.addFixedSubHeaderView(searchBox);
 
-        // Scrollable Apps List Container
-        ScrollView scroll = new ScrollView(activity);
-        scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
-
-        final LinearLayout listContainer = new LinearLayout(activity);
-        listContainer.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(listContainer);
-        root.addView(scroll);
+        final LinearLayout listContainer = dlg.getContentContainer();
 
         // Query and Deduplicate Installed Apps
         PackageManager pm = activity.getPackageManager();
@@ -315,23 +299,18 @@ public final class AppNetworkFirewall {
         });
 
         // Close / Back Button
-        TextView closeBtn = new TextView(activity);
-        closeBtn.setText(I18n.get(I18n.KEY_CANCEL, curLangCode));
-        closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(14);
-        closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        closeBtn.setGravity(Gravity.CENTER);
-        closeBtn.setMinimumHeight((int) (48 * density));
-        closeBtn.setPadding(0, (int) (12 * density), 0, (int) (12 * density));
-        closeBtn.setClickable(true);
-        closeBtn.setFocusable(true);
-        closeBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dlg.dismiss();
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, curLangCode),
+            themeTokens.navAccent,
+            themeTokens.border,
+            true,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
             }
-        });
-        root.addView(closeBtn);
+        );
 
         dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
@@ -342,7 +321,6 @@ public final class AppNetworkFirewall {
             }
         });
 
-        dlg.setContentView(root);
         dlg.show();
     }
 
@@ -398,15 +376,7 @@ public final class AppNetworkFirewall {
             toggleBtn.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
             toggleBtn.setClickable(true);
             toggleBtn.setFocusable(true);
-
-            StateListDrawable sld = new StateListDrawable();
-            GradientDrawable pressed = new GradientDrawable();
-            pressed.setColor(tokens.controlBgPressed);
-            pressed.setCornerRadius((int) (4 * density));
-            sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-            sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-            sld.addState(new int[]{}, new ColorDrawable(Color.TRANSPARENT));
-            toggleBtn.setBackground(sld);
+            toggleBtn.setBackground(TactileUi.createTouchFeedbackDrawable(activity, tokens));
 
             toggleBtn.setOnClickListener(new View.OnClickListener() {
                 @Override

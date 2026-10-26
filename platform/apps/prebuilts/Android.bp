@@ -1,7 +1,21 @@
 android_app_import {
+    name: "TontOSLauncher",
+    apk: "tontos-launcher.apk",
+    preprocessed: true,
+    presigned: true,
+    privileged: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    system_ext_specific: true,
+}
+
+android_app_import {
     name: "OrganicMaps",
     apk: "app.organicmaps.apk",
-    certificate: "platform",
+    preprocessed: true,
+    presigned: true,
+    skip_preprocessed_apk_checks: true,
     dex_preopt: {
         enabled: false,
     },
@@ -22,7 +36,9 @@ android_app_import {
 android_app_import {
     name: "FairEmail",
     apk: "eu.faircode.email.apk",
-    certificate: "platform",
+    preprocessed: true,
+    presigned: true,
+    skip_preprocessed_apk_checks: true,
     dex_preopt: {
         enabled: false,
     },
@@ -127,5 +143,62 @@ android_app_import {
         enabled: false,
     },
     overrides: ["Dialer"],
+    product_specific: true,
+}
+
+android_app_import {
+    name: "BitChat",
+    apk: "bitchat.apk",
+    preprocessed: true,
+    presigned: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    product_specific: true,
+}
+
+android_app_import {
+    name: "GraphenePdfViewer",
+    apk: "app.grapheneos.pdfviewer.apk",
+    preprocessed: true,
+    presigned: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    product_specific: true,
+}
+
+android_app_import {
+    name: "HeliumKeyboard",
+    apk: "helium314.keyboard.apk",
+    preprocessed: true,
+    presigned: true,
+    skip_preprocessed_apk_checks: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    overrides: ["LatinIME"],
+    product_specific: true,
+}
+
+android_app_import {
+    name: "OpenDocumentReader",
+    apk: "org.opendocument.reader.apk",
+    preprocessed: true,
+    presigned: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    product_specific: true,
+}
+
+android_app_import {
+    name: "NewPipe",
+    apk: "org.schabi.newpipe.apk",
+    preprocessed: true,
+    presigned: true,
+    dex_preopt: {
+        enabled: false,
+    },
     product_specific: true,
 }

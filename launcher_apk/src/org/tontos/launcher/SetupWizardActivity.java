@@ -47,6 +47,12 @@ public class SetupWizardActivity extends Activity {
     private static final int DEFAULT_BUDGET_MINUTES = 120;
     private static final int MIN_TOUCH_TARGET_DP = 48;
 
+    public static volatile boolean isWizardActive = false;
+
+    public static boolean isWizardActive() {
+        return isWizardActive;
+    }
+
     private SharedPreferences preferences;
     private LinearLayout rootLayout;
     private TextView titleView;
@@ -60,16 +66,22 @@ public class SetupWizardActivity extends Activity {
 
     private LocaleItem selectedLocale = LocaleItem.DEFAULT;
     private RegionItem selectedRegion = LocaleManager.DEFAULT_REGION;
-    private LanguageLocale selectedLanguage = LanguageLocale.EN_US;
     private ThemePreset selectedTheme = ThemePreset.AMOLED;
     private int selectedBudgetMinutes = DEFAULT_BUDGET_MINUTES;
     private int selectedFontScale = 100;
     private boolean selectedClock24h = true;
+    private LockSecurityManager.SecurityType selectedSecurityType = LockSecurityManager.SecurityType.NONE;
+    private boolean selectedFingerprintEnabled = true;
 
     @Override
     protected void attachBaseContext(Context newBase) {
-        SharedPreferences prefs = newBase.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        int scaleInt = prefs.getInt("pref_font_scale", 100);
+        int scaleInt = 100;
+        try {
+            SharedPreferences prefs = MainActivity.getSafeSharedPreferences(newBase, PREFS_NAME, Context.MODE_PRIVATE);
+            if (prefs != null) {
+                scaleInt = prefs.getInt("pref_font_scale", 100);
+            }
+        } catch (Throwable ignored) {}
         Configuration config = new Configuration(newBase.getResources().getConfiguration());
         config.fontScale = scaleInt / 100.0f;
         Context context = newBase.createConfigurationContext(config);
@@ -78,16 +90,21 @@ public class SetupWizardActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        isWizardActive = true;
         super.onCreate(savedInstanceState);
 
-        preferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        preferences = MainActivity.getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
+        if (preferences != null) {
+            preferences.edit().putBoolean(KEY_SETUP_COMPLETED, false).commit();
+        }
         String savedLang = preferences.getString(KEY_SYSTEM_LANGUAGE, "en");
         String savedRegion = preferences.getString(KEY_SYSTEM_REGION, "US");
         selectedLocale = LocaleManager.getLanguage(savedLang);
         selectedRegion = LocaleManager.getRegion(savedRegion);
-        selectedLanguage = LanguageLocale.fromCode(selectedLocale.getTag());
         selectedFontScale = preferences.getInt("pref_font_scale", 100);
         selectedClock24h = preferences.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
+        selectedSecurityType = LockSecurityManager.getSecurityType(this);
+        selectedFingerprintEnabled = LockSecurityManager.isFingerprintEnabled(this);
         I18n.applyLocaleAndScale(this, selectedLocale.getTag(), selectedRegion.getCode(), selectedFontScale / 100.0f);
 
         ThemeTokens initTokens = ThemeTokens.get(selectedTheme);
@@ -101,14 +118,14 @@ public class SetupWizardActivity extends Activity {
         rootLayout.setPadding(50, 60, 50, 40);
 
         titleView = new TextView(this);
-        titleView.setText("TontOS SETUP WIZARD");
+        titleView.setText(I18n.get(I18n.KEY_WIZARD_TITLE, "en"));
         titleView.setTextColor(initTokens.accent);
         titleView.setTextSize(20);
         titleView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         rootLayout.addView(titleView);
 
         subtitleView = new TextView(this);
-        subtitleView.setText("Initial Device & Detox Configuration");
+        subtitleView.setText(I18n.get(I18n.KEY_WIZARD_SUBTITLE, "en"));
         subtitleView.setTextColor(initTokens.textMuted);
         subtitleView.setTextSize(13);
         subtitleView.setTypeface(Typeface.MONOSPACE);
@@ -183,8 +200,31 @@ public class SetupWizardActivity extends Activity {
         rootLayout.addView(bottomNavDock);
 
         setContentView(rootLayout);
+        disableStatusBarForSetup(true);
         hideSystemUI();
         renderStep();
+    }
+
+    @Override
+    protected void onResume() {
+        isWizardActive = true;
+        super.onResume();
+        disableStatusBarForSetup(true);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        isWizardActive = false;
+    }
+
+    private void disableStatusBarForSetup(boolean disable) {
+        try {
+            SafeCommandExecutor.executePrivileged("cmd", "statusbar", "disable-for-setup", disable ? "true" : "false");
+            if (disable) {
+                SafeCommandExecutor.executePrivileged("cmd", "statusbar", "collapse-instant");
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void hideSystemUI() {
@@ -208,11 +248,14 @@ public class SetupWizardActivity extends Activity {
     }
 
     private void completeSetup() {
+        isWizardActive = false;
         // Seed home defaults: full pinned set + order + limit = visible size.
         // Ensures first boot from 0 shows all defaults; background can reuse.
         // Seed bg_allowed_apps = DEFAULT_PINNED + bg_policy whitelist so the
         // background policy never kills Phone/Messages on first boot.
         String pinnedOrder = android.text.TextUtils.join(",", MainActivity.DEFAULT_PINNED_PACKAGES);
+        LockSecurityManager.setSecurityType(this, selectedSecurityType);
+        LockSecurityManager.setFingerprintEnabled(this, selectedFingerprintEnabled);
         preferences.edit()
             .putBoolean(KEY_SETUP_COMPLETED, true)
             .putString(KEY_SYSTEM_LANGUAGE, selectedLocale.getTag())
@@ -227,8 +270,9 @@ public class SetupWizardActivity extends Activity {
             .putInt(MainActivity.KEY_HOME_APP_LIMIT, MainActivity.DEFAULT_PINNED_PACKAGES.size())
             .putString("bg_policy", "whitelist")
             .putStringSet("bg_allowed_apps", new java.util.HashSet<String>(MainActivity.DEFAULT_PINNED_PACKAGES))
-            .apply();
+            .commit();
         I18n.applyLocaleAndScale(this, selectedLocale.getTag(), selectedRegion.getCode(), selectedFontScale / 100.0f);
+        disableStatusBarForSetup(false);
         try {
             android.provider.Settings.System.putString(getContentResolver(), android.provider.Settings.System.TIME_12_24, selectedClock24h ? "24" : "12");
             SafeCommandExecutor.executePrivileged("settings", "put", "system", "time_12_24", selectedClock24h ? "24" : "12");
@@ -247,9 +291,12 @@ public class SetupWizardActivity extends Activity {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
 
         rootLayout.setBackgroundColor(tokens.bg);
+        float fontScale = selectedFontScale / 100.0f;
         titleView.setText(I18n.get(I18n.KEY_WIZARD_TITLE, langCode));
+        titleView.setTextSize(20f * fontScale);
         titleView.setTextColor(tokens.accent);
         subtitleView.setText(I18n.get(I18n.KEY_WIZARD_SUBTITLE, langCode));
+        subtitleView.setTextSize(13f * fontScale);
         subtitleView.setTextColor(tokens.textMuted);
         dividerView.setBackgroundColor(tokens.border);
 
@@ -275,6 +322,9 @@ public class SetupWizardActivity extends Activity {
             case DETOX_BUDGET:
                 renderBudgetSelection(tokens);
                 break;
+            case SECURITY:
+                renderSecuritySelection(tokens);
+                break;
             case COMPLETE:
                 renderSummary(tokens);
                 break;
@@ -298,6 +348,10 @@ public class SetupWizardActivity extends Activity {
 
     private void updateNavDock(ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
+        prevButton.setTextSize(13f * fontScale);
+        nextButton.setTextSize(13f * fontScale);
+
         if (currentStep == WizardStep.WELCOME) {
             prevButton.setVisibility(View.INVISIBLE);
             prevButton.setEnabled(false);
@@ -313,23 +367,10 @@ public class SetupWizardActivity extends Activity {
             nextButton.setText(I18n.get(I18n.KEY_ENTER_HOME, langCode));
         } else if (currentStep == WizardStep.WELCOME) {
             nextButton.setText(I18n.get(I18n.KEY_BEGIN_SETUP, langCode));
+        } else if (currentStep == WizardStep.SECURITY) {
+            nextButton.setText("[ " + I18n.get(I18n.KEY_WIZARD_FINALIZE, langCode) + " > ]");
         } else {
-            String nextTitle;
-            switch (currentStep) {
-                case LANGUAGE_REGION:
-                    nextTitle = I18n.get(I18n.KEY_THEME_PRESET, langCode).toUpperCase(Locale.ROOT);
-                    break;
-                case THEME_PRESET:
-                    nextTitle = I18n.get(I18n.KEY_DAILY_BUDGET, langCode).toUpperCase(Locale.ROOT);
-                    break;
-                case DETOX_BUDGET:
-                    nextTitle = I18n.get(I18n.KEY_WIZARD_FINALIZE, langCode);
-                    break;
-                default:
-                    nextTitle = I18n.get(I18n.KEY_WIZARD_NEXT, langCode);
-                    break;
-            }
-            nextButton.setText(I18n.get(I18n.KEY_NEXT, langCode) + nextTitle + " > ]");
+            nextButton.setText("[ " + I18n.get(I18n.KEY_WIZARD_NEXT, langCode) + " > ]");
         }
         nextButton.setTextColor(tokens.isLight ? Color.WHITE : tokens.navAccent);
         nextButton.setBackground(createTactileButtonDrawable(tokens.navAccent, tokens.isLight ? tokens.navAccent : tokens.navBg, tokens.controlBgPressed));
@@ -337,12 +378,13 @@ public class SetupWizardActivity extends Activity {
 
     private void renderWelcome(ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader("TontOS v1.0-beta", tokens);
 
         TextView welcome = new TextView(this);
         welcome.setText(formatBulletText(I18n.get(I18n.KEY_WELCOME_BODY, langCode), tokens.accent));
         welcome.setTextColor(tokens.textPrimary);
-        welcome.setTextSize(14);
+        welcome.setTextSize(14f * fontScale);
         welcome.setTypeface(Typeface.MONOSPACE);
         welcome.setLineSpacing(4, 1.2f);
         contentContainer.addView(welcome);
@@ -350,12 +392,13 @@ public class SetupWizardActivity extends Activity {
 
     private void renderLanguageRegion(final ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader(I18n.get(I18n.KEY_STEP1_TITLE, langCode), tokens);
 
         TextView info = new TextView(this);
         info.setText(I18n.get(I18n.KEY_STEP1_DESC, langCode));
         info.setTextColor(tokens.textMuted);
-        info.setTextSize(13);
+        info.setTextSize(13f * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
         info.setPadding(0, 0, 0, dpToPx(16));
         contentContainer.addView(info);
@@ -371,7 +414,6 @@ public class SetupWizardActivity extends Activity {
                         @Override
                         public void onLocaleSelected(LocaleItem selected) {
                             selectedLocale = selected;
-                            selectedLanguage = LanguageLocale.fromCode(selected.getTag());
                             String defRegion = LocaleManager.getDefaultRegionForLanguage(selected.getTag());
                             selectedRegion = LocaleManager.getRegion(defRegion);
                             preferences.edit()
@@ -475,6 +517,7 @@ public class SetupWizardActivity extends Activity {
 
     private void renderThemeSelection(final ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader(I18n.get(I18n.KEY_STEP2_TITLE, langCode), tokens);
 
         TextView info = new TextView(this);
@@ -485,7 +528,7 @@ public class SetupWizardActivity extends Activity {
             + "• SLATE: " + I18n.get(I18n.KEY_THEME_SLATE_DESC, langCode);
         info.setText(formatBulletText(themeDesc, tokens.accent));
         info.setTextColor(tokens.textMuted);
-        info.setTextSize(12);
+        info.setTextSize(12f * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
         info.setPadding(0, 0, 0, dpToPx(16));
         contentContainer.addView(info);
@@ -521,12 +564,13 @@ public class SetupWizardActivity extends Activity {
 
     private void renderBudgetSelection(final ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
         addHeader(I18n.get(I18n.KEY_STEP3_TITLE, langCode), tokens);
 
         TextView info = new TextView(this);
         info.setText(I18n.get(I18n.KEY_STEP3_DESC, langCode));
         info.setTextColor(tokens.textMuted);
-        info.setTextSize(12);
+        info.setTextSize(12f * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
         info.setPadding(0, 0, 0, dpToPx(16));
         contentContainer.addView(info);
@@ -579,9 +623,97 @@ public class SetupWizardActivity extends Activity {
         }, tokens);
     }
 
+    private void renderSecuritySelection(final ThemeTokens tokens) {
+        final String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
+        addHeader(I18n.get(I18n.KEY_STEP4_TITLE, langCode), tokens);
+
+        TextView info = new TextView(this);
+        info.setText(I18n.get(I18n.KEY_STEP4_DESC, langCode));
+        info.setTextColor(tokens.textMuted);
+        info.setTextSize(12f * fontScale);
+        info.setTypeface(Typeface.MONOSPACE);
+        info.setPadding(0, 0, 0, dpToPx(16));
+        contentContainer.addView(info);
+
+        String currentSecDisplay;
+        if (selectedSecurityType == LockSecurityManager.SecurityType.PIN) {
+            boolean hasPin = LockSecurityManager.hasPin(this);
+            currentSecDisplay = I18n.get(I18n.KEY_LOCK_TYPE_PIN, langCode) + (hasPin ? " [✓]" : " [! " + I18n.get(I18n.KEY_LOCK_SETUP_PIN, langCode) + "]");
+        } else if (selectedSecurityType == LockSecurityManager.SecurityType.PATTERN) {
+            boolean hasPattern = LockSecurityManager.hasPattern(this);
+            currentSecDisplay = I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, langCode) + (hasPattern ? " [✓]" : " [! " + I18n.get(I18n.KEY_LOCK_SETUP_PATTERN, langCode) + "]");
+        } else {
+            currentSecDisplay = I18n.get(I18n.KEY_LOCK_TYPE_NONE, langCode);
+        }
+
+        addSelectorRow(I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, langCode), currentSecDisplay, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.NONE.getId(), I18n.get(I18n.KEY_LOCK_TYPE_NONE, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.PIN.getId(), I18n.get(I18n.KEY_LOCK_TYPE_PIN, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.PATTERN.getId(), I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, langCode)));
+
+                SingleChoiceSelectorDialog.show(
+                    SetupWizardActivity.this,
+                    tokens,
+                    I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, langCode),
+                    options,
+                    selectedSecurityType.getId(),
+                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                        @Override
+                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            LockSecurityManager.SecurityType chosen = LockSecurityManager.SecurityType.fromId(selected.id);
+                            selectedSecurityType = chosen;
+                            LockSecurityManager.setSecurityType(SetupWizardActivity.this, chosen);
+
+                            if (chosen == LockSecurityManager.SecurityType.NONE) {
+                                LockSecurityManager.clearCredentials(SetupWizardActivity.this);
+                                LockScreenManager.setLockScreenEnabled(SetupWizardActivity.this, true);
+                                renderStep();
+                            } else if (chosen == LockSecurityManager.SecurityType.PIN) {
+                                PinSetupDialog.show(SetupWizardActivity.this, tokens, langCode, new PinSetupDialog.OnPinSetupListener() {
+                                    @Override
+                                    public void onPinConfigured() {
+                                        LockScreenManager.setLockScreenEnabled(SetupWizardActivity.this, true);
+                                        renderStep();
+                                    }
+                                });
+                            } else if (chosen == LockSecurityManager.SecurityType.PATTERN) {
+                                PatternSetupDialog.show(SetupWizardActivity.this, tokens, langCode, new PatternSetupDialog.OnPatternSetupListener() {
+                                    @Override
+                                    public void onPatternConfigured() {
+                                        LockScreenManager.setLockScreenEnabled(SetupWizardActivity.this, true);
+                                        renderStep();
+                                    }
+                                });
+                            }
+                        }
+                    }
+                );
+            }
+        }, tokens);
+
+        final boolean fpDetected = LockSecurityManager.isFingerprintHardwareAvailable(this);
+        String fpDisplay = selectedFingerprintEnabled
+            ? (fpDetected ? I18n.get(I18n.KEY_STATE_ON, langCode) : I18n.get(I18n.KEY_LOCK_FINGERPRINT_UNSUPPORTED, langCode))
+            : I18n.get(I18n.KEY_STATE_OFF, langCode);
+
+        addSelectorRow(I18n.get(I18n.KEY_LOCK_FINGERPRINT_TOGGLE, langCode), fpDisplay, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectedFingerprintEnabled = !selectedFingerprintEnabled;
+                LockSecurityManager.setFingerprintEnabled(SetupWizardActivity.this, selectedFingerprintEnabled);
+                renderStep();
+            }
+        }, tokens);
+    }
+
     private void renderSummary(ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
-        addHeader(I18n.get(I18n.KEY_STEP4_TITLE, langCode), tokens);
+        float fontScale = selectedFontScale / 100.0f;
+        addHeader(I18n.get(I18n.KEY_STEP5_TITLE, langCode), tokens);
 
         String budgetLabel = (selectedBudgetMinutes <= 0)
             ? I18n.get(I18n.KEY_BUDGET_OFF, langCode)
@@ -598,29 +730,43 @@ public class SetupWizardActivity extends Activity {
             budgetLabel,
             UpdateChannel.BETA.getCode()
         );
+
+        String secLabel = (selectedSecurityType == LockSecurityManager.SecurityType.PIN)
+            ? I18n.get(I18n.KEY_LOCK_TYPE_PIN, langCode)
+            : (selectedSecurityType == LockSecurityManager.SecurityType.PATTERN
+                ? I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, langCode)
+                : I18n.get(I18n.KEY_LOCK_TYPE_NONE, langCode));
+        String fpLabel = selectedFingerprintEnabled
+            ? I18n.get(I18n.KEY_STATE_ON, langCode)
+            : I18n.get(I18n.KEY_STATE_OFF, langCode);
+
+        text += "\n• " + I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, langCode) + ": " + secLabel;
+        text += "\n• " + I18n.get(I18n.KEY_LOCK_FINGERPRINT_TOGGLE, langCode) + ": " + fpLabel;
         summary.setText(formatBulletText(text, tokens.accent));
         summary.setTextColor(tokens.textPrimary);
-        summary.setTextSize(14);
+        summary.setTextSize(14f * fontScale);
         summary.setTypeface(Typeface.MONOSPACE);
         summary.setLineSpacing(4, 1.2f);
         contentContainer.addView(summary);
     }
 
     private void addHeader(String text, ThemeTokens tokens) {
+        float fontScale = selectedFontScale / 100.0f;
         TextView header = new TextView(this);
         header.setText(text);
         header.setTextColor(tokens.accent);
-        header.setTextSize(15);
+        header.setTextSize(15f * fontScale);
         header.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         header.setPadding(0, 8, 0, 14);
         contentContainer.addView(header);
     }
 
     private void addSelectorRow(String label, String valueText, View.OnClickListener listener, ThemeTokens tokens) {
+        float fontScale = selectedFontScale / 100.0f;
         TextView labelView = new TextView(this);
         labelView.setText(label);
         labelView.setTextColor(tokens.textMuted);
-        labelView.setTextSize(13);
+        labelView.setTextSize(13f * fontScale);
         labelView.setTypeface(Typeface.MONOSPACE);
         labelView.setSingleLine(true);
         labelView.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -635,7 +781,7 @@ public class SetupWizardActivity extends Activity {
         TextView triggerBtn = new TextView(this);
         triggerBtn.setText("[ " + cleanVal + "  ▼ ]");
         triggerBtn.setTextColor(tokens.textPrimary);
-        triggerBtn.setTextSize(14);
+        triggerBtn.setTextSize(14f * fontScale);
         triggerBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         triggerBtn.setSingleLine(true);
         triggerBtn.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -644,17 +790,7 @@ public class SetupWizardActivity extends Activity {
         triggerBtn.setMinimumHeight(dpToPx(MIN_TOUCH_TARGET_DP));
         triggerBtn.setPadding(dpToPx(6), dpToPx(8), dpToPx(6), dpToPx(8));
 
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius(dpToPx(4));
-
-        ColorDrawable normal = new ColorDrawable(Color.TRANSPARENT);
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        triggerBtn.setBackground(sld);
+        triggerBtn.setBackground(TactileUi.createTouchFeedbackDrawable(this, tokens));
 
         triggerBtn.setClickable(true);
         triggerBtn.setFocusable(true);
@@ -671,24 +807,7 @@ public class SetupWizardActivity extends Activity {
     }
 
     private Drawable createTactileButtonDrawable(int strokeColor, int bgColor, int pressedBgColor) {
-        StateListDrawable sld = new StateListDrawable();
-
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setShape(GradientDrawable.RECTANGLE);
-        pressed.setColor(pressedBgColor);
-        pressed.setStroke(dpToPx(2), strokeColor);
-        pressed.setCornerRadius(dpToPx(4));
-
-        GradientDrawable normal = new GradientDrawable();
-        normal.setShape(GradientDrawable.RECTANGLE);
-        normal.setColor(bgColor);
-        normal.setStroke(dpToPx(1), strokeColor);
-        normal.setCornerRadius(dpToPx(4));
-
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{android.R.attr.state_focused}, pressed);
-        sld.addState(new int[]{}, normal);
-        return sld;
+        return TactileUi.createButtonDrawable(bgColor, pressedBgColor, strokeColor, dpToPx(1), dpToPx(4));
     }
 
     private int dpToPx(int dp) {

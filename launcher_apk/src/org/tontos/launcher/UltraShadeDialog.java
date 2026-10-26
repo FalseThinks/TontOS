@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsetsController;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -48,9 +47,10 @@ public final class UltraShadeDialog {
             }
         });
 
-        SharedPreferences prefs = activity.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
-        final String lang = prefs.getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
-        final java.util.Set<String> tilesOrder = prefs.getStringSet("shade_tiles", null);
+        SharedPreferences prefs = MainActivity.getSafeSharedPreferences(activity, MainActivity.PREFS_NAME);
+        final boolean setupCompleted = prefs != null && prefs.getBoolean(MainActivity.KEY_SETUP_COMPLETED, false) && !SetupWizardActivity.isWizardActive();
+        final String lang = prefs != null ? prefs.getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en") : "en";
+        final java.util.Set<String> tilesOrder = prefs != null ? prefs.getStringSet("shade_tiles", null) : null;
 
         int densityDpi = activity.getResources().getDisplayMetrics().densityDpi;
         final float density = densityDpi / 160.0f;
@@ -79,6 +79,7 @@ public final class UltraShadeDialog {
         dragHandle.setTextColor(tokens.border);
         dragHandle.setGravity(Gravity.CENTER);
         dragHandle.setTextSize(14);
+        dragHandle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         dragHandle.setPadding(0, 0, 0, dp8);
         dragHandle.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { try { dialog.dismiss(); } catch (Throwable ignored) {} }
@@ -86,9 +87,18 @@ public final class UltraShadeDialog {
         root.addView(dragHandle);
 
         // Header Title
-        TextView headerTitle = new TextView(activity);
-        headerTitle.setText(I18n.get(I18n.KEY_SHADE_HEADER, lang));
-        headerTitle.setTextColor(tokens.accent);
+        final TextView headerTitle = new TextView(activity);
+        final Runnable updateHeader = new Runnable() {
+            @Override
+            public void run() {
+                boolean isUltra = UltraBatterySaverManager.isUltraBatterySaverActive(activity);
+                headerTitle.setText(isUltra
+                    ? I18n.get(I18n.KEY_SHADE_HEADER, lang)
+                    : I18n.get(I18n.KEY_QUICK_SETTINGS_HEADER, lang));
+                headerTitle.setTextColor(isUltra ? (tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555")) : tokens.accent);
+            }
+        };
+        updateHeader.run();
         headerTitle.setTextSize(15);
         headerTitle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         headerTitle.setGravity(Gravity.CENTER);
@@ -117,8 +127,8 @@ public final class UltraShadeDialog {
         // Grid of Quick Toggles (2 rows x 3 columns or 3 rows x 2 columns)
         // Row 1: Modo Avión | Modo No Molestar
         LinearLayout row1 = createToggleRow(activity);
-        final Button btnAirplane = createToggleButton(activity, tokens, dp48);
-        final Button btnDnd = createToggleButton(activity, tokens, dp48);
+        final TextView btnAirplane = createToggleButton(activity, tokens, dp48);
+        final TextView btnDnd = createToggleButton(activity, tokens, dp48);
         row1.addView(btnAirplane);
         row1.addView(createSpacer(activity, dp8));
         row1.addView(btnDnd);
@@ -129,8 +139,8 @@ public final class UltraShadeDialog {
 
         // Row 2: Wi-Fi | Datos Móviles
         LinearLayout row2 = createToggleRow(activity);
-        final Button btnWifi = createToggleButton(activity, tokens, dp48);
-        final Button btnData = createToggleButton(activity, tokens, dp48);
+        final TextView btnWifi = createToggleButton(activity, tokens, dp48);
+        final TextView btnData = createToggleButton(activity, tokens, dp48);
         row2.addView(btnWifi);
         row2.addView(createSpacer(activity, dp8));
         row2.addView(btnData);
@@ -141,33 +151,45 @@ public final class UltraShadeDialog {
 
         // Row 3: Bluetooth | Linterna
         LinearLayout row3 = createToggleRow(activity);
-        final Button btnBluetooth = createToggleButton(activity, tokens, dp48);
-        final Button btnTorch = createToggleButton(activity, tokens, dp48);
+        final TextView btnBluetooth = createToggleButton(activity, tokens, dp48);
+        final TextView btnTorch = createToggleButton(activity, tokens, dp48);
         row3.addView(btnBluetooth);
         row3.addView(createSpacer(activity, dp8));
         row3.addView(btnTorch);
         root.addView(row3);
 
-        // Row 4: NFC (hide if unsupported)
-        final Button btnNfc = createToggleButton(activity, tokens, dp48);
+        // Spacer between rows
+        root.addView(createVerticalSpacer(activity, dp8));
+
+        // Row 4: Ultra Battery Saver | NFC
+        LinearLayout row4 = createToggleRow(activity);
+        final TextView btnUltra = createToggleButton(activity, tokens, dp48);
+        final TextView btnNfc = createToggleButton(activity, tokens, dp48);
         final boolean nfcSupported = UltraBatterySaverManager.getNfcState(activity) != UltraBatterySaverManager.ToggleState.UNKNOWN
                 || android.nfc.NfcAdapter.getDefaultAdapter(activity) != null;
+        row4.addView(btnUltra);
+        row4.addView(createSpacer(activity, dp8));
         if (nfcSupported) {
-            root.addView(createVerticalSpacer(activity, dp8));
-            LinearLayout row4 = createToggleRow(activity);
             row4.addView(btnNfc);
-            // spacer + invisible placeholder to keep 2-col alignment
-            row4.addView(createSpacer(activity, dp8));
+        } else {
             android.widget.Space ph = new android.widget.Space(activity);
             ph.setLayoutParams(new LinearLayout.LayoutParams(0, dp48, 1.0f));
             row4.addView(ph);
-            root.addView(row4);
         }
+        root.addView(row4);
 
         // Update states helper
         final Runnable stateRefresher = new Runnable() {
             @Override
             public void run() {
+                // Ultra Saver Mode
+                boolean isUltra = UltraBatterySaverManager.isUltraBatterySaverActive(activity);
+                updateToggleStyle(btnUltra, tokens,
+                    I18n.get(I18n.KEY_TOGGLE_ULTRA_SAVER, lang) + ": "
+                        + (isUltra ? I18n.get(I18n.KEY_STATE_ON, lang) : I18n.get(I18n.KEY_STATE_OFF, lang)),
+                    isUltra, density);
+                updateHeader.run();
+
                 // Airplane Mode
                 UltraBatterySaverManager.ToggleState airplaneState =
                     UltraBatterySaverManager.getAirplaneModeState(activity);
@@ -238,12 +260,30 @@ public final class UltraShadeDialog {
         };
 
         // Click listeners
+        btnUltra.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean active = UltraBatterySaverManager.isUltraBatterySaverActive(activity);
+                UltraBatterySaverManager.ActionResult result =
+                    UltraBatterySaverManager.setUltraBatterySaver(activity, !active);
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
+            }
+        });
+
         btnAirplane.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                handleActionResult(
-                    activity, dialog, v, stateRefresher, lang,
-                    UltraBatterySaverManager.openAirplaneModeSettings(activity));
+                if (LockScreenManager.isDeviceLocked(activity) && LockSecurityManager.getSecurityType(activity) != LockSecurityManager.SecurityType.NONE) {
+                    Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                    LockScreenManager.launchLockScreen(activity);
+                    return;
+                }
+                UltraBatterySaverManager.ToggleState cur = UltraBatterySaverManager.getAirplaneModeState(activity);
+                boolean enable = cur != UltraBatterySaverManager.ToggleState.ON;
+                UltraBatterySaverManager.ActionResult result =
+                    UltraBatterySaverManager.setAirplaneMode(activity, enable);
+                handleActionResult(activity, dialog, v, stateRefresher, lang, result);
             }
         });
 
@@ -266,6 +306,9 @@ public final class UltraShadeDialog {
             public void onClick(View v) {
                 UltraBatterySaverManager.ToggleState state =
                     UltraBatterySaverManager.getWifiState(activity);
+                if (state == UltraBatterySaverManager.ToggleState.UNKNOWN && !setupCompleted) {
+                    return;
+                }
                 UltraBatterySaverManager.ActionResult result =
                     state == UltraBatterySaverManager.ToggleState.UNKNOWN
                         ? UltraBatterySaverManager.openWifiSettings(activity)
@@ -278,6 +321,9 @@ public final class UltraShadeDialog {
         btnData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!setupCompleted) {
+                    return;
+                }
                 handleActionResult(
                     activity, dialog, v, stateRefresher, lang,
                     UltraBatterySaverManager.openMobileDataSettings(activity));
@@ -289,6 +335,9 @@ public final class UltraShadeDialog {
             public void onClick(View v) {
                 UltraBatterySaverManager.ToggleState state =
                     UltraBatterySaverManager.getBluetoothState(activity);
+                if (state == UltraBatterySaverManager.ToggleState.UNKNOWN && !setupCompleted) {
+                    return;
+                }
                 UltraBatterySaverManager.ActionResult result;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                         && state == UltraBatterySaverManager.ToggleState.UNKNOWN) {
@@ -310,6 +359,9 @@ public final class UltraShadeDialog {
             @Override
             public void onClick(View v) {
                 UltraBatterySaverManager.ToggleState st = UltraBatterySaverManager.getNfcState(activity);
+                if (st == UltraBatterySaverManager.ToggleState.UNKNOWN && !setupCompleted) {
+                    return;
+                }
                 UltraBatterySaverManager.ActionResult r = (st == UltraBatterySaverManager.ToggleState.UNKNOWN)
                         ? UltraBatterySaverManager.openNfcSettings(activity)
                         : UltraBatterySaverManager.setNfc(activity, st != UltraBatterySaverManager.ToggleState.ON);
@@ -336,11 +388,14 @@ public final class UltraShadeDialog {
         LinearLayout bottomRow = new LinearLayout(activity);
         bottomRow.setOrientation(LinearLayout.HORIZONTAL);
 
-        Button btnClose = new Button(activity);
-        btnClose.setText(I18n.get(I18n.KEY_SHADE_CLOSE, lang));
+        TextView btnClose = new TextView(activity);
+        btnClose.setText(ensureBrackets(I18n.get(I18n.KEY_SHADE_CLOSE, lang)));
         btnClose.setTextColor(tokens.textMuted);
         btnClose.setTextSize(13);
         btnClose.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        btnClose.setGravity(Gravity.CENTER);
+        btnClose.setClickable(true);
+        btnClose.setFocusable(true);
         btnClose.setBackground(createButtonDrawable(tokens.controlBgNormal, tokens.border, (int) (1 * density), (int) (4 * density)));
         LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(0, dp48, 1.0f);
         btnClose.setLayoutParams(closeLp);
@@ -352,24 +407,37 @@ public final class UltraShadeDialog {
         });
         bottomRow.addView(btnClose);
 
-        bottomRow.addView(createSpacer(activity, dp8));
+        if (setupCompleted) {
+            bottomRow.addView(createSpacer(activity, dp8));
 
-        Button btnSettings = new Button(activity);
-        btnSettings.setText(I18n.get(I18n.KEY_SHADE_SETTINGS, lang));
-        btnSettings.setTextColor(tokens.navAccent);
-        btnSettings.setTextSize(13);
-        btnSettings.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        btnSettings.setBackground(createButtonDrawable(tokens.controlBgNormal, tokens.navAccent, (int) (1 * density), (int) (4 * density)));
-        LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(0, dp48, 1.0f);
-        btnSettings.setLayoutParams(settingsLp);
-        btnSettings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                activity.startActivity(new Intent(activity, SettingsActivity.class));
-            }
-        });
-        bottomRow.addView(btnSettings);
+            TextView btnSettings = new TextView(activity);
+            btnSettings.setText(ensureBrackets(I18n.get(I18n.KEY_SHADE_SETTINGS, lang)));
+            btnSettings.setTextColor(tokens.navAccent);
+            btnSettings.setTextSize(13);
+            btnSettings.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+            btnSettings.setGravity(Gravity.CENTER);
+            btnSettings.setClickable(true);
+            btnSettings.setFocusable(true);
+            btnSettings.setBackground(createButtonDrawable(tokens.controlBgNormal, tokens.navAccent, (int) (1 * density), (int) (4 * density)));
+            LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(0, dp48, 1.0f);
+            btnSettings.setLayoutParams(settingsLp);
+            btnSettings.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                    if (!setupCompleted) {
+                        return;
+                    }
+                    if (LockScreenManager.isDeviceLocked(activity) && LockScreenManager.isLockScreenEnabled(activity)) {
+                        Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
+                        LockScreenManager.launchLockScreen(activity);
+                        return;
+                    }
+                    activity.startActivity(new Intent(activity, SettingsActivity.class));
+                }
+            });
+            bottomRow.addView(btnSettings);
+        }
         root.addView(bottomRow);
 
         dialog.setContentView(root);
@@ -380,7 +448,7 @@ public final class UltraShadeDialog {
             window.setGravity(Gravity.TOP);
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            window.setWindowAnimations(android.R.style.Animation_Dialog);
+            window.setWindowAnimations(0); // Disable jarring default dialog scale-in
 
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
@@ -392,7 +460,28 @@ public final class UltraShadeDialog {
             } catch (Throwable ignored) {}
         }
 
+        dialog.setOnShowListener(new android.content.DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(android.content.DialogInterface d) {
+                root.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        root.setTranslationY(-root.getHeight());
+                        root.animate()
+                            .translationY(0f)
+                            .setDuration(220)
+                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                            .start();
+                    }
+                });
+            }
+        });
+
         dialog.show();
+    }
+
+    private static String ensureBrackets(String val) {
+        return TactileUi.ensureBrackets(val);
     }
 
     private static boolean isTileEnabled(java.util.Set<String> tilesOrder, String id) {
@@ -429,17 +518,19 @@ public final class UltraShadeDialog {
         return row;
     }
 
-    private static Button createToggleButton(Context context, ThemeTokens tokens, int height) {
-        Button btn = new Button(context);
+    private static TextView createToggleButton(Context context, ThemeTokens tokens, int height) {
+        TextView btn = new TextView(context);
         btn.setLayoutParams(new LinearLayout.LayoutParams(0, height, 1.0f));
         btn.setTextSize(12);
         btn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         btn.setGravity(Gravity.CENTER);
         btn.setPadding(4, 0, 4, 0);
+        btn.setClickable(true);
+        btn.setFocusable(true);
         return btn;
     }
 
-    private static void updateToggleStyle(Button btn, ThemeTokens tokens, String text, boolean isActive, float density) {
+    private static void updateToggleStyle(TextView btn, ThemeTokens tokens, String text, boolean isActive, float density) {
         btn.setText(text);
         if (isActive) {
             btn.setTextColor(tokens.activeSelectionText);
@@ -463,19 +554,6 @@ public final class UltraShadeDialog {
     }
 
     private static StateListDrawable createButtonDrawable(int normalBg, int strokeColor, int strokeWidth, int cornerRadius) {
-        GradientDrawable normal = new GradientDrawable();
-        normal.setColor(normalBg);
-        normal.setStroke(strokeWidth, strokeColor);
-        normal.setCornerRadius(cornerRadius);
-
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(strokeColor);
-        pressed.setStroke(strokeWidth, strokeColor);
-        pressed.setCornerRadius(cornerRadius);
-
-        StateListDrawable sld = new StateListDrawable();
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{}, normal);
-        return sld;
+        return TactileUi.createButtonDrawable(normalBg, strokeColor, strokeColor, strokeWidth, cornerRadius);
     }
 }

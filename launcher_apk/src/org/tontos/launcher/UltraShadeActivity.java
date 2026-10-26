@@ -23,11 +23,24 @@ public class UltraShadeActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (SetupWizardActivity.isWizardActive()) {
+            finish();
+            return;
+        }
+        SharedPreferences prefs = MainActivity.getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
+        boolean setupCompleted = prefs != null && prefs.getBoolean(MainActivity.KEY_SETUP_COMPLETED, false);
+        if (!setupCompleted) {
+            finish();
+            return;
+        }
+        if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
+            finish();
+            return;
+        }
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL);
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String themeId = prefs.getString("selected_theme", "AMOLED");
+        String themeId = prefs != null ? prefs.getString("selected_theme", "AMOLED") : "AMOLED";
         ThemeTokens tokens = ThemeTokens.get(themeId);
 
         // Fetch current battery percentage via sticky broadcast

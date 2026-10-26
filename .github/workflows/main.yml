@@ -113,11 +113,14 @@ jobs:
 
       - name: Run Java Modular Tests with JaCoCo Coverage
         run: |
-          mkdir -p target/test-classes target/jacoco-report
+          mkdir -p target/test-classes target/jacoco-report target/jacoco-tools
+          JACOCO_VERSION="0.8.12"
+          curl -sSL "https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/${JACOCO_VERSION}/org.jacoco.agent-${JACOCO_VERSION}-runtime.jar" -o target/jacoco-tools/jacocoagent.jar
+          curl -sSL "https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/${JACOCO_VERSION}/org.jacoco.cli-${JACOCO_VERSION}-nodeps.jar" -o target/jacoco-tools/jacococli.jar
           JAVA_TEST_FILES=$(find tests/java -name "*.java")
           javac -d target/test-classes $JAVA_TEST_FILES
-          java -javaagent:tools/jacoco/jacocoagent.jar=destfile=target/jacoco.exec -cp target/test-classes org.tontos.tests.TestRunner
-          java -jar tools/jacoco/jacococli.jar report target/jacoco.exec --classfiles target/test-classes --sourcefiles tests/java --html target/jacoco-report --csv target/jacoco-report/jacoco.csv
+          java -javaagent:target/jacoco-tools/jacocoagent.jar=destfile=target/jacoco.exec -cp target/test-classes org.tontos.tests.TestRunner
+          java -jar target/jacoco-tools/jacococli.jar report target/jacoco.exec --classfiles target/test-classes --sourcefiles tests/java --html target/jacoco-report --csv target/jacoco-report/jacoco.csv
           awk -F',' 'NR>1 {inst_miss+=$4; inst_cov+=$5; line_miss+=$8; line_cov+=$9} END {total_inst=inst_miss+inst_cov; total_line=line_miss+line_cov; if (total_inst>0) printf "::notice title=JaCoCo Coverage::Instructions: %.1f%% (%d/%d), Lines: %.1f%% (%d/%d)\n", (inst_cov*100.0/total_inst), inst_cov, total_inst, (line_cov*100.0/total_line), line_cov, total_line}' target/jacoco-report/jacoco.csv
           COVERAGE_PCT=$(awk -F',' 'NR>1 {inst_miss+=$4; inst_cov+=$5} END {total=inst_miss+inst_cov; if (total>0) printf "%.0f", (inst_cov*100.0/total)}' target/jacoco-report/jacoco.csv)
           if [ "$COVERAGE_PCT" -lt 90 ]; then
@@ -266,6 +269,7 @@ jobs:
             --exclude .ccache \
             --error \
             --sarif --output semgrep.sarif .
+          python3 -c "import json; d=json.load(open('semgrep.sarif')); [r.pop('invocations', None) for r in d.get('runs', [])]; json.dump(d, open('semgrep.sarif', 'w'))"
 
       - name: Upload Semgrep results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
@@ -277,6 +281,7 @@ jobs:
           (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
           sarif_file: semgrep.sarif
+          category: semgrep-sast
 
   trivy-security-scan:
     name: "3. Security: Trivy Container & FS"

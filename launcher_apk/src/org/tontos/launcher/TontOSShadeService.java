@@ -138,6 +138,13 @@ public class TontOSShadeService extends Service {
         overlayView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                if (SetupWizardActivity.isWizardActive()) {
+                    return false;
+                }
+                android.content.SharedPreferences prefs = MainActivity.getSafeSharedPreferences(TontOSShadeService.this, MainActivity.PREFS_NAME);
+                if (prefs == null || !prefs.getBoolean(MainActivity.KEY_SETUP_COMPLETED, false)) {
+                    return false;
+                }
                 Log.i(TAG, "overlay touch: action=" + event.getActionMasked() + " Y=" + event.getRawY());
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
@@ -171,6 +178,15 @@ public class TontOSShadeService extends Service {
     }
 
     private void triggerCustomShade() {
+        if (SetupWizardActivity.isWizardActive()) {
+            return;
+        }
+        android.content.SharedPreferences prefs = MainActivity.getSafeSharedPreferences(this, MainActivity.PREFS_NAME);
+        boolean setupCompleted = prefs != null && prefs.getBoolean(MainActivity.KEY_SETUP_COMPLETED, false);
+        if (!setupCompleted) {
+            return;
+        }
+
         try {
             SafeCommandExecutor.executePrivileged("cmd", "statusbar", "collapse-instant");
         } catch (Throwable ignored) {}

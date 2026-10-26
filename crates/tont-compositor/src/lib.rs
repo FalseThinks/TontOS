@@ -36,7 +36,7 @@ impl DirectScanoutEvaluator {
     pub fn evaluate_frame(
         &self,
         has_damage: bool,
-        damage_rects: Vec<Rect>,
+        damage_rects: &[Rect],
         has_active_overlay: bool,
         focused_surface_id: Option<u64>,
         focused_surface_size: Option<(u32, u32)>,
@@ -55,7 +55,50 @@ impl DirectScanoutEvaluator {
         }
 
         ScanoutDecision::CompositeDamage {
-            damage_regions: damage_rects,
+            damage_regions: damage_rects.to_vec(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_skip_frame_when_no_damage() {
+        let evaluator = DirectScanoutEvaluator::new(1080, 2400);
+        let decision = evaluator.evaluate_frame(false, &[], false, None, None);
+        assert_eq!(decision, ScanoutDecision::SkipFrame);
+    }
+
+    #[test]
+    fn test_direct_scanout_fullscreen() {
+        let evaluator = DirectScanoutEvaluator::new(1080, 2400);
+        let damage = [Rect {
+            x: 0,
+            y: 0,
+            width: 1080,
+            height: 2400,
+        }];
+        let decision = evaluator.evaluate_frame(true, &damage, false, Some(42), Some((1080, 2400)));
+        assert_eq!(decision, ScanoutDecision::DirectScanout { surface_id: 42 });
+    }
+
+    #[test]
+    fn test_composite_damage_with_overlay() {
+        let evaluator = DirectScanoutEvaluator::new(1080, 2400);
+        let damage = [Rect {
+            x: 10,
+            y: 10,
+            width: 100,
+            height: 100,
+        }];
+        let decision = evaluator.evaluate_frame(true, &damage, true, Some(42), Some((1080, 2400)));
+        assert_eq!(
+            decision,
+            ScanoutDecision::CompositeDamage {
+                damage_regions: damage.to_vec()
+            }
+        );
     }
 }

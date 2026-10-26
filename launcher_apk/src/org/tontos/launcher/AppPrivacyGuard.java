@@ -235,71 +235,24 @@ public final class AppPrivacyGuard {
     ) {
         if (activity == null || activity.isFinishing()) return;
 
-        final Dialog dlg = new Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dlg.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        Window window = dlg.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(tokens.bg));
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
-                    window.getInsetsController().setSystemBarsAppearance(
-                        tokens.isLight ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    );
-                }
-            } catch (Throwable ignored) {}
-            GrayscaleManager.applyGrayscaleToWindow(window, GrayscaleManager.isGrayscaleEnabled(activity));
-        }
-
-        final float density = activity.getResources().getDisplayMetrics().density;
-        final int pad = (int) (24 * density);
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(tokens.bg);
-        root.setPadding(pad, pad, pad, pad);
-
-        // Header Title
-        TextView titleView = new TextView(activity);
-        titleView.setText("GRAPHENEOS PRIVACY GUARD");
-        titleView.setTextColor(tokens.accent);
-        titleView.setTextSize(16);
-        titleView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        titleView.setPadding(0, 0, 0, (int) (4 * density));
-        root.addView(titleView);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_APP_PRIVACY_GUARD, langCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
 
         // App Label & Package Subtitle
         TextView appSub = new TextView(activity);
         appSub.setText((appLabel != null ? appLabel : pkg) + " [" + pkg + "]");
-        appSub.setTextColor(tokens.textMuted);
-        appSub.setTextSize(12);
+        appSub.setTextColor(themeTokens.textMuted);
+        appSub.setTextSize(12 * fontScale);
         appSub.setTypeface(Typeface.MONOSPACE);
-        appSub.setPadding(0, 0, 0, (int) (12 * density));
-        root.addView(appSub);
+        appSub.setPadding(0, 0, 0, (int) (8 * density));
+        dlg.addHeaderCustomView(appSub);
 
-        // Tactile Dynamic Line Divider
-        View divider = new View(activity);
-        LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (int) (1 * density + 0.5f)
-        );
-        divParams.setMargins(0, 0, 0, (int) (16 * density));
-        divider.setLayoutParams(divParams);
-        divider.setBackgroundColor(tokens.border);
-        root.addView(divider);
+        LinearLayout content = dlg.getContentContainer();
 
-        ScrollView scroll = new ScrollView(activity);
-        scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
-
-        LinearLayout content = new LinearLayout(activity);
-        content.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(content);
-        root.addView(scroll);
-
-        final int blockedColor = tokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555");
-        final int allowedColor = tokens.navAccent;
+        final int blockedColor = themeTokens.isLight ? Color.parseColor("#CC0000") : Color.parseColor("#FF5555");
+        final int allowedColor = themeTokens.navAccent;
         final String blockedLabel = I18n.get(I18n.KEY_STATUS_BLOCKED, langCode);
         final String allowedLabel = I18n.get(I18n.KEY_STATUS_ALLOWED, langCode);
         final String restrictedLabel = I18n.get(I18n.KEY_STATUS_RESTRICTED, langCode);
@@ -307,8 +260,8 @@ public final class AppPrivacyGuard {
         // Section 1 Header: PERMISOS / PERMISSIONS
         TextView permHeader = new TextView(activity);
         permHeader.setText(I18n.get(I18n.KEY_PERMS_HEADER, langCode));
-        permHeader.setTextColor(tokens.accent);
-        permHeader.setTextSize(14);
+        permHeader.setTextColor(themeTokens.accent);
+        permHeader.setTextSize(14 * fontScale);
         permHeader.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         permHeader.setPadding(0, (int) (4 * density), 0, (int) (8 * density));
         content.addView(permHeader);
@@ -442,23 +395,18 @@ public final class AppPrivacyGuard {
         });
 
         // Close Button
-        TextView closeBtn = new TextView(activity);
-        closeBtn.setText(I18n.get(I18n.KEY_CANCEL, langCode));
-        closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(14);
-        closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        closeBtn.setGravity(Gravity.CENTER);
-        closeBtn.setMinimumHeight((int) (48 * density));
-        closeBtn.setPadding(0, (int) (12 * density), 0, (int) (12 * density));
-        closeBtn.setClickable(true);
-        closeBtn.setFocusable(true);
-        closeBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dlg.dismiss();
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            themeTokens.navAccent,
+            themeTokens.border,
+            true,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
             }
-        });
-        root.addView(closeBtn);
+        );
 
         dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
@@ -469,7 +417,6 @@ public final class AppPrivacyGuard {
             }
         });
 
-        dlg.setContentView(root);
         dlg.show();
     }
 
@@ -514,14 +461,7 @@ public final class AppPrivacyGuard {
         toggleBtn.setPadding((int) (8 * density), (int) (4 * density), (int) (8 * density), (int) (4 * density));
         toggleBtn.setClickable(true);
         toggleBtn.setFocusable(true);
-
-        StateListDrawable sld = new StateListDrawable();
-        GradientDrawable pressed = new GradientDrawable();
-        pressed.setColor(tokens.controlBgPressed);
-        pressed.setCornerRadius((int) (4 * density));
-        sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-        sld.addState(new int[]{}, new ColorDrawable(Color.TRANSPARENT));
-        toggleBtn.setBackground(sld);
+        toggleBtn.setBackground(TactileUi.createTouchFeedbackDrawable(activity, tokens));
 
         toggleBtn.setOnClickListener(onClick);
         top.addView(toggleBtn);
@@ -590,66 +530,25 @@ public final class AppPrivacyGuard {
     ) {
         if (activity == null || activity.isFinishing()) return;
 
-        final Dialog dlg = new Dialog(activity, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        dlg.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        Window window = dlg.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(tokens.bg));
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
-                    window.getInsetsController().setSystemBarsAppearance(
-                        tokens.isLight ? WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS : 0,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    );
-                }
-            } catch (Throwable ignored) {}
-            GrayscaleManager.applyGrayscaleToWindow(window, GrayscaleManager.isGrayscaleEnabled(activity));
-        }
-
-        final float density = activity.getResources().getDisplayMetrics().density;
-        final int pad = (int) (24 * density);
-
-        LinearLayout root = new LinearLayout(activity);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(tokens.bg);
-        root.setPadding(pad, pad, pad, pad);
-
-        // Header Title
-        TextView titleView = new TextView(activity);
-        titleView.setText("GRAPHENEOS APP PRIVACY GUARD");
-        titleView.setTextColor(tokens.accent);
-        titleView.setTextSize(16);
-        titleView.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        titleView.setPadding(0, 0, 0, (int) (4 * density));
-        root.addView(titleView);
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_APP_PRIVACY_GUARD, langCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
 
         // Subtitle
         final TextView summaryView = new TextView(activity);
-        summaryView.setTextColor(tokens.textMuted);
-        summaryView.setTextSize(12);
+        summaryView.setTextColor(themeTokens.textMuted);
+        summaryView.setTextSize(12 * fontScale);
         summaryView.setTypeface(Typeface.MONOSPACE);
         summaryView.setPadding(0, 0, 0, (int) (8 * density));
-        root.addView(summaryView);
-
-        // Dynamic Line Divider
-        View divider = new View(activity);
-        LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            (int) (1 * density + 0.5f)
-        );
-        divParams.setMargins(0, 0, 0, (int) (12 * density));
-        divider.setLayoutParams(divParams);
-        divider.setBackgroundColor(tokens.border);
-        root.addView(divider);
+        dlg.addHeaderCustomView(summaryView);
 
         // Search Filter Input
         final EditText searchBox = new EditText(activity);
         searchBox.setHint(I18n.get(I18n.KEY_SEARCH_APPS, langCode));
-        searchBox.setHintTextColor(tokens.textMuted);
-        searchBox.setTextColor(tokens.textPrimary);
-        searchBox.setTextSize(13);
+        searchBox.setHintTextColor(themeTokens.textMuted);
+        searchBox.setTextColor(themeTokens.textPrimary);
+        searchBox.setTextSize(13 * fontScale);
         searchBox.setTypeface(Typeface.MONOSPACE);
         searchBox.setSingleLine(true);
         searchBox.setMinimumHeight((int) (44 * density));
@@ -657,30 +556,23 @@ public final class AppPrivacyGuard {
 
         final GradientDrawable searchBg = new GradientDrawable();
         searchBg.setColor(Color.TRANSPARENT);
-        searchBg.setStroke((int) (1 * density), tokens.border);
+        searchBg.setStroke((int) (1 * density), themeTokens.border);
         searchBg.setCornerRadius((int) (4 * density));
         searchBox.setBackground(searchBg);
 
         searchBox.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                searchBg.setStroke((int) (1 * density), hasFocus ? tokens.accent : tokens.border);
+                searchBg.setStroke((int) (1 * density), hasFocus ? themeTokens.accent : themeTokens.border);
             }
         });
 
         LinearLayout.LayoutParams searchLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        searchLp.setMargins(0, 0, 0, (int) (12 * density));
+        searchLp.setMargins(0, 0, 0, (int) (8 * density));
         searchBox.setLayoutParams(searchLp);
-        root.addView(searchBox);
+        dlg.addFixedSubHeaderView(searchBox);
 
-        // Scrollable List
-        ScrollView scroll = new ScrollView(activity);
-        scroll.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
-
-        final LinearLayout listContainer = new LinearLayout(activity);
-        listContainer.setOrientation(LinearLayout.VERTICAL);
-        scroll.addView(listContainer);
-        root.addView(scroll);
+        final LinearLayout listContainer = dlg.getContentContainer();
 
         // Query apps
         PackageManager pm = activity.getPackageManager();
@@ -729,23 +621,18 @@ public final class AppPrivacyGuard {
         });
 
         // Close Button
-        TextView closeBtn = new TextView(activity);
-        closeBtn.setText(I18n.get(I18n.KEY_CANCEL, langCode));
-        closeBtn.setTextColor(tokens.navAccent);
-        closeBtn.setTextSize(14);
-        closeBtn.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        closeBtn.setGravity(Gravity.CENTER);
-        closeBtn.setMinimumHeight((int) (48 * density));
-        closeBtn.setPadding(0, (int) (12 * density), 0, (int) (12 * density));
-        closeBtn.setClickable(true);
-        closeBtn.setFocusable(true);
-        closeBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dlg.dismiss();
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            themeTokens.navAccent,
+            themeTokens.border,
+            true,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
             }
-        });
-        root.addView(closeBtn);
+        );
 
         dlg.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
@@ -756,7 +643,6 @@ public final class AppPrivacyGuard {
             }
         });
 
-        dlg.setContentView(root);
         dlg.show();
     }
 
@@ -801,14 +687,7 @@ public final class AppPrivacyGuard {
             row.setPadding(0, (int) (6 * density), 0, (int) (6 * density));
             row.setClickable(true);
             row.setFocusable(true);
-
-            StateListDrawable sld = new StateListDrawable();
-            GradientDrawable pressed = new GradientDrawable();
-            pressed.setColor(tokens.controlBgPressed);
-            pressed.setCornerRadius((int) (4 * density));
-            sld.addState(new int[]{android.R.attr.state_pressed}, pressed);
-            sld.addState(new int[]{}, new ColorDrawable(Color.TRANSPARENT));
-            row.setBackground(sld);
+            row.setBackground(TactileUi.createTouchFeedbackDrawable(activity, tokens));
 
             LinearLayout textCol = new LinearLayout(activity);
             textCol.setOrientation(LinearLayout.VERTICAL);

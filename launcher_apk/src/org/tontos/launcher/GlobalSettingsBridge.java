@@ -13,10 +13,8 @@ import java.lang.reflect.Method;
 import java.util.Locale;
 
 /**
- * Universal System-Wide Configuration Bridge for TontOS.
- * Ensures all preference updates (Font Scale, Audio, Language, Display Timeout,
- * Lock Screen privacy/owner metadata) are broadcast and enforced globally to the
- * entire Android OS and third-party apps, rather than isolated to launcher preferences.
+ * System settings bridge for TontOS.
+ * Synchronizes launcher preferences with Android system settings.
  */
 public final class GlobalSettingsBridge {
 
@@ -28,13 +26,17 @@ public final class GlobalSettingsBridge {
 
     private GlobalSettingsBridge() {}
 
+    private static SharedPreferences getPrefs(Context context) {
+        if (context == null) return null;
+        return MainActivity.getSafeSharedPreferences(context, PREFS_NAME, Context.MODE_PRIVATE);
+    }
+
     /**
      * Resolves current font scale factor (0.85f - 1.30f).
      */
     public static float getFontScale(Context context) {
-        if (context == null) return 1.0f;
-        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        int scaleInt = prefs.getInt(KEY_FONT_SCALE, 100);
+        SharedPreferences prefs = getPrefs(context);
+        int scaleInt = prefs != null ? prefs.getInt(KEY_FONT_SCALE, 100) : 100;
         return Math.max(0.5f, Math.min(2.0f, scaleInt / 100.0f));
     }
 
@@ -47,8 +49,10 @@ public final class GlobalSettingsBridge {
         final int scaleInt = Math.round(scale * 100.0f);
 
         // 1. Save locally in TontOS launcher preferences
-        appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_FONT_SCALE, scaleInt).apply();
+        SharedPreferences prefs = getPrefs(appCtx != null ? appCtx : context);
+        if (prefs != null) {
+            prefs.edit().putInt(KEY_FONT_SCALE, scaleInt).apply();
+        }
 
         // 2. Apply asynchronously to Android framework, system providers, and ActivityManager
         new Thread(new Runnable() {
@@ -89,8 +93,10 @@ public final class GlobalSettingsBridge {
     public static void applyGlobalScreenTimeout(final Context context, final int secs) {
         if (context == null) return;
         final Context appCtx = context.getApplicationContext();
-        appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_TIMEOUT, secs).apply();
+        SharedPreferences prefs = getPrefs(appCtx != null ? appCtx : context);
+        if (prefs != null) {
+            prefs.edit().putInt(KEY_TIMEOUT, secs).apply();
+        }
 
         final long ms = (secs <= 0) ? 2147483647L : ((long) secs * 1000L);
         new Thread(new Runnable() {
@@ -114,8 +120,10 @@ public final class GlobalSettingsBridge {
     public static void applyGlobalBrightness(final Context context, final int progressPercent) {
         if (context == null) return;
         final Context appCtx = context.getApplicationContext();
-        appCtx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().putInt(KEY_BRIGHTNESS, progressPercent).apply();
+        SharedPreferences prefs = getPrefs(appCtx != null ? appCtx : context);
+        if (prefs != null) {
+            prefs.edit().putInt(KEY_BRIGHTNESS, progressPercent).apply();
+        }
 
         final int val255 = (int) Math.round((Math.max(0, Math.min(100, progressPercent)) / 100.0) * 255.0);
         new Thread(new Runnable() {
@@ -140,6 +148,15 @@ public final class GlobalSettingsBridge {
      */
     public static void applyGlobalRingerMode(final Context context, final int ringerMode) {
         if (context == null) return;
+        final String modeStr;
+        if (ringerMode == AudioManager.RINGER_MODE_SILENT) {
+            modeStr = "SILENT";
+        } else if (ringerMode == AudioManager.RINGER_MODE_VIBRATE) {
+            modeStr = "VIBRATE";
+        } else {
+            modeStr = "NORMAL";
+        }
+
         try {
             AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
@@ -150,7 +167,8 @@ public final class GlobalSettingsBridge {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                SafeCommandExecutor.executePrivileged("cmd", "audio", "set-ringer-mode", String.valueOf(ringerMode));
+                SafeCommandExecutor.executePrivileged("cmd", "notification", "allow_dnd", context.getPackageName());
+                SafeCommandExecutor.executePrivileged("cmd", "audio", "set-ringer-mode", modeStr);
             }
         }, "TontOS-GlobalRingerApplier").start();
     }

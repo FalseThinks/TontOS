@@ -1,4 +1,4 @@
-use tont_settings_app::{AppRole, SettingsAction, SettingsApp, SettingsCategory};
+use tont_settings::{AppRole, SettingsAction, SettingsApp, SettingsCategory};
 
 #[test]
 fn test_navigation_flow() {

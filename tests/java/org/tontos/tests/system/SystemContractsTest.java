@@ -20,9 +20,9 @@ public class SystemContractsTest {
             TestAssert.assertEquals(5, totalSections, "Settings must have exactly 5 categorized sections");
         });
 
-        TestAssert.runTest("Wizard Steps Contract (0-4)", () -> {
-            int totalSteps = 5;
-            TestAssert.assertEquals(5, totalSteps, "Setup Wizard must have 5 linear steps (0-4)");
+        TestAssert.runTest("Wizard Steps Contract (0-5)", () -> {
+            int totalSteps = 6;
+            TestAssert.assertEquals(6, totalSteps, "Setup Wizard must have 6 linear steps (0-5)");
         });
 
         TestAssert.runTest("Low-RAM AOSP Properties in tontos_base.mk", () -> {
