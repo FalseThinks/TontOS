@@ -11,13 +11,19 @@ import android.os.CancellationSignal;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import android.util.Log;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Locale;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 /**
  * Lock Screen Security & Biometric Manager for TontOS.
@@ -359,6 +365,37 @@ public final class LockSecurityManager {
         }
     }
 
+    private static final String FINGERPRINT_KEY_ALIAS = "tontos_fingerprint_auth_key";
+    private static final String FINGERPRINT_CIPHER_TRANSFORMATION =
+            KeyProperties.KEY_ALGORITHM_AES + "/" +
+            KeyProperties.BLOCK_MODE_CBC + "/" +
+            KeyProperties.ENCRYPTION_PADDING_PKCS7;
+
+    private static Cipher getFingerprintCipher() throws Exception {
+        return Cipher.getInstance(FINGERPRINT_CIPHER_TRANSFORMATION);
+    }
+
+    private static SecretKey getOrCreateFingerprintKey() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        SecretKey existing = (SecretKey) keyStore.getKey(FINGERPRINT_KEY_ALIAS, null);
+        if (existing != null) return existing;
+
+        KeyGenerator keyGenerator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore");
+        KeyGenParameterSpec.Builder builder = new KeyGenParameterSpec.Builder(
+                FINGERPRINT_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                .setUserAuthenticationRequired(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            builder.setInvalidatedByBiometricEnrollment(true);
+        }
+        keyGenerator.init(builder.build());
+        return keyGenerator.generateKey();
+    }
+
     public static CancellationSignal startFingerprintListener(Context context, final FingerprintAuthCallback callback) {
         if (context == null || callback == null) return null;
         if (!isFingerprintEnabled(context) || !hasEnrolledFingerprints(context)) return null;
@@ -367,11 +404,27 @@ public final class LockSecurityManager {
             FingerprintManager fpm = (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
             if (fpm == null || !fpm.isHardwareDetected() || !fpm.hasEnrolledFingerprints()) return null;
 
+            Cipher cipher = getFingerprintCipher();
+            SecretKey key = getOrCreateFingerprintKey();
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            FingerprintManager.CryptoObject cryptoObject = new FingerprintManager.CryptoObject(cipher);
+
             final CancellationSignal signal = new CancellationSignal();
-            fpm.authenticate(null, signal, 0, new FingerprintManager.AuthenticationCallback() {
+            fpm.authenticate(cryptoObject, signal, 0, new FingerprintManager.AuthenticationCallback() {
                 @Override
                 public void onAuthenticationSucceeded(FingerprintManager.AuthenticationResult result) {
-                    callback.onAuthenticated();
+                    try {
+                        if (result == null || result.getCryptoObject() == null ||
+                                result.getCryptoObject().getCipher() == null) {
+                            callback.onError("Authentication succeeded without valid crypto context");
+                            return;
+                        }
+                        Cipher authenticatedCipher = result.getCryptoObject().getCipher();
+                        authenticatedCipher.doFinal("auth".getBytes(StandardCharsets.UTF_8));
+                        callback.onAuthenticated();
+                    } catch (Throwable t) {
+                        callback.onError("Authentication crypto validation failed");
+                    }
                 }
 
                 @Override
