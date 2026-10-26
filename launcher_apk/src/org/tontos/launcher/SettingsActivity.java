@@ -141,6 +141,14 @@ public class SettingsActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        preferences = MainActivity.getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
+        if (SetupWizardActivity.isWizardActive() || preferences == null || !preferences.getBoolean(MainActivity.KEY_SETUP_COMPLETED, false)) {
+            android.util.Log.w("SettingsActivity", "Access denied: Setup wizard active or not completed");
+            startActivity(new Intent(this, SetupWizardActivity.class));
+            finish();
+            return;
+        }
+
         if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
             android.util.Log.w("SettingsActivity", "Access denied: Device is locked");
             LockScreenManager.launchLockScreen(this);
@@ -148,7 +156,6 @@ public class SettingsActivity extends Activity {
             return;
         }
 
-        preferences = MainActivity.getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         rootLayout = new LinearLayout(this);
@@ -235,6 +242,15 @@ public class SettingsActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (preferences == null) {
+            preferences = MainActivity.getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
+        }
+        if (SetupWizardActivity.isWizardActive() || preferences == null || !preferences.getBoolean(MainActivity.KEY_SETUP_COMPLETED, false)) {
+            android.util.Log.w("SettingsActivity", "Access denied: Setup wizard active or not completed");
+            startActivity(new Intent(this, SetupWizardActivity.class));
+            finish();
+            return;
+        }
         if (LockScreenManager.isDeviceLocked(this) && LockScreenManager.isLockScreenEnabled(this)) {
             android.util.Log.w("SettingsActivity", "Access denied: Device is locked");
             LockScreenManager.launchLockScreen(this);

@@ -233,6 +233,16 @@ public final class LockSecurityManager {
         return matched;
     }
 
+    public static boolean hasPin(Context context) {
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null && prefs.getString(KEY_PIN_HASH, null) != null;
+    }
+
+    public static boolean hasPattern(Context context) {
+        SharedPreferences prefs = getPrefs(context);
+        return prefs != null && prefs.getString(KEY_PATTERN_HASH, null) != null;
+    }
+
     public static void clearSecurity(Context context) {
         SharedPreferences prefs = getPrefs(context);
         if (prefs != null) {
@@ -242,6 +252,10 @@ public final class LockSecurityManager {
                 .putString(KEY_SECURITY_TYPE, SecurityType.NONE.getId())
                 .apply();
         }
+    }
+
+    public static void clearCredentials(Context context) {
+        clearSecurity(context);
     }
 
     // --- Biometric & Fingerprint Integration ---

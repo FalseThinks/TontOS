@@ -47,9 +47,10 @@ public final class UltraShadeDialog {
             }
         });
 
-        SharedPreferences prefs = activity.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
-        final String lang = prefs.getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en");
-        final java.util.Set<String> tilesOrder = prefs.getStringSet("shade_tiles", null);
+        SharedPreferences prefs = MainActivity.getSafeSharedPreferences(activity, MainActivity.PREFS_NAME);
+        final boolean setupCompleted = prefs != null && prefs.getBoolean(MainActivity.KEY_SETUP_COMPLETED, false) && !SetupWizardActivity.isWizardActive();
+        final String lang = prefs != null ? prefs.getString(MainActivity.KEY_SYSTEM_LANGUAGE, "en") : "en";
+        final java.util.Set<String> tilesOrder = prefs != null ? prefs.getStringSet("shade_tiles", null) : null;
 
         int densityDpi = activity.getResources().getDisplayMetrics().densityDpi;
         final float density = densityDpi / 160.0f;
@@ -305,6 +306,9 @@ public final class UltraShadeDialog {
             public void onClick(View v) {
                 UltraBatterySaverManager.ToggleState state =
                     UltraBatterySaverManager.getWifiState(activity);
+                if (state == UltraBatterySaverManager.ToggleState.UNKNOWN && !setupCompleted) {
+                    return;
+                }
                 UltraBatterySaverManager.ActionResult result =
                     state == UltraBatterySaverManager.ToggleState.UNKNOWN
                         ? UltraBatterySaverManager.openWifiSettings(activity)
@@ -317,6 +321,9 @@ public final class UltraShadeDialog {
         btnData.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!setupCompleted) {
+                    return;
+                }
                 handleActionResult(
                     activity, dialog, v, stateRefresher, lang,
                     UltraBatterySaverManager.openMobileDataSettings(activity));
@@ -328,6 +335,9 @@ public final class UltraShadeDialog {
             public void onClick(View v) {
                 UltraBatterySaverManager.ToggleState state =
                     UltraBatterySaverManager.getBluetoothState(activity);
+                if (state == UltraBatterySaverManager.ToggleState.UNKNOWN && !setupCompleted) {
+                    return;
+                }
                 UltraBatterySaverManager.ActionResult result;
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                         && state == UltraBatterySaverManager.ToggleState.UNKNOWN) {
@@ -349,6 +359,9 @@ public final class UltraShadeDialog {
             @Override
             public void onClick(View v) {
                 UltraBatterySaverManager.ToggleState st = UltraBatterySaverManager.getNfcState(activity);
+                if (st == UltraBatterySaverManager.ToggleState.UNKNOWN && !setupCompleted) {
+                    return;
+                }
                 UltraBatterySaverManager.ActionResult r = (st == UltraBatterySaverManager.ToggleState.UNKNOWN)
                         ? UltraBatterySaverManager.openNfcSettings(activity)
                         : UltraBatterySaverManager.setNfc(activity, st != UltraBatterySaverManager.ToggleState.ON);
@@ -394,32 +407,37 @@ public final class UltraShadeDialog {
         });
         bottomRow.addView(btnClose);
 
-        bottomRow.addView(createSpacer(activity, dp8));
+        if (setupCompleted) {
+            bottomRow.addView(createSpacer(activity, dp8));
 
-        TextView btnSettings = new TextView(activity);
-        btnSettings.setText(ensureBrackets(I18n.get(I18n.KEY_SHADE_SETTINGS, lang)));
-        btnSettings.setTextColor(tokens.navAccent);
-        btnSettings.setTextSize(13);
-        btnSettings.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
-        btnSettings.setGravity(Gravity.CENTER);
-        btnSettings.setClickable(true);
-        btnSettings.setFocusable(true);
-        btnSettings.setBackground(createButtonDrawable(tokens.controlBgNormal, tokens.navAccent, (int) (1 * density), (int) (4 * density)));
-        LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(0, dp48, 1.0f);
-        btnSettings.setLayoutParams(settingsLp);
-        btnSettings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-                if (LockScreenManager.isDeviceLocked(activity) && LockScreenManager.isLockScreenEnabled(activity)) {
-                    Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
-                    LockScreenManager.launchLockScreen(activity);
-                    return;
+            TextView btnSettings = new TextView(activity);
+            btnSettings.setText(ensureBrackets(I18n.get(I18n.KEY_SHADE_SETTINGS, lang)));
+            btnSettings.setTextColor(tokens.navAccent);
+            btnSettings.setTextSize(13);
+            btnSettings.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+            btnSettings.setGravity(Gravity.CENTER);
+            btnSettings.setClickable(true);
+            btnSettings.setFocusable(true);
+            btnSettings.setBackground(createButtonDrawable(tokens.controlBgNormal, tokens.navAccent, (int) (1 * density), (int) (4 * density)));
+            LinearLayout.LayoutParams settingsLp = new LinearLayout.LayoutParams(0, dp48, 1.0f);
+            btnSettings.setLayoutParams(settingsLp);
+            btnSettings.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                    if (!setupCompleted) {
+                        return;
+                    }
+                    if (LockScreenManager.isDeviceLocked(activity) && LockScreenManager.isLockScreenEnabled(activity)) {
+                        Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
+                        LockScreenManager.launchLockScreen(activity);
+                        return;
+                    }
+                    activity.startActivity(new Intent(activity, SettingsActivity.class));
                 }
-                activity.startActivity(new Intent(activity, SettingsActivity.class));
-            }
-        });
-        bottomRow.addView(btnSettings);
+            });
+            bottomRow.addView(btnSettings);
+        }
         root.addView(bottomRow);
 
         dialog.setContentView(root);

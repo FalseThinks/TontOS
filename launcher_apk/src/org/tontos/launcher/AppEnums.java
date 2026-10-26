@@ -239,7 +239,8 @@ enum WizardStep {
     LANGUAGE_REGION(1, "1. Language & Region"),
     THEME_PRESET(2, "2. Theme Preset"),
     DETOX_BUDGET(3, "3. Focus & Detox Limit"),
-    COMPLETE(4, "4. Setup Complete");
+    SECURITY(4, "4. Device Security"),
+    COMPLETE(5, "5. Setup Complete");
 
     private final int index;
     private final String headerTitle;

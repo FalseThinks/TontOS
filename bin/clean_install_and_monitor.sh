@@ -197,6 +197,33 @@ echo " Usage Log:   $USAGE_LOG"
 echo " Logcat Log:  $LOGCAT_LOG"
 echo "=========================================================="
 
+if [[ -f "$ROOT_DIR/launcher_apk/tontos-launcher.apk" ]]; then
+    echo "[+] Syncing latest compiled Launcher APK to VM..."
+    adb -s 127.0.0.1:6520 root >/dev/null 2>&1 || true
+    sleep 2
+    REMOUNT_LOG="$(adb -s 127.0.0.1:6520 remount 2>&1 || true)"
+    if echo "$REMOUNT_LOG" | grep -qi "reboot"; then
+        echo "[+] Overlayfs configured; rebooting VM to apply writable partitions..."
+        adb -s 127.0.0.1:6520 reboot >/dev/null 2>&1 || true
+        sleep 4
+        while true; do
+            BOOT_STATUS="$(adb -s 127.0.0.1:6520 shell getprop sys.boot_completed 2>/dev/null || echo 0)"
+            [[ "${BOOT_STATUS//$'\r'/}" == "1" ]] && break
+            sleep 2
+            adb connect 127.0.0.1:6520 >/dev/null 2>&1 || true
+        done
+        adb -s 127.0.0.1:6520 root >/dev/null 2>&1 || true
+        sleep 2
+        adb -s 127.0.0.1:6520 remount >/dev/null 2>&1 || true
+    fi
+    adb -s 127.0.0.1:6520 push "$ROOT_DIR/launcher_apk/tontos-launcher.apk" /system_ext/priv-app/TontOSLauncher/TontOSLauncher.apk
+    adb -s 127.0.0.1:6520 shell "chmod 644 /system_ext/priv-app/TontOSLauncher/TontOSLauncher.apk && chown root:root /system_ext/priv-app/TontOSLauncher/TontOSLauncher.apk"
+    adb -s 127.0.0.1:6520 shell su 0 "rm -rf /data/user/0/org.tontos.launcher/* /data/user_de/0/org.tontos.launcher/* && pkill -9 -f org.tontos.launcher"
+    sleep 1
+    adb -s 127.0.0.1:6520 shell wm dismiss-keyguard >/dev/null 2>&1 || true
+    adb -s 127.0.0.1:6520 shell am start -n org.tontos.launcher/.SetupWizardActivity >/dev/null 2>&1 || true
+fi
+
 adb -s 127.0.0.1:6520 logcat -v threadtime > "$LOGCAT_LOG" 2>&1 &
 LOGCAT_PID=$!
 

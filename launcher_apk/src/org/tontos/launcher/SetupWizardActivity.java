@@ -47,6 +47,12 @@ public class SetupWizardActivity extends Activity {
     private static final int DEFAULT_BUDGET_MINUTES = 120;
     private static final int MIN_TOUCH_TARGET_DP = 48;
 
+    public static volatile boolean isWizardActive = false;
+
+    public static boolean isWizardActive() {
+        return isWizardActive;
+    }
+
     private SharedPreferences preferences;
     private LinearLayout rootLayout;
     private TextView titleView;
@@ -64,6 +70,8 @@ public class SetupWizardActivity extends Activity {
     private int selectedBudgetMinutes = DEFAULT_BUDGET_MINUTES;
     private int selectedFontScale = 100;
     private boolean selectedClock24h = true;
+    private LockSecurityManager.SecurityType selectedSecurityType = LockSecurityManager.SecurityType.NONE;
+    private boolean selectedFingerprintEnabled = true;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -82,15 +90,21 @@ public class SetupWizardActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        isWizardActive = true;
         super.onCreate(savedInstanceState);
 
         preferences = MainActivity.getSafeSharedPreferences(this, PREFS_NAME, Context.MODE_PRIVATE);
+        if (preferences != null) {
+            preferences.edit().putBoolean(KEY_SETUP_COMPLETED, false).commit();
+        }
         String savedLang = preferences.getString(KEY_SYSTEM_LANGUAGE, "en");
         String savedRegion = preferences.getString(KEY_SYSTEM_REGION, "US");
         selectedLocale = LocaleManager.getLanguage(savedLang);
         selectedRegion = LocaleManager.getRegion(savedRegion);
         selectedFontScale = preferences.getInt("pref_font_scale", 100);
         selectedClock24h = preferences.getBoolean("pref_clock_24h", android.text.format.DateFormat.is24HourFormat(this));
+        selectedSecurityType = LockSecurityManager.getSecurityType(this);
+        selectedFingerprintEnabled = LockSecurityManager.isFingerprintEnabled(this);
         I18n.applyLocaleAndScale(this, selectedLocale.getTag(), selectedRegion.getCode(), selectedFontScale / 100.0f);
 
         ThemeTokens initTokens = ThemeTokens.get(selectedTheme);
@@ -186,8 +200,31 @@ public class SetupWizardActivity extends Activity {
         rootLayout.addView(bottomNavDock);
 
         setContentView(rootLayout);
+        disableStatusBarForSetup(true);
         hideSystemUI();
         renderStep();
+    }
+
+    @Override
+    protected void onResume() {
+        isWizardActive = true;
+        super.onResume();
+        disableStatusBarForSetup(true);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        isWizardActive = false;
+    }
+
+    private void disableStatusBarForSetup(boolean disable) {
+        try {
+            SafeCommandExecutor.executePrivileged("cmd", "statusbar", "disable-for-setup", disable ? "true" : "false");
+            if (disable) {
+                SafeCommandExecutor.executePrivileged("cmd", "statusbar", "collapse-instant");
+            }
+        } catch (Throwable ignored) {}
     }
 
     private void hideSystemUI() {
@@ -211,11 +248,14 @@ public class SetupWizardActivity extends Activity {
     }
 
     private void completeSetup() {
+        isWizardActive = false;
         // Seed home defaults: full pinned set + order + limit = visible size.
         // Ensures first boot from 0 shows all defaults; background can reuse.
         // Seed bg_allowed_apps = DEFAULT_PINNED + bg_policy whitelist so the
         // background policy never kills Phone/Messages on first boot.
         String pinnedOrder = android.text.TextUtils.join(",", MainActivity.DEFAULT_PINNED_PACKAGES);
+        LockSecurityManager.setSecurityType(this, selectedSecurityType);
+        LockSecurityManager.setFingerprintEnabled(this, selectedFingerprintEnabled);
         preferences.edit()
             .putBoolean(KEY_SETUP_COMPLETED, true)
             .putString(KEY_SYSTEM_LANGUAGE, selectedLocale.getTag())
@@ -232,6 +272,7 @@ public class SetupWizardActivity extends Activity {
             .putStringSet("bg_allowed_apps", new java.util.HashSet<String>(MainActivity.DEFAULT_PINNED_PACKAGES))
             .commit();
         I18n.applyLocaleAndScale(this, selectedLocale.getTag(), selectedRegion.getCode(), selectedFontScale / 100.0f);
+        disableStatusBarForSetup(false);
         try {
             android.provider.Settings.System.putString(getContentResolver(), android.provider.Settings.System.TIME_12_24, selectedClock24h ? "24" : "12");
             SafeCommandExecutor.executePrivileged("settings", "put", "system", "time_12_24", selectedClock24h ? "24" : "12");
@@ -281,6 +322,9 @@ public class SetupWizardActivity extends Activity {
             case DETOX_BUDGET:
                 renderBudgetSelection(tokens);
                 break;
+            case SECURITY:
+                renderSecuritySelection(tokens);
+                break;
             case COMPLETE:
                 renderSummary(tokens);
                 break;
@@ -323,7 +367,7 @@ public class SetupWizardActivity extends Activity {
             nextButton.setText(I18n.get(I18n.KEY_ENTER_HOME, langCode));
         } else if (currentStep == WizardStep.WELCOME) {
             nextButton.setText(I18n.get(I18n.KEY_BEGIN_SETUP, langCode));
-        } else if (currentStep == WizardStep.DETOX_BUDGET) {
+        } else if (currentStep == WizardStep.SECURITY) {
             nextButton.setText("[ " + I18n.get(I18n.KEY_WIZARD_FINALIZE, langCode) + " > ]");
         } else {
             nextButton.setText("[ " + I18n.get(I18n.KEY_WIZARD_NEXT, langCode) + " > ]");
@@ -579,10 +623,97 @@ public class SetupWizardActivity extends Activity {
         }, tokens);
     }
 
+    private void renderSecuritySelection(final ThemeTokens tokens) {
+        final String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
+        float fontScale = selectedFontScale / 100.0f;
+        addHeader(I18n.get(I18n.KEY_STEP4_TITLE, langCode), tokens);
+
+        TextView info = new TextView(this);
+        info.setText(I18n.get(I18n.KEY_STEP4_DESC, langCode));
+        info.setTextColor(tokens.textMuted);
+        info.setTextSize(12f * fontScale);
+        info.setTypeface(Typeface.MONOSPACE);
+        info.setPadding(0, 0, 0, dpToPx(16));
+        contentContainer.addView(info);
+
+        String currentSecDisplay;
+        if (selectedSecurityType == LockSecurityManager.SecurityType.PIN) {
+            boolean hasPin = LockSecurityManager.hasPin(this);
+            currentSecDisplay = I18n.get(I18n.KEY_LOCK_TYPE_PIN, langCode) + (hasPin ? " [✓]" : " [! " + I18n.get(I18n.KEY_LOCK_SETUP_PIN, langCode) + "]");
+        } else if (selectedSecurityType == LockSecurityManager.SecurityType.PATTERN) {
+            boolean hasPattern = LockSecurityManager.hasPattern(this);
+            currentSecDisplay = I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, langCode) + (hasPattern ? " [✓]" : " [! " + I18n.get(I18n.KEY_LOCK_SETUP_PATTERN, langCode) + "]");
+        } else {
+            currentSecDisplay = I18n.get(I18n.KEY_LOCK_TYPE_NONE, langCode);
+        }
+
+        addSelectorRow(I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, langCode), currentSecDisplay, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<SingleChoiceSelectorDialog.Option> options = new ArrayList<>();
+                options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.NONE.getId(), I18n.get(I18n.KEY_LOCK_TYPE_NONE, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.PIN.getId(), I18n.get(I18n.KEY_LOCK_TYPE_PIN, langCode)));
+                options.add(new SingleChoiceSelectorDialog.Option(LockSecurityManager.SecurityType.PATTERN.getId(), I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, langCode)));
+
+                SingleChoiceSelectorDialog.show(
+                    SetupWizardActivity.this,
+                    tokens,
+                    I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, langCode),
+                    options,
+                    selectedSecurityType.getId(),
+                    new SingleChoiceSelectorDialog.OnOptionSelectedListener() {
+                        @Override
+                        public void onOptionSelected(SingleChoiceSelectorDialog.Option selected) {
+                            LockSecurityManager.SecurityType chosen = LockSecurityManager.SecurityType.fromId(selected.id);
+                            selectedSecurityType = chosen;
+                            LockSecurityManager.setSecurityType(SetupWizardActivity.this, chosen);
+
+                            if (chosen == LockSecurityManager.SecurityType.NONE) {
+                                LockSecurityManager.clearCredentials(SetupWizardActivity.this);
+                                LockScreenManager.setLockScreenEnabled(SetupWizardActivity.this, true);
+                                renderStep();
+                            } else if (chosen == LockSecurityManager.SecurityType.PIN) {
+                                PinSetupDialog.show(SetupWizardActivity.this, tokens, langCode, new PinSetupDialog.OnPinSetupListener() {
+                                    @Override
+                                    public void onPinConfigured() {
+                                        LockScreenManager.setLockScreenEnabled(SetupWizardActivity.this, true);
+                                        renderStep();
+                                    }
+                                });
+                            } else if (chosen == LockSecurityManager.SecurityType.PATTERN) {
+                                PatternSetupDialog.show(SetupWizardActivity.this, tokens, langCode, new PatternSetupDialog.OnPatternSetupListener() {
+                                    @Override
+                                    public void onPatternConfigured() {
+                                        LockScreenManager.setLockScreenEnabled(SetupWizardActivity.this, true);
+                                        renderStep();
+                                    }
+                                });
+                            }
+                        }
+                    }
+                );
+            }
+        }, tokens);
+
+        final boolean fpDetected = LockSecurityManager.isFingerprintHardwareAvailable(this);
+        String fpDisplay = selectedFingerprintEnabled
+            ? (fpDetected ? I18n.get(I18n.KEY_STATE_ON, langCode) : I18n.get(I18n.KEY_LOCK_FINGERPRINT_UNSUPPORTED, langCode))
+            : I18n.get(I18n.KEY_STATE_OFF, langCode);
+
+        addSelectorRow(I18n.get(I18n.KEY_LOCK_FINGERPRINT_TOGGLE, langCode), fpDisplay, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectedFingerprintEnabled = !selectedFingerprintEnabled;
+                LockSecurityManager.setFingerprintEnabled(SetupWizardActivity.this, selectedFingerprintEnabled);
+                renderStep();
+            }
+        }, tokens);
+    }
+
     private void renderSummary(ThemeTokens tokens) {
         String langCode = selectedLocale != null ? selectedLocale.getTag() : "en";
         float fontScale = selectedFontScale / 100.0f;
-        addHeader(I18n.get(I18n.KEY_STEP4_TITLE, langCode), tokens);
+        addHeader(I18n.get(I18n.KEY_STEP5_TITLE, langCode), tokens);
 
         String budgetLabel = (selectedBudgetMinutes <= 0)
             ? I18n.get(I18n.KEY_BUDGET_OFF, langCode)
@@ -599,6 +730,18 @@ public class SetupWizardActivity extends Activity {
             budgetLabel,
             UpdateChannel.BETA.getCode()
         );
+
+        String secLabel = (selectedSecurityType == LockSecurityManager.SecurityType.PIN)
+            ? I18n.get(I18n.KEY_LOCK_TYPE_PIN, langCode)
+            : (selectedSecurityType == LockSecurityManager.SecurityType.PATTERN
+                ? I18n.get(I18n.KEY_LOCK_TYPE_PATTERN, langCode)
+                : I18n.get(I18n.KEY_LOCK_TYPE_NONE, langCode));
+        String fpLabel = selectedFingerprintEnabled
+            ? I18n.get(I18n.KEY_STATE_ON, langCode)
+            : I18n.get(I18n.KEY_STATE_OFF, langCode);
+
+        text += "\n• " + I18n.get(I18n.KEY_LOCK_SECURITY_TYPE, langCode) + ": " + secLabel;
+        text += "\n• " + I18n.get(I18n.KEY_LOCK_FINGERPRINT_TOGGLE, langCode) + ": " + fpLabel;
         summary.setText(formatBulletText(text, tokens.accent));
         summary.setTextColor(tokens.textPrimary);
         summary.setTextSize(14f * fontScale);
