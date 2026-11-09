@@ -507,6 +507,25 @@ public class SettingsActivity extends Activity {
             }
         }, tokens);
 
+        final boolean has120Hz = is120HzSupported(this);
+        int savedFps = preferences.getInt("pref_target_fps", -1);
+        if (savedFps <= 0) {
+            savedFps = 60;
+        }
+        final int curFps = savedFps;
+
+        addButtonRow(I18n.get(I18n.KEY_REFRESH_RATE_30, curLangCode), "[ " + curFps + " FPS ]", tokens.navAccent, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SettingsDescriptions.showFpsCustomDialog(SettingsActivity.this, tokens, new Runnable() {
+                    @Override
+                    public void run() {
+                        buildSettingsUI();
+                    }
+                });
+            }
+        }, tokens);
+
         addToggleRow(I18n.get(I18n.KEY_GRAYSCALE_MODE, curLangCode), stateLabel(isGray), isGray, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -2504,6 +2523,42 @@ public class SettingsActivity extends Activity {
     private void applySystemBrightness(final int percent) {
         applyBrightness(percent);
         GlobalSettingsBridge.applyGlobalBrightness(this, percent);
+    }
+
+    public static boolean is120HzSupported(Context context) {
+        if (context == null) return false;
+        try {
+            android.view.WindowManager wm = (android.view.WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            if (wm != null) {
+                android.view.Display d = wm.getDefaultDisplay();
+                if (d != null) {
+                    android.view.Display.Mode[] modes = d.getSupportedModes();
+                    if (modes != null) {
+                        for (android.view.Display.Mode m : modes) {
+                            if (Math.round(m.getRefreshRate()) >= 119) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
+
+    public static void applyRefreshRateCap(Context context, int targetFps) {
+        if (context == null) return;
+        float rate = (float) targetFps;
+        try {
+            android.provider.Settings.System.putFloat(context.getContentResolver(), "peak_refresh_rate", rate);
+            android.provider.Settings.System.putFloat(context.getContentResolver(), "min_refresh_rate", rate);
+        } catch (Throwable ignored) {}
+        SafeCommandExecutor.executePrivileged("settings", "put", "system", "peak_refresh_rate", String.valueOf(rate));
+        SafeCommandExecutor.executePrivileged("settings", "put", "system", "min_refresh_rate", String.valueOf(rate));
+    }
+
+    public static void applyRefreshRateCap(Context context, boolean cap30) {
+        applyRefreshRateCap(context, cap30 ? 30 : 60);
     }
 
     private boolean getNfcHardwareState() {

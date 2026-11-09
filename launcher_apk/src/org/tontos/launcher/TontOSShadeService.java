@@ -113,10 +113,7 @@ public class TontOSShadeService extends Service {
         final int triggerThreshold = dpToPx(16);
 
         int layoutType;
-        if (checkCallingOrSelfPermission("android.permission.STATUS_BAR_SERVICE") == android.content.pm.PackageManager.PERMISSION_GRANTED
-                || checkCallingOrSelfPermission("android.permission.INTERNAL_SYSTEM_WINDOW") == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            layoutType = 2024; // TYPE_NAVIGATION_BAR_PANEL - higher Z-order than stock StatusBar
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             layoutType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         } else {
             layoutType = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
@@ -203,6 +200,13 @@ public class TontOSShadeService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         startAsForegroundService();
         LockScreenManager.registerScreenReceiver(this);
+        if (overlayView == null) {
+            try {
+                setupTopEdgeOverlay();
+            } catch (Throwable t) {
+                Log.w(TAG, "Could not attach overlay view: " + t.getMessage());
+            }
+        }
         return START_STICKY;
     }
 

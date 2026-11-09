@@ -143,6 +143,8 @@ public final class UltraBatterySaverManager {
             GlobalSettingsBridge.applyGlobalScreenTimeout(context, 15);
             SafeCommandExecutor.executePrivileged("cmd", "power", "set-mode", "1");
             SafeCommandExecutor.executePrivileged("settings", "put", "global", "low_power", "1");
+            SafeCommandExecutor.executePrivileged("settings", "put", "system", "peak_refresh_rate", "30.0");
+            SafeCommandExecutor.executePrivileged("settings", "put", "system", "min_refresh_rate", "30.0");
             GrayscaleManager.setGrayscaleEnabled(context, true);
         } else {
             int rawB = prefs.getInt("pre_ultra_brightness", 128);

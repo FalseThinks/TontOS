@@ -75,14 +75,164 @@ public final class BackupRestoreManager {
         }
     }
 
+    public static final String DEFAULT_BACKUP_SECRET = "TontOS_Secure_Backup_v1_Secret";
+
+    public static String bytesToHex(byte[] bytes) {
+        if (bytes == null) return "";
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit(b & 0xF, 16));
+        }
+        return sb.toString();
+    }
+
+    public static byte[] hexToBytes(String hex) {
+        if (hex == null || hex.length() % 2 != 0) return new byte[0];
+        int len = hex.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4)
+                                 + Character.digit(hex.charAt(i + 1), 16));
+        }
+        return data;
+    }
+
+    public static byte[] deriveKey(String password, byte[] salt) throws Exception {
+        if (password == null || password.trim().isEmpty()) {
+            password = DEFAULT_BACKUP_SECRET;
+        }
+        javax.crypto.spec.PBEKeySpec spec = new javax.crypto.spec.PBEKeySpec(password.toCharArray(), salt, 10000, 256);
+        javax.crypto.SecretKeyFactory factory;
+        try {
+            factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        } catch (Exception e) {
+            factory = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+        }
+        return factory.generateSecret(spec).getEncoded();
+    }
+
+    public static byte[] encryptAesGcm(byte[] plaintext, byte[] keyBytes, byte[] iv) throws Exception {
+        javax.crypto.spec.SecretKeySpec keySpec = new javax.crypto.spec.SecretKeySpec(keyBytes, "AES");
+        javax.crypto.spec.GCMParameterSpec gcmSpec = new javax.crypto.spec.GCMParameterSpec(128, iv);
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
+        return cipher.doFinal(plaintext);
+    }
+
+    public static byte[] decryptAesGcm(byte[] ciphertext, byte[] keyBytes, byte[] iv) throws Exception {
+        javax.crypto.spec.SecretKeySpec keySpec = new javax.crypto.spec.SecretKeySpec(keyBytes, "AES");
+        javax.crypto.spec.GCMParameterSpec gcmSpec = new javax.crypto.spec.GCMParameterSpec(128, iv);
+        javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(javax.crypto.Cipher.DECRYPT_MODE, keySpec, gcmSpec);
+        return cipher.doFinal(ciphertext);
+    }
+
+    public static String decryptPayload(JSONObject envelope, String password) throws Exception {
+        if (!envelope.optBoolean("encrypted", false)) {
+            return envelope.getString("payload");
+        }
+        String saltHex = envelope.getString("salt");
+        String ivHex = envelope.getString("iv");
+        String cipherHex = envelope.getString("ciphertext");
+
+        byte[] salt = hexToBytes(saltHex);
+        byte[] iv = hexToBytes(ivHex);
+        byte[] cipherBytes = hexToBytes(cipherHex);
+
+        byte[] keyBytes = deriveKey(password, salt);
+        byte[] plainBytes = decryptAesGcm(cipherBytes, keyBytes, iv);
+        return new String(plainBytes, StandardCharsets.UTF_8);
+    }
+
+    public static class CategoryDef {
+        public final String id;
+        public final String nameKey;
+        public final String descKey;
+
+        public CategoryDef(String id, String nameKey, String descKey) {
+            this.id = id;
+            this.nameKey = nameKey;
+            this.descKey = descKey;
+        }
+
+        public String getName(String langCode) {
+            return I18n.get(nameKey, langCode);
+        }
+
+        public String getDesc(String langCode) {
+            return I18n.get(descKey, langCode);
+        }
+    }
+
+    public static final List<CategoryDef> ALL_CATEGORIES = Collections.unmodifiableList(java.util.Arrays.asList(
+        new CategoryDef("display", I18n.KEY_BACKUP_CAT_DISPLAY_NAME, I18n.KEY_BACKUP_CAT_DISPLAY_DESC),
+        new CategoryDef("detox", I18n.KEY_BACKUP_CAT_DETOX_NAME, I18n.KEY_BACKUP_CAT_DETOX_DESC),
+        new CategoryDef("launcher", I18n.KEY_BACKUP_CAT_LAUNCHER_NAME, I18n.KEY_BACKUP_CAT_LAUNCHER_DESC),
+        new CategoryDef("security", I18n.KEY_BACKUP_CAT_SECURITY_NAME, I18n.KEY_BACKUP_CAT_SECURITY_DESC),
+        new CategoryDef("system", I18n.KEY_BACKUP_CAT_SYSTEM_NAME, I18n.KEY_BACKUP_CAT_SYSTEM_DESC)
+    ));
+
+    public static Set<String> getAllCategoryIds() {
+        Set<String> set = new HashSet<>();
+        for (CategoryDef cat : ALL_CATEGORIES) {
+            set.add(cat.id);
+        }
+        return set;
+    }
+
+    public static String getCategoryForKey(String key) {
+        if (key == null) return null;
+        if (key.equals("selected_theme") || key.equals("system_language") || key.equals("system_region")
+                || key.equals("pref_font_scale") || key.equals("pref_clock_24h") || key.equals("pref_grayscale_enabled")) {
+            return "display";
+        }
+        if (key.equals("pref_friction_seconds") || key.equals("pref_daily_budget_mins")
+                || key.equals("pref_home_app_limit") || key.equals("screen_time_today_secs")
+                || key.equals(MainActivity.KEY_SCREEN_TIME_SECS)) {
+            return "detox";
+        }
+        if (key.equals("pinned_apps") || key.equals("pinned_apps_order") || key.equals("shade_tiles")) {
+            return "launcher";
+        }
+        if (key.equals("pref_blocked_network_apps") || key.equals("pref_privacy_restricted_bg_apps")
+                || key.startsWith("pref_privacy_")) {
+            return "security";
+        }
+        if (key.equals("bg_policy") || key.equals("bg_allowed_apps") || key.equals("pref_ultra_battery_saver")
+                || key.startsWith("pre_ultra_") || key.equals("pref_notification_delivery_mode")
+                || key.startsWith("pref_glyph_") || key.startsWith("pref_eq_") || key.equals("setup_completed")) {
+            return "system";
+        }
+        return null;
+    }
+
     public static String generateBackupEnvelope(SharedPreferences prefs) throws Exception {
+        return generateBackupEnvelope(prefs, getAllCategoryIds(), null);
+    }
+
+    public static String generateBackupEnvelope(SharedPreferences prefs, Set<String> selectedCategories) throws Exception {
+        return generateBackupEnvelope(prefs, selectedCategories, null);
+    }
+
+    public static String generateBackupEnvelope(SharedPreferences prefs, Set<String> selectedCategories, String password) throws Exception {
+        if (selectedCategories == null || selectedCategories.isEmpty()) {
+            selectedCategories = getAllCategoryIds();
+        }
         JSONObject payload = new JSONObject();
         Map<String, ?> all = prefs.getAll();
         for (Map.Entry<String, ?> entry : all.entrySet()) {
             String key = entry.getKey();
             if (key == null) continue;
             // Exclude temporary scroll positions and security credentials (PIN/pattern/salt)
-            if (key.startsWith("pref_last_settings_scroll") || key.startsWith("pref_lock_")) continue;
+            if (key.startsWith("pref_last_settings_scroll") || key.startsWith("pref_lock_") || key.equals("lock_salt") || key.contains("hash")) continue;
+            if (!isAllowedPreferenceKey(key)) continue;
+
+            String cat = getCategoryForKey(key);
+            if (cat == null || !selectedCategories.contains(cat)) {
+                continue;
+            }
+
             Object val = entry.getValue();
             if (val instanceof Set || val instanceof java.util.Collection) {
                 org.json.JSONArray arr = new org.json.JSONArray();
@@ -98,15 +248,36 @@ public final class BackupRestoreManager {
         String payloadStr = payload.toString();
         String checksum = sha256Hex(payloadStr);
 
+        byte[] salt = new byte[16];
+        new java.security.SecureRandom().nextBytes(salt);
+        byte[] iv = new byte[12];
+        new java.security.SecureRandom().nextBytes(iv);
+
+        byte[] keyBytes = deriveKey(password, salt);
+        byte[] cipherBytes = encryptAesGcm(payloadStr.getBytes(StandardCharsets.UTF_8), keyBytes, iv);
+
+        boolean hasUserPassword = (password != null && !password.trim().isEmpty());
+
         JSONObject envelope = new JSONObject();
-        envelope.put("version", 1);
+        envelope.put("version", 2);
         envelope.put("timestamp", System.currentTimeMillis());
         envelope.put("date_iso", new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(new Date()));
+        envelope.put("encrypted", true);
+        envelope.put("cipher", "AES-256-GCM");
+        envelope.put("kdf", "PBKDF2WithHmacSHA256");
+        envelope.put("has_user_password", hasUserPassword);
+        envelope.put("salt", bytesToHex(salt));
+        envelope.put("iv", bytesToHex(iv));
         envelope.put("sha256", checksum);
         envelope.put("device_model", Build.MANUFACTURER + " " + Build.MODEL);
         envelope.put("tontos_version", MainActivity.OS_VERSION_STRING);
         envelope.put("keys_count", payload.length());
-        envelope.put("payload", payloadStr);
+        org.json.JSONArray catsArr = new org.json.JSONArray();
+        for (String c : selectedCategories) {
+            catsArr.put(c);
+        }
+        envelope.put("categories", catsArr);
+        envelope.put("ciphertext", bytesToHex(cipherBytes));
 
         return envelope.toString(2);
     }
@@ -132,7 +303,7 @@ public final class BackupRestoreManager {
         // Summary Info
         TextView info = new TextView(activity);
         int keyCount = prefs.getAll().size();
-        info.setText(I18n.format(I18n.KEY_BACKUP_CREATE_SUMMARY_FMT, langCode, keyCount));
+        info.setText(I18n.format(I18n.KEY_BACKUP_CREATE_SUMMARY_FMT, langCode, keyCount, "SHA-256"));
         info.setTextColor(tokens.textMuted);
         info.setTextSize(12 * fontScale);
         info.setTypeface(Typeface.MONOSPACE);
@@ -174,6 +345,124 @@ public final class BackupRestoreManager {
         destLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         destLabel.setPadding(0, (int) (14 * density), 0, (int) (6 * density));
         scrollContent.addView(destLabel);
+
+        // Selectable Categories for Export
+        TextView catLabel = new TextView(activity);
+        catLabel.setText(I18n.get(I18n.KEY_BACKUP_CAT_EXPORT_LABEL, langCode));
+        catLabel.setTextColor(tokens.textPrimary);
+        catLabel.setTextSize(13 * fontScale);
+        catLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        catLabel.setPadding(0, (int) (14 * density), 0, (int) (6 * density));
+        scrollContent.addView(catLabel);
+
+        final Set<String> selectedCategories = new HashSet<>(getAllCategoryIds());
+        final LinearLayout catContainer = new LinearLayout(activity);
+        catContainer.setOrientation(LinearLayout.VERTICAL);
+
+        // "Todo" toggle row
+        final TextView selectAllExportRow = new TextView(activity);
+        selectAllExportRow.setText("[X] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL, langCode));
+        selectAllExportRow.setTextColor(tokens.accent);
+        selectAllExportRow.setTextSize(12 * fontScale);
+        selectAllExportRow.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        selectAllExportRow.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
+        selectAllExportRow.setClickable(true);
+        selectAllExportRow.setFocusable(true);
+        catContainer.addView(selectAllExportRow);
+
+        final List<TextView> exportCatRows = new ArrayList<>();
+        for (final CategoryDef def : ALL_CATEGORIES) {
+            final TextView catRow = new TextView(activity);
+            catRow.setText("[X] " + def.getName(langCode) + "\n    " + def.getDesc(langCode));
+            catRow.setTextColor(tokens.accent);
+            catRow.setTextSize(12 * fontScale);
+            catRow.setTypeface(Typeface.MONOSPACE);
+            catRow.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
+            catRow.setClickable(true);
+            catRow.setFocusable(true);
+
+            catRow.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (selectedCategories.contains(def.id)) {
+                        if (selectedCategories.size() <= 1) {
+                            Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_CAT_SELECT_AT_LEAST_ONE, langCode), Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        selectedCategories.remove(def.id);
+                        catRow.setText("[ ] " + def.getName(langCode) + "\n    " + def.getDesc(langCode));
+                        catRow.setTextColor(tokens.textMuted);
+                    } else {
+                        selectedCategories.add(def.id);
+                        catRow.setText("[X] " + def.getName(langCode) + "\n    " + def.getDesc(langCode));
+                        catRow.setTextColor(tokens.accent);
+                    }
+                    if (selectedCategories.size() == ALL_CATEGORIES.size()) {
+                        selectAllExportRow.setText("[X] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL, langCode));
+                        selectAllExportRow.setTextColor(tokens.accent);
+                    } else {
+                        selectAllExportRow.setText("[ ] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL, langCode));
+                        selectAllExportRow.setTextColor(tokens.textMuted);
+                    }
+                }
+            });
+            exportCatRows.add(catRow);
+            catContainer.addView(catRow);
+        }
+
+        selectAllExportRow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (selectedCategories.size() == ALL_CATEGORIES.size()) {
+                    selectedCategories.clear();
+                    selectAllExportRow.setText("[ ] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL, langCode));
+                    selectAllExportRow.setTextColor(tokens.textMuted);
+                    for (int i = 0; i < ALL_CATEGORIES.size(); i++) {
+                        CategoryDef d = ALL_CATEGORIES.get(i);
+                        TextView r = exportCatRows.get(i);
+                        r.setText("[ ] " + d.getName(langCode) + "\n    " + d.getDesc(langCode));
+                        r.setTextColor(tokens.textMuted);
+                    }
+                } else {
+                    selectedCategories.clear();
+                    selectedCategories.addAll(getAllCategoryIds());
+                    selectAllExportRow.setText("[X] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL, langCode));
+                    selectAllExportRow.setTextColor(tokens.accent);
+                    for (int i = 0; i < ALL_CATEGORIES.size(); i++) {
+                        CategoryDef d = ALL_CATEGORIES.get(i);
+                        TextView r = exportCatRows.get(i);
+                        r.setText("[X] " + d.getName(langCode) + "\n    " + d.getDesc(langCode));
+                        r.setTextColor(tokens.accent);
+                    }
+                }
+            }
+        });
+        scrollContent.addView(catContainer);
+
+        // Encryption Password Label
+        TextView pwdLabel = new TextView(activity);
+        pwdLabel.setText(I18n.get(I18n.KEY_BACKUP_PWD_LABEL, langCode));
+        pwdLabel.setTextColor(tokens.textPrimary);
+        pwdLabel.setTextSize(13 * fontScale);
+        pwdLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        pwdLabel.setPadding(0, (int) (14 * density), 0, (int) (4 * density));
+        scrollContent.addView(pwdLabel);
+
+        final EditText pwdInput = new EditText(activity);
+        pwdInput.setHint(I18n.get(I18n.KEY_BACKUP_PWD_HINT, langCode));
+        pwdInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        pwdInput.setTextColor(tokens.textPrimary);
+        pwdInput.setHintTextColor(tokens.textMuted);
+        pwdInput.setTextSize(13 * fontScale);
+        pwdInput.setTypeface(Typeface.MONOSPACE);
+        pwdInput.setSingleLine(true);
+        pwdInput.setPadding((int) (12 * density), (int) (10 * density), (int) (12 * density), (int) (10 * density));
+        GradientDrawable pwdBg = new GradientDrawable();
+        pwdBg.setColor(tokens.controlBgNormal);
+        pwdBg.setStroke((int) (1 * density + 0.5f), tokens.border);
+        pwdBg.setCornerRadius((int) (4 * density));
+        pwdInput.setBackground(pwdBg);
+        scrollContent.addView(pwdInput);
 
         // 3 Destination Options (Download, App Internal, SAF System Picker)
         final int[] selectedDest = new int[]{0}; // 0 = Downloads, 1 = App Internal, 2 = SAF Picker
@@ -267,7 +556,9 @@ public final class BackupRestoreManager {
                     }
 
                     try {
-                        String envelopeJson = generateBackupEnvelope(prefs);
+                        String userPassword = pwdInput.getText().toString().trim();
+                        if (userPassword.isEmpty()) userPassword = null;
+                        String envelopeJson = generateBackupEnvelope(prefs, selectedCategories, userPassword);
 
                         if (selectedDest[0] == 2) {
                             // SAF Picker
@@ -544,14 +835,120 @@ public final class BackupRestoreManager {
         final SharedPreferences prefs,
         final Runnable onRestored
     ) throws Exception {
-        JSONObject envelope = new JSONObject(rawJson);
-        if (!envelope.has("payload") || !envelope.has("sha256")) {
+        final JSONObject envelope = new JSONObject(rawJson);
+        final boolean isEncrypted = envelope.optBoolean("encrypted", false);
+
+        if (!isEncrypted && !envelope.has("payload")) {
+            Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_ERR_INVALID, langCode), Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (isEncrypted && !envelope.has("ciphertext")) {
             Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_ERR_INVALID, langCode), Toast.LENGTH_LONG).show();
             return;
         }
 
-        final String payload = envelope.getString("payload");
-        String recordedHash = envelope.getString("sha256");
+        boolean hasUserPassword = envelope.optBoolean("has_user_password", false);
+        if (isEncrypted && hasUserPassword) {
+            promptRestorePassword(activity, tokens, langCode, envelope, prefs, onRestored);
+        } else {
+            try {
+                String payload = decryptPayload(envelope, null);
+                showRestoreCategorySelectionDialog(activity, tokens, langCode, envelope, payload, prefs, onRestored);
+            } catch (Exception e) {
+                Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_PWD_WRONG_ERR, langCode), Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private static void promptRestorePassword(
+        final Activity activity,
+        final ThemeTokens tokens,
+        final String langCode,
+        final JSONObject envelope,
+        final SharedPreferences prefs,
+        final Runnable onRestored
+    ) {
+        final AmoledDialog pwdDlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_BACKUP_PWD_PROMPT_TITLE, langCode));
+        final float density = pwdDlg.getDensity();
+        final float fontScale = pwdDlg.getFontScale();
+        final ThemeTokens themeTokens = pwdDlg.getTokens();
+
+        LinearLayout content = pwdDlg.getContentContainer();
+
+        TextView label = new TextView(activity);
+        label.setText(I18n.get(I18n.KEY_BACKUP_PWD_PROMPT_DESC, langCode));
+        label.setTextColor(tokens.textPrimary);
+        label.setTextSize(13 * fontScale);
+        label.setTypeface(Typeface.MONOSPACE);
+        label.setPadding(0, 0, 0, (int) (8 * density));
+        content.addView(label);
+
+        final EditText input = new EditText(activity);
+        input.setHint(I18n.get(I18n.KEY_BACKUP_PWD_PROMPT_HINT, langCode));
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setTextColor(tokens.textPrimary);
+        input.setHintTextColor(tokens.textMuted);
+        input.setTextSize(13 * fontScale);
+        input.setTypeface(Typeface.MONOSPACE);
+        input.setSingleLine(true);
+        input.setPadding((int) (12 * density), (int) (10 * density), (int) (12 * density), (int) (10 * density));
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(tokens.controlBgNormal);
+        inputBg.setStroke((int) (1 * density + 0.5f), tokens.border);
+        inputBg.setCornerRadius((int) (4 * density));
+        input.setBackground(inputBg);
+        content.addView(input);
+
+        pwdDlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            themeTokens.textMuted,
+            themeTokens.border,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    pwdDlg.dismiss();
+                }
+            }
+        );
+
+        pwdDlg.addActionButton(
+            I18n.get(I18n.KEY_BACKUP_PWD_DECRYPT_BTN, langCode),
+            themeTokens.accent,
+            themeTokens.accent,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String pwd = input.getText().toString();
+                    if (pwd.isEmpty()) {
+                        Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_PWD_EMPTY_ERR, langCode), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    try {
+                        String payload = decryptPayload(envelope, pwd);
+                        pwdDlg.dismiss();
+                        showRestoreCategorySelectionDialog(activity, tokens, langCode, envelope, payload, prefs, onRestored);
+                    } catch (Exception e) {
+                        Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_PWD_WRONG_ERR, langCode), Toast.LENGTH_LONG).show();
+                    }
+                }
+            }
+        );
+
+        pwdDlg.show();
+    }
+
+    private static void showRestoreCategorySelectionDialog(
+        final Activity activity,
+        final ThemeTokens tokens,
+        final String langCode,
+        final JSONObject envelope,
+        final String payload,
+        final SharedPreferences prefs,
+        final Runnable onRestored
+    ) throws Exception {
+        String recordedHash = envelope.optString("sha256", "");
         String actualHash = sha256Hex(payload);
 
         if (!actualHash.equalsIgnoreCase(recordedHash)) {
@@ -561,38 +958,210 @@ public final class BackupRestoreManager {
 
         final JSONObject payloadObj = new JSONObject(payload);
 
+        // Detect available categories in the payload
+        final Set<String> availableCategoriesInBackup = new HashSet<>();
+        java.util.Iterator<String> pKeys = payloadObj.keys();
+        while (pKeys.hasNext()) {
+            String pk = pKeys.next();
+            String cat = getCategoryForKey(pk);
+            if (cat != null) {
+                availableCategoriesInBackup.add(cat);
+            }
+        }
+        if (envelope.has("categories")) {
+            org.json.JSONArray catArr = envelope.optJSONArray("categories");
+            if (catArr != null) {
+                for (int i = 0; i < catArr.length(); i++) {
+                    String c = catArr.optString(i);
+                    if (c != null && !c.isEmpty()) availableCategoriesInBackup.add(c);
+                }
+            }
+        }
+
+        final AmoledDialog dlg = new AmoledDialog(activity, tokens, I18n.get(I18n.KEY_RESTORE_CONFIRM_TITLE, langCode));
+        final float density = dlg.getDensity();
+        final float fontScale = dlg.getFontScale();
+        final ThemeTokens themeTokens = dlg.getTokens();
+
+        LinearLayout scrollContent = dlg.getContentContainer();
+
         String dateStr = envelope.optString("date_iso", "Unknown");
         String devStr = envelope.optString("device_model", "TontOS Device");
         int count = payloadObj.length();
-        String confirmMsg = I18n.format(I18n.KEY_RESTORE_CONFIRM_MSG_FMT, langCode, count, dateStr, devStr);
 
-        BooleanSelectorDialog.show(
-            activity,
-            tokens,
-            I18n.get(I18n.KEY_RESTORE_CONFIRM_TITLE, langCode),
-            confirmMsg,
-            I18n.get(I18n.KEY_RESTORE_NOW_BTN, langCode),
-            I18n.get(I18n.KEY_CANCEL, langCode),
-            new BooleanSelectorDialog.OnBooleanSelectedListener() {
-                @Override
-                public void onSelected(boolean confirmed) {
-                    if (confirmed) {
-                        applyRestoredPreferences(prefs, payloadObj);
-                        Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_SUCCESS, langCode), Toast.LENGTH_SHORT).show();
-                        if (onRestored != null) onRestored.run();
+        String cipherInfo = envelope.optBoolean("encrypted", false) ? ("\n🔒 " + envelope.optString("cipher", "AES-256-GCM")) : "";
+
+        TextView info = new TextView(activity);
+        info.setText(I18n.format(I18n.KEY_RESTORE_CONFIRM_MSG_FMT, langCode, count, dateStr, devStr)
+                + "\n✔ SHA-256: " + (recordedHash.length() > 16 ? recordedHash.substring(0, 16) : recordedHash) + "..."
+                + cipherInfo);
+        info.setTextColor(tokens.textMuted);
+        info.setTextSize(12 * fontScale);
+        info.setTypeface(Typeface.MONOSPACE);
+        info.setPadding(0, 0, 0, (int) (12 * density));
+        scrollContent.addView(info);
+
+        TextView selectLabel = new TextView(activity);
+        selectLabel.setText(I18n.get(I18n.KEY_BACKUP_CAT_IMPORT_LABEL, langCode));
+        selectLabel.setTextColor(tokens.textPrimary);
+        selectLabel.setTextSize(13 * fontScale);
+        selectLabel.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        selectLabel.setPadding(0, (int) (4 * density), 0, (int) (6 * density));
+        scrollContent.addView(selectLabel);
+
+        final Set<String> selectedRestoreCategories = new HashSet<>(availableCategoriesInBackup);
+        final LinearLayout catContainer = new LinearLayout(activity);
+        catContainer.setOrientation(LinearLayout.VERTICAL);
+
+        // "Todo" toggle row for restore
+        final TextView selectAllRestoreRow = new TextView(activity);
+        selectAllRestoreRow.setText("[X] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL_AVAILABLE, langCode));
+        selectAllRestoreRow.setTextColor(tokens.accent);
+        selectAllRestoreRow.setTextSize(12 * fontScale);
+        selectAllRestoreRow.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        selectAllRestoreRow.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
+        selectAllRestoreRow.setClickable(true);
+        selectAllRestoreRow.setFocusable(true);
+        catContainer.addView(selectAllRestoreRow);
+
+        final List<TextView> availableCatRows = new ArrayList<>();
+        final List<CategoryDef> availableDefs = new ArrayList<>();
+
+        for (final CategoryDef def : ALL_CATEGORIES) {
+            final boolean isAvailable = availableCategoriesInBackup.contains(def.id);
+            final TextView catRow = new TextView(activity);
+            if (isAvailable) {
+                catRow.setText("[X] " + def.getName(langCode) + "\n    " + def.getDesc(langCode));
+                catRow.setTextColor(tokens.accent);
+                catRow.setClickable(true);
+                catRow.setFocusable(true);
+                catRow.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (selectedRestoreCategories.contains(def.id)) {
+                            if (selectedRestoreCategories.size() <= 1) {
+                                Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_CAT_SELECT_AT_LEAST_ONE, langCode), Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            selectedRestoreCategories.remove(def.id);
+                            catRow.setText("[ ] " + def.getName(langCode) + "\n    " + def.getDesc(langCode));
+                            catRow.setTextColor(tokens.textMuted);
+                        } else {
+                            selectedRestoreCategories.add(def.id);
+                            catRow.setText("[X] " + def.getName(langCode) + "\n    " + def.getDesc(langCode));
+                            catRow.setTextColor(tokens.accent);
+                        }
+                        if (selectedRestoreCategories.size() == availableCategoriesInBackup.size()) {
+                            selectAllRestoreRow.setText("[X] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL_AVAILABLE, langCode));
+                            selectAllRestoreRow.setTextColor(tokens.accent);
+                        } else {
+                            selectAllRestoreRow.setText("[ ] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL_AVAILABLE, langCode));
+                            selectAllRestoreRow.setTextColor(tokens.textMuted);
+                        }
+                    }
+                });
+                availableCatRows.add(catRow);
+                availableDefs.add(def);
+            } else {
+                String notAvailableStr = I18n.get(I18n.KEY_BACKUP_CAT_NOT_AVAILABLE, langCode);
+                catRow.setText("[-] " + def.getName(langCode) + " " + notAvailableStr);
+                catRow.setTextColor(tokens.textMuted);
+                catRow.setAlpha(0.5f);
+            }
+            catRow.setTextSize(12 * fontScale);
+            catRow.setTypeface(Typeface.MONOSPACE);
+            catRow.setPadding((int) (8 * density), (int) (6 * density), (int) (8 * density), (int) (6 * density));
+            catContainer.addView(catRow);
+        }
+
+        selectAllRestoreRow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (selectedRestoreCategories.size() == availableCategoriesInBackup.size()) {
+                    selectedRestoreCategories.clear();
+                    selectAllRestoreRow.setText("[ ] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL_AVAILABLE, langCode));
+                    selectAllRestoreRow.setTextColor(tokens.textMuted);
+                    for (int i = 0; i < availableDefs.size(); i++) {
+                        CategoryDef d = availableDefs.get(i);
+                        TextView r = availableCatRows.get(i);
+                        r.setText("[ ] " + d.getName(langCode) + "\n    " + d.getDesc(langCode));
+                        r.setTextColor(tokens.textMuted);
+                    }
+                } else {
+                    selectedRestoreCategories.clear();
+                    selectedRestoreCategories.addAll(availableCategoriesInBackup);
+                    selectAllRestoreRow.setText("[X] " + I18n.get(I18n.KEY_BACKUP_CAT_ALL_AVAILABLE, langCode));
+                    selectAllRestoreRow.setTextColor(tokens.accent);
+                    for (int i = 0; i < availableDefs.size(); i++) {
+                        CategoryDef d = availableDefs.get(i);
+                        TextView r = availableCatRows.get(i);
+                        r.setText("[X] " + d.getName(langCode) + "\n    " + d.getDesc(langCode));
+                        r.setTextColor(tokens.accent);
                     }
                 }
             }
+        });
+
+        scrollContent.addView(catContainer);
+
+        // Cancel Button
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_CANCEL, langCode),
+            themeTokens.textMuted,
+            themeTokens.border,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dlg.dismiss();
+                }
+            }
         );
+
+        // Restore Button
+        dlg.addActionButton(
+            I18n.get(I18n.KEY_RESTORE_NOW_BTN, langCode),
+            themeTokens.accent,
+            themeTokens.accent,
+            false,
+            new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (selectedRestoreCategories.isEmpty()) {
+                        Toast.makeText(activity, I18n.get(I18n.KEY_BACKUP_CAT_SELECT_AT_LEAST_ONE, langCode), Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    dlg.dismiss();
+                    applyRestoredPreferences(prefs, payloadObj, selectedRestoreCategories);
+                    Toast.makeText(activity, I18n.get(I18n.KEY_RESTORE_SUCCESS, langCode), Toast.LENGTH_SHORT).show();
+                    if (onRestored != null) onRestored.run();
+                }
+            }
+        );
+
+        dlg.show();
     }
 
-    private static void applyRestoredPreferences(SharedPreferences prefs, JSONObject payload) {
+    public static void applyRestoredPreferences(SharedPreferences prefs, JSONObject payload) {
+        applyRestoredPreferences(prefs, payload, getAllCategoryIds());
+    }
+
+    public static void applyRestoredPreferences(SharedPreferences prefs, JSONObject payload, Set<String> allowedCategories) {
+        if (allowedCategories == null || allowedCategories.isEmpty()) {
+            allowedCategories = getAllCategoryIds();
+        }
         SharedPreferences.Editor editor = prefs.edit();
         java.util.Iterator<String> keys = payload.keys();
         while (keys.hasNext()) {
             String key = keys.next();
             // Validate key against strict allowlist (blocks credentials, hashes, or arbitrary injection)
             if (!isAllowedPreferenceKey(key)) continue;
+
+            String cat = getCategoryForKey(key);
+            if (cat == null || !allowedCategories.contains(cat)) {
+                continue;
+            }
+
             Object val = payload.opt(key);
             if (val instanceof Boolean) {
                 editor.putBoolean(key, (Boolean) val);

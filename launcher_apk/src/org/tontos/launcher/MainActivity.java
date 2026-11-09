@@ -144,6 +144,10 @@ public class MainActivity extends Activity {
     private boolean isCharging = false;
     private boolean isDrawerView = false;
     private GestureDetector swipeDetector;
+    private boolean guideDialogShown = false;
+    private float touchDownY = 0f;
+    private float touchDownX = 0f;
+    private boolean touchTracking = false;
 
     // Algorithmic optimization: Cached installed applications to avoid repeated PackageManager IPC
     private static final List<AppItem> cachedInstalledApps = new ArrayList<>();
@@ -616,7 +620,9 @@ public class MainActivity extends Activity {
         renderApps();
 
         checkAndTerminateExitedApp();
-        if (!prefs.getBoolean(QuickStartGuideDialog.PREF_GUIDE_SHOWN, false)) {
+        if (!guideDialogShown && !prefs.getBoolean(QuickStartGuideDialog.PREF_GUIDE_SHOWN, false)) {
+            guideDialogShown = true;
+            QuickStartGuideDialog.markGuideCompleted(this);
             QuickStartGuideDialog.show(this, currentTokens(), langCode);
         }
     }
@@ -1281,8 +1287,34 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (!isDrawerView && swipeDetector != null) {
-            swipeDetector.onTouchEvent(ev);
+        if (!isDrawerView) {
+            if (swipeDetector != null) {
+                swipeDetector.onTouchEvent(ev);
+            }
+            if (ev != null) {
+                switch (ev.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        touchDownX = ev.getX();
+                        touchDownY = ev.getY();
+                        touchTracking = true;
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        if (touchTracking) {
+                            float dy = ev.getY() - touchDownY;
+                            float dx = Math.abs(ev.getX() - touchDownX);
+                            if (dy > 100 && dy > dx * 1.2f) {
+                                touchTracking = false;
+                                openUltraShade();
+                                return true;
+                            }
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        touchTracking = false;
+                        break;
+                }
+            }
         }
         return super.dispatchTouchEvent(ev);
     }

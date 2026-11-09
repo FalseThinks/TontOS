@@ -247,6 +247,10 @@ public final class SettingsRowFactory {
         actionBtn.setOnClickListener(listener);
         row.addView(actionBtn);
 
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(listener);
+
         container.addView(row);
     }
 
@@ -309,6 +313,10 @@ public final class SettingsRowFactory {
         actionBtn.setFocusable(true);
         actionBtn.setOnClickListener(listener);
         row.addView(actionBtn);
+
+        row.setClickable(true);
+        row.setFocusable(true);
+        row.setOnClickListener(listener);
 
         container.addView(row);
     }

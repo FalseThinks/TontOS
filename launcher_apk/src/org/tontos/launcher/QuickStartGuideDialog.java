@@ -78,12 +78,26 @@ public final class QuickStartGuideDialog {
             }
         );
 
+        dlg.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(android.content.DialogInterface dialog) {
+                markGuideCompleted(context);
+            }
+        });
+
         dlg.show();
     }
 
-    private static void markGuideCompleted(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit().putBoolean(PREF_GUIDE_SHOWN, true).apply();
+    public static void markGuideCompleted(Context context) {
+        if (context == null) return;
+        SharedPreferences prefs = MainActivity.getSafeSharedPreferences(context, MainActivity.PREFS_NAME);
+        if (prefs != null) {
+            prefs.edit().putBoolean(PREF_GUIDE_SHOWN, true).commit();
+        }
+        try {
+            context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE)
+                   .edit().putBoolean(PREF_GUIDE_SHOWN, true).commit();
+        } catch (Throwable ignored) {}
     }
 
     private static void addCard(Context context, LinearLayout parent, ThemeTokens tokens, float density, float fontScale, String title, String body) {

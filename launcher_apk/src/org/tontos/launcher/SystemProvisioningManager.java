@@ -273,10 +273,19 @@ public final class SystemProvisioningManager {
                     SafeCommandExecutor.executePrivileged("cmd", "appops", "set", "org.tontos.launcher", "SYSTEM_ALERT_WINDOW", "allow");
                     LockScreenManager.registerScreenReceiver(appContext);
 
-                    // 10. Performance First: 0ms window animations system-wide
+                    // 10. Performance First: 0ms window animations & configurable FPS cap
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "window_animation_scale", "0");
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "transition_animation_scale", "0");
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "animator_duration_scale", "0");
+                    int targetFps = 60;
+                    try {
+                        android.content.SharedPreferences sp = MainActivity.getSafeSharedPreferences(appContext, MainActivity.PREFS_NAME);
+                        if (sp != null) {
+                            targetFps = sp.getInt("pref_target_fps", 60);
+                        }
+                    } catch (Throwable ignored) {}
+                    SafeCommandExecutor.executePrivileged("settings", "put", "system", "peak_refresh_rate", String.valueOf((float) targetFps));
+                    SafeCommandExecutor.executePrivileged("settings", "put", "system", "min_refresh_rate", String.valueOf((float) targetFps));
 
                     // 11. Ultra Battery Saving: Disable background scanning and enforce aggressive Doze sleep (30s)
                     SafeCommandExecutor.executePrivileged("settings", "put", "global", "wifi_scan_always_enabled", "0");
