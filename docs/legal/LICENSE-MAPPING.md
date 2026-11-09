@@ -1,8 +1,8 @@
 # TontOS — Comprehensive License Mapping
 
 **Maintainer:** FalseThinks <paproken@protonmail.com>  
-**Version:** 0.0.4  
-**Date:** 2026-11-01  
+**Version:** 0.0.5  
+**Date:** 2026-11-09  
 
 ---
 

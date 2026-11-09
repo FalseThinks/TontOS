@@ -67,11 +67,11 @@ public final class OtaUpdateManager {
     private OtaUpdateManager() {}
 
     public static String getInstalledVersion(Context context) {
-        if (context == null) return "0.0.4";
+        if (context == null) return "0.0.5";
         try {
             return context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
         } catch (Throwable ignored) {
-            return "0.0.4";
+            return "0.0.5";
         }
     }
 
