@@ -36,7 +36,7 @@ public final class UltraShadeDialog {
 
         final Dialog dialog = new Dialog(activity);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setCanceledOnTouchOutside(true);
+        dialog.setCanceledOnTouchOutside(false);
         dialog.setCancelable(true);
         dialog.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
             @Override
@@ -59,10 +59,11 @@ public final class UltraShadeDialog {
         final int dp16 = (int) (16 * density);
         final int dp48 = (int) (48 * density);
 
-        // Root container
-        LinearLayout root = new LinearLayout(activity);
+        // Root container - start translated off-screen to avoid any frame-1 flicker
+        final LinearLayout root = new LinearLayout(activity);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp16, dp16, dp16, dp16);
+        root.setTranslationY(-2000f);
 
         // Background styling matching active theme
         GradientDrawable rootBg = new GradientDrawable();
@@ -74,15 +75,49 @@ public final class UltraShadeDialog {
         root.setBackground(rootBg);
 
         // Top drag handle indicator
-        TextView dragHandle = new TextView(activity);
+        final TextView dragHandle = new TextView(activity);
         dragHandle.setText("━━━━━━");
         dragHandle.setTextColor(tokens.border);
         dragHandle.setGravity(Gravity.CENTER);
         dragHandle.setTextSize(14);
         dragHandle.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         dragHandle.setPadding(0, 0, 0, dp8);
+        final float[] startDragY = new float[1];
+        final boolean[] isDraggingHandle = new boolean[1];
+        dragHandle.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, android.view.MotionEvent event) {
+                switch (event.getAction()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        startDragY[0] = event.getRawY();
+                        isDraggingHandle[0] = false;
+                        return true;
+                    case android.view.MotionEvent.ACTION_MOVE:
+                        float diff = event.getRawY() - startDragY[0];
+                        if (diff < -15) {
+                            isDraggingHandle[0] = true;
+                            root.setTranslationY(diff);
+                        }
+                        return true;
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        if (isDraggingHandle[0]) {
+                            float totalDiff = event.getRawY() - startDragY[0];
+                            if (totalDiff < -50) {
+                                dismissWithAnimation(dialog, root, null);
+                            } else {
+                                root.animate().translationY(0f).setDuration(150).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+                            }
+                        } else {
+                            dismissWithAnimation(dialog, root, null);
+                        }
+                        return true;
+                }
+                return false;
+            }
+        });
         dragHandle.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { try { dialog.dismiss(); } catch (Throwable ignored) {} }
+            @Override public void onClick(View v) { dismissWithAnimation(dialog, root, null); }
         });
         root.addView(dragHandle);
 
@@ -402,7 +437,7 @@ public final class UltraShadeDialog {
         btnClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                dialog.dismiss();
+                dismissWithAnimation(dialog, root, null);
             }
         });
         bottomRow.addView(btnClose);
@@ -424,31 +459,54 @@ public final class UltraShadeDialog {
             btnSettings.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    dialog.dismiss();
-                    if (!setupCompleted) {
-                        return;
-                    }
-                    if (LockScreenManager.isDeviceLocked(activity) && LockScreenManager.isLockScreenEnabled(activity)) {
-                        Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
-                        LockScreenManager.launchLockScreen(activity);
-                        return;
-                    }
-                    activity.startActivity(new Intent(activity, SettingsActivity.class));
+                    dismissWithAnimation(dialog, root, new Runnable() {
+                        @Override
+                        public void run() {
+                            if (!setupCompleted) {
+                                return;
+                            }
+                            if (LockScreenManager.isDeviceLocked(activity) && LockScreenManager.isLockScreenEnabled(activity)) {
+                                Toast.makeText(activity, I18n.get(I18n.KEY_LOCK_PIN_PROMPT, lang), Toast.LENGTH_SHORT).show();
+                                LockScreenManager.launchLockScreen(activity);
+                                return;
+                            }
+                            activity.startActivity(new Intent(activity, SettingsActivity.class));
+                        }
+                    });
                 }
             });
             bottomRow.addView(btnSettings);
         }
         root.addView(bottomRow);
 
-        dialog.setContentView(root);
+        final LinearLayout container = new LinearLayout(activity);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        container.setBackgroundColor(Color.TRANSPARENT);
+        container.addView(root);
+
+        View outsideClickZone = new View(activity);
+        outsideClickZone.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1.0f));
+        outsideClickZone.setClickable(true);
+        outsideClickZone.setFocusable(false);
+        outsideClickZone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismissWithAnimation(dialog, root, null);
+            }
+        });
+        container.addView(outsideClickZone);
+
+        dialog.setContentView(container);
 
         // Window properties for top slide-down placement
         Window window = dialog.getWindow();
         if (window != null) {
             window.setGravity(Gravity.TOP);
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             window.setWindowAnimations(0); // Disable jarring default dialog scale-in
+            window.setDimAmount(0.35f);
 
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && window.getInsetsController() != null) {
@@ -460,24 +518,68 @@ public final class UltraShadeDialog {
             } catch (Throwable ignored) {}
         }
 
-        dialog.setOnShowListener(new android.content.DialogInterface.OnShowListener() {
+        root.getViewTreeObserver().addOnPreDrawListener(new android.view.ViewTreeObserver.OnPreDrawListener() {
             @Override
-            public void onShow(android.content.DialogInterface d) {
-                root.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        root.setTranslationY(-root.getHeight());
-                        root.animate()
-                            .translationY(0f)
-                            .setDuration(220)
-                            .setInterpolator(new android.view.animation.DecelerateInterpolator())
-                            .start();
-                    }
-                });
+            public boolean onPreDraw() {
+                root.getViewTreeObserver().removeOnPreDrawListener(this);
+                int h = root.getHeight();
+                if (h <= 0) h = root.getMeasuredHeight();
+                if (h <= 0) h = 1000;
+                root.setTranslationY(-h);
+                root.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+                root.animate()
+                    .translationY(0f)
+                    .setDuration(260)
+                    .setInterpolator(new android.view.animation.PathInterpolator(0.05f, 0.7f, 0.1f, 1.0f))
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            root.setLayerType(View.LAYER_TYPE_NONE, null);
+                        }
+                    })
+                    .start();
+                return true;
+            }
+        });
+
+        dialog.setOnKeyListener(new android.content.DialogInterface.OnKeyListener() {
+            @Override
+            public boolean onKey(android.content.DialogInterface d, int keyCode, android.view.KeyEvent event) {
+                if (keyCode == android.view.KeyEvent.KEYCODE_BACK && event.getAction() == android.view.KeyEvent.ACTION_UP) {
+                    dismissWithAnimation(dialog, root, null);
+                    return true;
+                }
+                return false;
             }
         });
 
         dialog.show();
+    }
+
+    private static void dismissWithAnimation(final Dialog dialog, final View root, final Runnable onDismissEnd) {
+        if (dialog == null || !dialog.isShowing()) return;
+        if (root == null) {
+            try { dialog.dismiss(); } catch (Throwable ignored) {}
+            if (onDismissEnd != null) onDismissEnd.run();
+            return;
+        }
+        int h = root.getHeight();
+        if (h <= 0) h = root.getMeasuredHeight();
+        if (h <= 0) h = 1000;
+        root.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        root.animate()
+            .translationY(-h)
+            .setDuration(190)
+            .setInterpolator(new android.view.animation.AccelerateInterpolator(1.5f))
+            .withEndAction(new Runnable() {
+                @Override
+                public void run() {
+                    root.setLayerType(View.LAYER_TYPE_NONE, null);
+                    try { dialog.dismiss(); } catch (Throwable ignored) {}
+                    if (onDismissEnd != null) onDismissEnd.run();
+                }
+            })
+            .start();
     }
 
     private static String ensureBrackets(String val) {

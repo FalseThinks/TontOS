@@ -40,6 +40,8 @@ launch_cvd \
     --memory_mb=4096 \
     --start_webrtc=true \
     --gpu_mode=guest_swiftshader \
+    --enable_host_bluetooth=false \
+    --extra_bootconfig_args="androidboot.cuttlefish_service_bluetooth_checker=false" \
     --system_image_dir="$PRODUCT_OUT"
 
 echo

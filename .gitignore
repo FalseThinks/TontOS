@@ -53,6 +53,10 @@ graphify-out/
 .env.*.local
 *.pem
 *.key
+*.pk8
+*.x509.pem
+platform/security/*
+!platform/security/README.md
 *.tontbak
 logs/
 
