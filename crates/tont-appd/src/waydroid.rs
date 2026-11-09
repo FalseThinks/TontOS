@@ -96,7 +96,7 @@ impl CommandRunner for SystemCommandRunner {
             Ok(Err(e)) => Err(e),
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 if let Some(pid) = rustix::process::Pid::from_raw(child_pid as i32) {
-                    let _ = rustix::process::kill_process(pid, rustix::process::Signal::Kill);
+                    let _ = rustix::process::kill_process(pid, rustix::process::Signal::KILL);
                 }
                 Err(io::Error::new(
                     io::ErrorKind::TimedOut,
