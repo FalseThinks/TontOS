@@ -12,7 +12,7 @@
 **Minimalist AOSP Distribution · Rust System Daemons · Low-Distraction Interface**
 
 [![Main Workflow](https://img.shields.io/github/actions/workflow/status/FalseThinks/TontOS/main.yml?branch=main&style=flat-square&label=CI&logo=githubactions&logoColor=white)](https://github.com/FalseThinks/TontOS/actions/workflows/main.yml)
-[![Release](https://img.shields.io/badge/release-v0.0.4--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
+[![Release](https://img.shields.io/badge/release-v0.0.5--alpha-2563EB.svg?style=flat-square&logo=github)](https://github.com/FalseThinks/TontOS/releases)
 [![Rust](https://img.shields.io/badge/rust-1.99.0%20(2024%20Edition)-DEA584.svg?style=flat-square&logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![AOSP](https://img.shields.io/badge/AOSP-17.0.0__r1-3DDC84.svg?style=flat-square&logo=android&logoColor=white)](https://source.android.com/)
 [![Tests](https://img.shields.io/badge/tests-151%20passed-10B981.svg?style=flat-square)](tests/)
